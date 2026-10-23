@@ -4,7 +4,7 @@ role: gate
 kinds: [code, files]
 agent: human
 summary: A person approves the result or asks for changes.
-when: A person must sign off before the job lands, for example a risky migration, a change the issue asks someone to approve, or a deliverable for a decision.
+when: A person must sign off before the job lands, for example a risky migration, a change the issue asks someone to approve, or a deliverable for a decision. Not for a check a person does on the PR before it is merged (a live run, a manual test, a dry-run against production): that check goes to plan.md "Outside the code" and the PR's Open points.
 requires: []
 version: 1
 ---

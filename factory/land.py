@@ -103,9 +103,18 @@ def round_paths(run_id, repo_name, number):
             "checks_file": os.path.join(folder, "checks.json")}
 
 
+def project_repo(project, repo_name):
+    return next((repo for repo in project.get("repos", []) if repo["name"] == repo_name), None) or {}
+
+
 def repo_test(project, repo_name):
-    entry = next((repo for repo in project.get("repos", []) if repo["name"] == repo_name), None)
-    return (entry or {}).get("test") or "none"
+    return project_repo(project, repo_name).get("test") or "none"
+
+
+def repo_verify(project, repo_name):
+    """How an agent sees the repo work, as the project defines it; the lander runs it after the tests."""
+    found = project_repo(project, repo_name).get("verify")
+    return json.dumps(found) if found else "none"
 
 
 def start(conn, run_id, repo_name, by="human"):
@@ -146,6 +155,7 @@ def start(conn, run_id, repo_name, by="human"):
         "base_branch": repo["base_branch"],
         "head_sha": head,
         "test": repo_test(project, repo_name),
+        "verify": repo_verify(project, repo_name),
         "checks": found["checks"],
         "round": number,
         "previous": ",".join(previous) or "none",

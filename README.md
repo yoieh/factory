@@ -202,6 +202,20 @@ When the lander says CHANGES, the factory fixes the PR itself: `land fix` rework
 
 The core acts only when every check passes (a repo without CI counts on the lander's own test run), the PR merges cleanly, no reviewer asked for changes and the PR's head is still the commit the lander judged. It merges pinned to that commit, without admin rights, auto-merge or branch deletion, so branch protection still applies. `--dry-run` says what it would do. With `ready` or `merge`, Finish lands the run's PRs by itself once their checks are done. Only the user turns landing on, per project, with `factory project set <name> defaults.land '"merge"'`; the code host adapter needs the `pr_checks` and `land_pr` capabilities.
 
+### Seeing it work
+
+Tests prove the code; a repo's `verify` proves the product. It says how an agent sees the repo work, and the lander does it on every PR after the tests, before it may pass:
+
+```json
+{"name": "web", "path": "~/src/web", "verify": {"how": "browser", "start": "npm run dev -- --port {port}",
+  "url": "http://localhost:{port}", "steps": "Add a lead and see it in the list, with no console errors"}}
+{"name": "api", "path": "~/src/api", "verify": {"how": "http", "start": "make run PORT={port}",
+  "url": "http://localhost:{port}/health", "steps": "POST /leads with a bad email gives 400"}}
+{"name": "cli", "path": "~/src/cli", "verify": {"how": "command", "run": "make e2e"}}
+```
+
+`how` is `browser` (the agent drives the page with `browser-use`), `http` (it calls the API with `curl`), `cli` (it runs the commands in `steps`) or `command` (one command whose exit code counts). `tool` names another tool; `project show` warns when it is missing. The lander writes what it did and saw under "Seen working" in its review. When `verify` cannot run, the PR waits for you; a repo without one gets a note asking for it. The planner and the `verify` gate of a run use it too. Only the user sets it: `factory project set <name> repos.<repo>.verify '<json>'`.
+
 ### After merge
 
 Once a PR is merged, by `land apply` or by a person, `/factory land <run-id>` runs the steps the repo's `after_merge` asks for:

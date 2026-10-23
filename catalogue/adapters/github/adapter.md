@@ -1,6 +1,6 @@
 # github
 
-Pushes feature branches to GitHub and opens one draft PR per repo with the `gh` CLI. A script reads PR states for `run prs`, Improve and the dashboard; two more read a PR's checks and mark it ready or merge it for `land`. Only `github.com` as written; for GitHub Enterprise, override `pr_url` in the project's `patterns` and use the instance's host in the commands (`--hostname`, the `origin` parsing).
+Pushes feature branches to GitHub and opens one draft PR per repo with the `gh` CLI. A script reads PR states for `run prs`, Improve and the dashboard; two more read a PR's checks and mark it ready or merge it for `land`, and two upload a build after a merge as a release and a package. Only `github.com` as written; for GitHub Enterprise, override `pr_url` in the project's `patterns` and use the instance's host in the commands (`--hostname`, the `origin` parsing).
 
 `$F` is the factory CLI as the skill sets it. Values in `<angle brackets>` come from the run (`run new`, `plan load`, `paths`) or, in Improve, from `improvement start`.
 
@@ -55,6 +55,13 @@ Scripts the core runs itself in Land: `land check` and `land start` run `pr_chec
 
 - `land_pr` with `ready` marks a draft PR ready for review. With `merge` it marks it ready and merges it with the `merge_method` setting (`squash`, `merge` or `rebase`), pinned to the judged commit. It never uses admin rights, auto-merge or branch deletion, so branch protection, required reviews and code owners still apply: when GitHub refuses the merge, `land apply` reports it and changes nothing else.
 
+## publish_release and publish_package
+
+Scripts the core runs itself in After merge: `land publish` runs them only for a repo whose `after_merge` asks for it, after its build is done. Never run them yourself, and never run `gh release` or push to the container registry yourself either.
+
+- `publish_release` creates the release `<tag>` at the merge commit with the build as its one asset, as a draft when `after_merge.release` is `draft`. It is a prerelease while the `prerelease` setting is true (the default), so a release a person made stays the latest. A release with the same tag is left as it is.
+- `publish_package` pushes the build as an OCI artifact to `<registry>/<owner>/<repo>` (lowercase), tagged `<tag>` and `latest`. Its `org.opencontainers.image.source` annotation links the package to the repo, so it shows under the repo's Packages and keeps the repo's visibility. Fetch it with `oras pull ghcr.io/<owner>/<repo>:latest`.
+
 ## pr_template
 
 Read the template fresh on every run, never from memory.
@@ -67,11 +74,13 @@ Read the template fresh on every run, never from memory.
 
 - Install `gh` (https://cli.github.com) and run `gh auth login` for `github.com` with access to every repo of the project. `gh auth status` must pass.
 - Each repo needs an `origin` remote on `github.com` that `git push` already works with.
-- Optional settings: `draft` (default true), `reviewers` (GitHub logins or `org/team` names, default none) and `merge_method` (`squash`, `merge` or `rebase`, default `squash`, used only by Land). Without `reviewers`, the repo's code owners are the reviewers GitHub adds by itself.
+- Optional settings: `draft` (default true), `reviewers` (GitHub logins or `org/team` names, default none), `merge_method` (`squash`, `merge` or `rebase`, default `squash`, used only by Land), `prerelease` (default true) and `registry` (default `https://ghcr.io`), used only by After merge.
+- `publish_package` needs the `write:packages` scope: `gh auth refresh -h github.com -s write:packages`. Without it, `land publish` reports missing credentials and pushes nothing. Without `reviewers`, the repo's code owners are the reviewers GitHub adds by itself.
 
 ## Never
 
 - Approve or close a PR (`gh pr review --approve`, `gh pr close`), or mark one ready or merge it (`gh pr ready`, `gh pr merge`) other than through the core's `land apply`.
+- Create, edit or delete a release, or push or delete a package, other than through the core's `land publish`.
 - Force-push in any form, or push the base branch or any branch other than the run's feature branches and `chore/improvements-*`.
 - Print a token: no `gh auth token`, no `gh auth status --show-token`, no `GH_TOKEN` or `GITHUB_TOKEN` in output, and never print the remote URL.
 - Write closing keywords (`Closes`, `Fixes`, `Resolves` followed by an issue) in a PR text: they close issues on merge, which writes to the tracker. Refer to an issue as `#<n>` only.
@@ -99,3 +108,16 @@ Read the template fresh on every run, never from memory.
 - `gh pr view <url> --json state,isDraft,headRefOid,url`: refuse a PR that is not open, or whose head is not `--head`.
 - A draft: `gh pr ready <url>`. With `merge`, then `gh pr merge <url> --<method> --match-head-commit <sha>`; never `--admin`, `--auto` or `--delete-branch`.
 - stdout: `{"action": "ready"|"merged", "url": "<the url>"}`.
+
+`scripts/publish_release.py --url <pr_url> --tag <tag> --target <merge_sha> --file <artifact> --title <title> --notes-file <notes_file> --mode draft|publish --prerelease true|false`, the same rules and exit codes:
+
+- The repository is `<owner>/<name>` from the PR url. Refuse a tag other than letters, digits, dots, dashes and underscores, a target that is not a full commit sha, another mode, and a file or notes file that does not exist.
+- `gh release view <tag> --repo <owner>/<name> --json url,isDraft`: when it exists, change nothing.
+- Otherwise `gh release create <tag> <file> --repo <owner>/<name> --target <sha> --title <title> --notes-file <notes>`, with `--draft` for `draft` and `--prerelease` when true, with a 1500 second timeout.
+- stdout: `{"action": "created"|"exists", "url", "draft", "tag"}`.
+
+`scripts/publish_package.py --url <pr_url> --tag <tag> --revision <merge_sha> --file <artifact> --registry <registry>`, the same rules and exit codes:
+
+- The token from `gh auth token` and the login from `gh api user`, never printed. A bearer token from `<registry>/token` for `repository:<owner>/<name>:pull,push`; a 401 or 403 anywhere is exit 3.
+- Upload the empty config `{}` and the file as blobs (skipped when the registry has them), then put one OCI image manifest with `artifactType` `application/vnd.factory.build.v1`, the file as its one layer (titled with its name) and the `source`, `revision` and `created` annotations, as `<tag>` and as `latest`.
+- stdout: `{"action": "pushed", "ref": "<registry host>/<owner>/<name>:<tag>", "digest"}`.

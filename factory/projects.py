@@ -17,7 +17,10 @@ TOP_KEYS = (
     "name", "key", "description", "repos", "repo_root", "integrations", "knowledge",
     "step_skills", "catalogue_dirs", "improvement_targets", "defaults",
 )
-REPO_KEYS = ("name", "path", "remote", "default_branch", "role", "test", "setup")
+REPO_KEYS = ("name", "path", "remote", "default_branch", "role", "test", "setup", "after_merge")
+AFTER_MERGE_KEYS = ("watch", "build", "artifact", "release", "package")
+RELEASE_MODES = ("off", "draft", "publish")
+PACKAGE_MODES = ("off", "publish")
 KNOWLEDGE_KEYS = ("label", "read_first", "per_repo", "architecture")
 TARGET_KEYS = ("repo", "base", "label")
 DEFAULTS = {"confirm_plan": False, "branch_prefix": "feature/", "require_code_review": True, "land": "off"}
@@ -110,6 +113,8 @@ def validate(project, folder_name=None, config=None):
                 problems.append(f"{label}: {key} must be a string")
         if "default_branch" in repo and not valid_branch_name(repo["default_branch"]):
             problems.append(f"{label}: default_branch is not a valid branch name")
+        if "after_merge" in repo:
+            problems.extend(after_merge_problems(f"{label}.after_merge", repo["after_merge"]))
     if "repo_root" in project:
         problem = path_problem("repo_root", project["repo_root"])
         if problem:
@@ -215,6 +220,30 @@ def validate(project, folder_name=None, config=None):
             problems.append(f"integrations.{slot}: adapter {entry['adapter']} is a {data['slot']} adapter")
             continue
         problems.extend(adapters.integration_problems(slot, entry, data))
+    return problems
+
+
+def after_merge_problems(label, after):
+    if not isinstance(after, dict):
+        return [f"{label} must be an object"]
+    problems = [f"{label}: unknown key {key!r}" for key in after if key not in AFTER_MERGE_KEYS]
+    if "watch" in after and not isinstance(after["watch"], bool):
+        problems.append(f"{label}.watch must be true or false")
+    for key in ("build", "artifact"):
+        if key in after and not (isinstance(after[key], str) and after[key].strip()):
+            problems.append(f"{label}.{key} must be a non-empty string")
+    artifact = after.get("artifact")
+    if isinstance(artifact, str) and (os.path.isabs(artifact) or ".." in artifact.replace("\\", "/").split("/")):
+        problems.append(f"{label}.artifact must be a path inside the repo")
+    if "release" in after and after["release"] not in RELEASE_MODES:
+        problems.append(f"{label}.release must be one of {', '.join(RELEASE_MODES)}")
+    if "package" in after and after["package"] not in PACKAGE_MODES:
+        problems.append(f"{label}.package must be one of {', '.join(PACKAGE_MODES)}")
+    if "artifact" in after and "build" not in after:
+        problems.append(f"{label}.artifact needs build")
+    for key in ("release", "package"):
+        if after.get(key, "off") != "off" and "artifact" not in after:
+            problems.append(f"{label}.{key} needs build and artifact")
     return problems
 
 
@@ -374,7 +403,16 @@ def set_key(conn, name, dotted, value):
     if top == "name":
         raise FactoryError("a project cannot be renamed")
     updated = copy.deepcopy(project)
-    dotted_set(updated, dotted, value)
+    if top == "repos" and dotted.count(".") >= 2:
+        _, repo_name, rest = dotted.split(".", 2)
+        entry = next((repo for repo in updated.get("repos", []) if repo.get("name") == repo_name), None)
+        if entry is None:
+            raise FactoryError(f"project {name} has no repo {repo_name}")
+        if rest.split(".")[0] in ("name", "path"):
+            raise FactoryError(f"repos.{repo_name}.{rest}: use link-repo and unlink-repo for a repo's name and path")
+        dotted_set(entry, rest, value)
+    else:
+        dotted_set(updated, dotted, value)
     checked(updated, name)
     with db.tx(conn):
         if updated["key"] != project["key"]:
@@ -564,6 +602,8 @@ def resolved(project, config=None, adhoc=False):
             "is_git": bool(top),
             "has_origin": has_origin,
         }
+        if repo.get("after_merge"):
+            entry["after_merge"] = repo["after_merge"]
         if not top:
             warnings.append(f"repo {repo['name']}: {path} is not a git checkout")
         repos.append(entry)

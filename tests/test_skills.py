@@ -6,7 +6,8 @@ from unittest import mock
 from helpers import ROOT, FactoryCase, read, write
 from factory import VERSION
 
-GENERIC = ("factory-planner", "factory-worker", "factory-reviewer", "factory-retro", "factory-improver", "factory-lander")
+GENERIC = ("factory-planner", "factory-worker", "factory-reviewer", "factory-retro", "factory-improver", "factory-lander",
+           "factory-watcher")
 DEDICATED_STEP = """---
 name: review-data
 role: gate
@@ -74,7 +75,7 @@ class SkillInstallTest(FactoryCase):
         self.cli("skill", "install", "--user")
         write(os.path.join(self.claude, "agents", "my-own-agent.md"), "mine\n")
         removed = self.cli("skill", "uninstall", "--user")
-        self.assertEqual(len(removed["removed"]), 7)
+        self.assertEqual(len(removed["removed"]), 8)
         self.assertFalse(os.path.exists(os.path.join(self.claude, "skills", "factory")))
         self.assertTrue(os.path.isfile(os.path.join(self.claude, "agents", "my-own-agent.md")))
         self.assertEqual(self.cli("skill", "status")["installs"], [])

@@ -16,7 +16,7 @@ PLACEHOLDER_RE = re.compile(r"\{([a-z_]+)\}")
 SLOTS = ("tracker", "code_host", "design")
 CAPABILITIES = {
     "tracker": ("fetch_issue", "import", "sync", "comment"),
-    "code_host": ("push", "open_pr", "pr_state", "pr_template", "pr_checks", "land_pr"),
+    "code_host": ("push", "open_pr", "pr_state", "pr_template", "pr_checks", "land_pr", "publish_release", "publish_package"),
     "design": ("fetch_design",),
 }
 VIAS = ("mcp", "cli", "skill", "git", "file", "script", "core")
@@ -30,6 +30,7 @@ PATTERN_KEYS = {
 PLACEHOLDERS = (
     "project", "repo", "repo_path", "remote_url", "source_branch", "target_branch",
     "pr_file", "title", "pr_url", "issue_key", "external_key", "external_keys", "head_sha", "action",
+    "merge_sha", "tag", "artifact", "notes_file", "release_mode",
 )
 RESERVED_SETTINGS = PLACEHOLDERS + ("adapter", "write", "patterns")
 DEFAULT_SLOTS = {"tracker": "local", "code_host": "none"}
@@ -352,6 +353,8 @@ OUTPUTS = {
         and data.get("checks") in ("passing", "pending", "failing", "none")
         and isinstance(data.get("failing"), list) and isinstance(data.get("pending"), list)),
     "land_pr": lambda data: data.get("action") in ("ready", "merged") and isinstance(data.get("url"), str),
+    "publish_release": lambda data: data.get("action") in ("created", "exists") and isinstance(data.get("url"), str),
+    "publish_package": lambda data: data.get("action") == "pushed" and isinstance(data.get("ref"), str),
     "sync": lambda data: isinstance(data.get("issues"), list) and all(
         isinstance(item, dict) and isinstance(item.get("external_key"), str) for item in data["issues"]),
     "fetch_issue": lambda data: isinstance(data.get("title"), str),
@@ -461,9 +464,9 @@ def script_capability(entry, capability):
     return spec
 
 
-def run_capability(project, entry, capability, repo=None, extra=None):
+def run_capability(project, entry, capability, repo=None, extra=None, timeout=None):
     spec = script_capability(entry, capability)
-    return run_script(entry["dir"], capability, spec, script_values(project, entry, repo, extra))
+    return run_script(entry["dir"], capability, spec, script_values(project, entry, repo, extra), timeout)
 
 
 SKELETON_CAPABILITIES = {

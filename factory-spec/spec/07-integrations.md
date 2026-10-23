@@ -16,6 +16,8 @@ Integrations plug in through adapters. A project names at most one adapter per s
 | code_host | `pr_template` | A file or a skill that defines the PR title format and sections. |
 | code_host | `pr_checks` | Read an open PR's checks, mergeability, draft flag and head commit. Run by the core in `land check` and `land start`. |
 | code_host | `land_pr` | Mark a PR ready for review, or merge it pinned to a given head commit. Run only by the core's `land apply`, never by the orchestrator. |
+| code_host | `publish_release` | Upload a build of a merge commit as a release (a draft or published). Run only by the core's `land publish`. |
+| code_host | `publish_package` | Push a build of a merge commit as a package of the repo. Run only by the core's `land publish`. |
 | design | `fetch_design` | Save one PNG and one markdown file per frame into `design/` (05, Design files). |
 
 Recognising keys and links, and scrubbing temporary URLs, are not capabilities: they are `patterns` in `adapter.json`, used by the core.
@@ -94,6 +96,7 @@ adapters/<name>/
   | `{source_branch}`, `{target_branch}`, `{pr_file}`, `{title}` | `open_pr` inputs |
   | `{pr_url}` | `pr_state`, `pr_checks` and `land_pr` input |
   | `{action}`, `{head_sha}` | `land_pr` inputs: `ready` or `merge`, and the commit the lander judged |
+  | `{merge_sha}`, `{tag}`, `{artifact}`, `{title}`, `{notes_file}`, `{release_mode}` | `publish_release` and `publish_package` inputs: the merge commit, the tag, the build file, the release title and notes, and `draft` or `publish` |
   | `{issue_key}`, `{external_key}`, `{external_keys}` | issue inputs; `external_keys` is a comma list of the project's mirrored keys for `sync` |
 
   Setting names must not equal a built-in placeholder. A placeholder without a value is an error before the script runs.
@@ -103,8 +106,10 @@ adapters/<name>/
   |---|---|
   | `pr_state` | `{"state": "OPEN"\|"MERGED"\|"DECLINED"\|"SUPERSEDED", "url": "..."}` |
   | `open_pr` | `{"action": "created"\|"updated", "url": "..."}` |
-  | `pr_checks` | `{"state": "OPEN"\|"MERGED"\|"DECLINED", "url", "draft", "head_sha", "mergeable": "MERGEABLE"\|"CONFLICTING"\|"UNKNOWN", "review", "checks": "passing"\|"pending"\|"failing"\|"none", "failing": [...], "pending": [...]}` |
+  | `pr_checks` | `{"state": "OPEN"\|"MERGED"\|"DECLINED", "url", "draft", "head_sha", "mergeable": "MERGEABLE"\|"CONFLICTING"\|"UNKNOWN", "review", "checks": "passing"\|"pending"\|"failing"\|"none", "failing": [...], "pending": [...], "merge_sha"}` (`merge_sha` may be empty while the PR is open) |
   | `land_pr` | `{"action": "ready"\|"merged", "url": "..."}` |
+  | `publish_release` | `{"action": "created"\|"exists", "url": "..."}` |
+  | `publish_package` | `{"action": "pushed", "ref": "..."}` |
   | `sync` | `{"issues": [{"external_key", "title", "url", "external_status", "updated_at"}]}` |
   | `fetch_issue` | `{"title", "url", "status", "assignee", "type", "labels", "parent", "description", "comments", "links", "attachments", "design_links"}` |
 
@@ -148,7 +153,7 @@ v1 ships:
 | `none` | code_host | No push, no PR. The default. |
 | `git` | code_host | `push` only; the PR is opened by hand. For hosts without a CLI or API. |
 | `local` | tracker | The central issue tracker itself (`via: core`). Default tracker of every project. |
-| `github` | code_host | `gh` CLI for `open_pr`, scripts for `pr_state`, `pr_checks` and `land_pr` (setting `merge_method`, default `squash`). |
+| `github` | code_host | `gh` CLI for `open_pr`, scripts for `pr_state`, `pr_checks` and `land_pr` (setting `merge_method`, default `squash`), `publish_release` (a GitHub release, setting `prerelease`, default true) and `publish_package` (an OCI artifact in the GitHub container registry, setting `registry`, default `https://ghcr.io`; needs the `write:packages` scope). |
 | `github-issues` | tracker | `gh issue view` for `fetch_issue`, a script for `sync`. Keys are issue numbers. |
 | `figma` | design | Figma MCP: metadata, screenshot, design context per frame; `scrub` for asset URLs. |
 

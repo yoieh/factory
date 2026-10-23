@@ -10,7 +10,7 @@ STATES = {"OPEN": "OPEN", "MERGED": "MERGED", "CLOSED": "DECLINED"}
 MERGEABLE = ("MERGEABLE", "CONFLICTING", "UNKNOWN")
 GOOD = ("SUCCESS", "NEUTRAL", "SKIPPED")
 WAITING = ("PENDING", "EXPECTED", "QUEUED", "IN_PROGRESS", "WAITING", "REQUESTED")
-FIELDS = "state,url,isDraft,headRefOid,mergeable,reviewDecision,statusCheckRollup"
+FIELDS = "state,url,isDraft,headRefOid,mergeable,reviewDecision,statusCheckRollup,mergeCommit"
 TIMEOUT = 25
 
 
@@ -78,6 +78,7 @@ def checks_of(url):
         "checks": overall,
         "failing": failing,
         "pending": pending,
+        "merge_sha": (data.get("mergeCommit") or {}).get("oid") or "",
     }
 
 

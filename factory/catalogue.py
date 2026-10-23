@@ -13,6 +13,7 @@ REQUIRES = ("designs", "upstream", "previous", "repo-tests", "issue")
 GENERIC = {"produce": "factory-worker", "gate": "factory-reviewer"}
 GENERIC_AGENTS = (
     "factory-planner", "factory-worker", "factory-reviewer", "factory-retro", "factory-improver", "factory-lander",
+    "factory-watcher",
 )
 STEP_KEYS = (
     "name", "role", "kinds", "agent", "model", "summary", "when", "requires",

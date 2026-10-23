@@ -49,7 +49,7 @@ Keys:
 | `name` | yes | `^[a-z][a-z0-9-]{1,39}$`, equals the folder name. |
 | `key` | yes | Issue key prefix, `^[A-Z][A-Z0-9]{1,9}$`, unique across projects. |
 | `description` | no | One line. |
-| `repos` | yes (may be empty) | `name` (`^[A-Za-z0-9][A-Za-z0-9._-]*$`, unique), `path` (a git checkout), optional `remote`, `default_branch` (read from `origin/HEAD` when missing), `role` (free text for the planner), `test` and `setup` (hints for the planner; the plan's repo facts win). |
+| `repos` | yes (may be empty) | `name` (`^[A-Za-z0-9][A-Za-z0-9._-]*$`, unique), `path` (a git checkout), optional `remote`, `default_branch` (read from `origin/HEAD` when missing), `role` (free text for the planner), `test` and `setup` (hints for the planner; the plan's repo facts win), `after_merge` (below). |
 | `repo_root` | no | A folder the planner may scan for repos not yet linked; it may propose linking one in a question, never use it unlinked. |
 | `integrations` | no | See 07. |
 | `knowledge` | no | Paths the agents read when they exist: `label`, `read_first`, `per_repo` (with `{repo}`), `architecture`. |
@@ -57,6 +57,18 @@ Keys:
 | `catalogue_dirs` | no | Extra catalogue folders (06). |
 | `improvement_targets` | no | Where accepted improvements go. Default: `factory`, `repo`, `process`; `knowledge` only when set. Per target: `repo` (a project repo, or none for `factory` and `process`), `base` (`current`, `default` or a branch name), `label`. |
 | `defaults` | no | Run defaults. `land` (`off`, `ready` or `merge`, default `off`) says what `land apply` does with a PR the lander passed: nothing, mark it ready for review, or merge it. Only the user turns it on, per project. |
+
+A repo's `after_merge` says what the factory does once its PR is merged, in **After merge** of Land. Only the user sets it.
+
+| Key | Meaning |
+|---|---|
+| `watch` | `true`: a `factory-watcher` follows the merge commit's deploy with the `deploy-watch` skill, rolls back a production outage the deploy caused, and opens (never merges) a remediation PR. |
+| `build` | A shell command, run with the repo's `setup` in a detached worktree at the merge commit. |
+| `artifact` | The build's output, a path inside the repo (a folder is zipped). Needs `build`. |
+| `release` | `off` (default), `draft` or `publish`: upload the artifact as a release of the code host. Needs `artifact`. |
+| `package` | `off` (default) or `publish`: push the artifact as a package of the repo. Needs `artifact`. |
+
+`factory project set <name> repos.<repo>.after_merge '<json>'` sets it for one repo.
 
 Validation: unknown keys at any level are an error, paths are expanded and must be absolute after expansion, repo paths must be git checkouts (a warning in `project show`, an error in `run new` for a repo the run uses). Credentials never go in project config; see 07 `settings`.
 

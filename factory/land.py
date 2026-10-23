@@ -60,12 +60,15 @@ def with_prs(conn, run_id, repo_name=None):
 
 
 def check(conn, run_id, repo_name=None, wait=0):
+    from . import after
+
     run = runs.get(conn, run_id)
     project = runs.current_project(run)
     selected = with_prs(conn, run_id, repo_name)
     deadline = time.monotonic() + max(wait or 0, 0)
     while True:
-        results = [dict(read_checks(project, repo), repo=repo["repo"], url=repo["pr_url"]) for repo in selected]
+        results = [dict(read_checks(project, repo), repo=repo["repo"], url=repo["pr_url"],
+                        after=after.todo(project, run_id, repo["repo"])) for repo in selected]
         waiting = [found["repo"] for found in results if is_waiting(found)]
         left = deadline - time.monotonic()
         if not waiting or left <= 0:
@@ -194,6 +197,8 @@ def blockers(project, mode, verdict, found, head):
 
 
 def apply(conn, run_id, repo_name, dry_run=False):
+    from . import after
+
     run = runs.get(conn, run_id)
     project = runs.current_project(run)
     repo = with_prs(conn, run_id, repo_name)[0]
@@ -226,7 +231,8 @@ def apply(conn, run_id, repo_name, dry_run=False):
         db.event(conn, "land.apply", run_id, repo=repo_name, round=started["round"], verdict=verdict, mode=mode,
                  action=action, reasons=reasons, dry_run=dry_run)
     result = {"repo": repo_name, "url": repo["pr_url"], "mode": mode, "verdict": verdict, "action": action,
-              "reasons": reasons, "round": started["round"], "review_file": paths["review_file"], "issues_done": []}
+              "reasons": reasons, "round": started["round"], "review_file": paths["review_file"], "issues_done": [],
+              "after": after.todo(project, run_id, repo_name) if action in ("merged", "would_merge") else []}
     if action == "merged":
         result["issues_done"] = runs.check_prs(conn, run_id, force=True)["issues_done"]
     return result

@@ -106,12 +106,13 @@ Taken in phase 0 on 2026-10-22, from `spec/14-open-questions.md` and the user's 
 
 ### Phase 5
 
-Taken during the acceptance walk-through on 2026-10-22, from what the live runs showed. The user decided items 1 to 4.
+Taken during the acceptance walk-through on 2026-10-22, from what the live runs showed. The user decided items 1 to 5.
 
 1. **Refused writes.** In auto mode, Claude Code tells subagents to hand their final report back, and its Write tool refused a research worker's `out/findings.md` ("Subagents should return findings as text, not write report files"). The refusal comes from the tool, so allow rules don't help. A gate also ended without its review file, believing it had no write tool. Fix: agents return refused files as `=== FILE: <path> ===` blocks, and the orchestrator stores them unchanged with the new `factory step save`, which accepts only the agent's own files (05, Refused writes). The worker and reviewer prompts and the skill say so.
 2. **Dropping a job.** The CLI had no way to give a job up, so a run reached `done` with a job left `running`. Fix: `factory job drop <ref> "<reason>"` and the stage `dropped` (schema version 2, which rebuilds `jobs` with foreign keys off). `job ready` reports jobs blocked by a dropped dependency. `run status finishing|done` refuses while a job is neither done nor dropped, and a dropped job can be reworked.
 3. **The plan confirm is asked in chat as plain text,** no longer with AskUserQuestion. A question box blocks the session, and a dashboard answer could not close it, so the user had to answer twice.
 4. **Moving rarely used parts of `SKILL.md` into files read on demand** is left for after phase 5. The orchestrator was 57 to 70% of each run's cost.
+5. **License: MIT,** copyright yoieh, chosen by the owner after phase 5. `LICENSE` is at the repo root and `plugin.json` says `"license": "MIT"`.
 
 Fixed without a decision, as phase 5's "fix what breaks":
 

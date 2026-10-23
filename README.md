@@ -2,7 +2,7 @@
 
 A software factory for Claude Code. It turns an issue or a feature text into reviewed changes: a planner splits the work into small jobs, each job runs a pipeline of steps from a catalogue, agents work in their own git worktrees, and the results land in one feature branch per repo. The spec it is built from is in `factory-spec/` (start with `factory-spec/README.md`); the decisions taken during the build are in `factory-spec/DECISIONS.md`.
 
-This repo is the core: the `factory` CLI, the SQLite schema, the built-in catalogue, the `/factory` skill and its five agents, and the tests. It is also a Claude Code plugin and a one-plugin marketplace. It is built in phases (`factory-spec/BUILD-PROMPT.md`); phases 1 to 4 are done: the core state, the integrations and lifecycle, the plugin with the skill and agent installs, and the dashboard. Phase 5 walks the acceptance list end to end.
+This repo is the core: the `factory` CLI, the SQLite schema, the built-in catalogue, the `/factory` skill and its five agents, and the tests. It is also a Claude Code plugin and a one-plugin marketplace. It was built in phases (`factory-spec/BUILD-PROMPT.md`): the core state, the integrations and lifecycle, the plugin with the skill and agent installs, the dashboard, and a walk through the acceptance list end to end.
 
 ## Requirements
 
@@ -13,11 +13,13 @@ Python 3.10 or newer (standard library only), git, SQLite 3.35 or newer (the one
 In Claude Code:
 
 ```text
-/plugin marketplace add <git url or local path of this repo>
+/plugin marketplace add yoieh/factory
 /plugin install factory@factory
 ```
 
-For a marketplace given as `<owner>/<repo>`, Claude Code 2.1.275 and later also take it in one step: `/plugin install factory --marketplace <owner>/<repo>`.
+Claude Code 2.1.275 and later also take it in one step: `/plugin install factory --marketplace yoieh/factory`. `yoieh/factory` is the repo's `<owner>/<repo>` short form; its full clone URL works too, and `#<branch or tag>` after either pins a version. To work on the factory itself, add the path of a local checkout instead (start a relative path with `./`): the plugin then loads from that folder, so edits need no reinstall.
+
+Claude Code does not update plugins from this marketplace by itself unless you turn auto-update on in the **Marketplaces** tab of `/plugin`. To update by hand, choose **Update now** on the plugin in the **Installed** tab, or run `claude plugin update factory@factory` in a shell. An installed copy only changes when `version` in `.claude-plugin/plugin.json` changes, so every release bumps it.
 
 The plugin brings the `/factory` skill (its full name is `/factory:factory`; plain `/factory` works while no other command uses that name), the five agents (`factory:factory-planner`, `factory:factory-worker`, `factory:factory-reviewer`, `factory:factory-retro`, `factory:factory-improver`) and the `factory` command, which Claude Code puts on the Bash tool's PATH. Nothing else to set up: the first command creates the factory home. State never lives in the plugin folder, because that folder changes with every version and Claude Code deletes plugin data on uninstall; it lives in `~/.factory`.
 
@@ -248,3 +250,7 @@ The tests use a temporary factory home and home folder per case, local git repos
 A failure names the file, the line and the word.
 
 Two more tests keep the prompts honest. `tests/test_prompts.py` runs every CLI call that the skill, the agents and the adapters name through the CLI's argument parser, checks the JSON fields the skill reads against real command output, and checks that the prompt keys of each agent are the same in the skill, the agent file and spec 05. `tests/test_shell.py` parses every fenced `sh` block in the skill, the agents and the adapters with `sh -n`, `bash -n` and, when it is installed, `zsh -n`, after replacing each `<placeholder>` with a plain word.
+
+## License
+
+MIT, see `LICENSE`.

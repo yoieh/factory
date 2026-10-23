@@ -10,160 +10,250 @@
   --bg: #f6f6f3;
   --panel: #ffffff;
   --sunk: #efeee9;
-  --text: #1f1f1c;
-  --muted: #6d6c66;
-  --line: #e2e0d9;
-  --focus: #4a6fa5;
-  --pass: #2e7d4f;
-  --pass-bg: #e3f1e8;
-  --changes: #b4432f;
-  --changes-bg: #f7e4df;
-  --pending: #8f8e88;
-  --pending-bg: #ecebe6;
-  --wait: #a87d12;
-  --wait-bg: #f6edd3;
-  --run: #4a6fa5;
-  --run-bg: #e3eaf4;
+  --text: #1b1b19;
+  --muted: #5c5b55;
+  --line: #e0dfd9;
+  --focus: #2f5d9e;
+  --pass: #1d7543;
+  --pass-bg: #e6f0ea;
+  --changes: #b03722;
+  --changes-bg: #f6e9e7;
+  --pending: #66665f;
+  --pending-bg: #eeeeed;
+  --wait: #835f00;
+  --wait-bg: #f1ede3;
+  --run: #2c5aa0;
+  --run-bg: #e8edf5;
+  --shade: rgba(0, 0, 0, .35);
   --radius: 8px;
-  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --mono: ui-monospace, SFMono-Regular, "Cascadia Code", Menlo, Consolas, monospace;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #17181a;
-  --panel: #1f2023;
-  --sunk: #26282c;
-  --text: #e6e5e1;
-  --muted: #9a9993;
-  --line: #34363b;
-  --focus: #7f9fd1;
-  --pass: #6cc28f;
-  --pass-bg: #1f3a2b;
-  --changes: #e58a76;
-  --changes-bg: #42261f;
-  --pending: #8a8a86;
-  --pending-bg: #2c2d31;
-  --wait: #d9b45a;
-  --wait-bg: #3d3420;
-  --run: #8fb0e0;
-  --run-bg: #24324a;
+  --bg: #131416;
+  --panel: #1b1c1f;
+  --sunk: #24262a;
+  --text: #ededea;
+  --muted: #a9a8a2;
+  --line: #33353a;
+  --focus: #8ab4f8;
+  --pass: #7fd19e;
+  --pass-bg: #2b3933;
+  --changes: #f2937f;
+  --changes-bg: #3d2f2e;
+  --pending: #a3a3a0;
+  --pending-bg: #313234;
+  --wait: #e8c463;
+  --wait-bg: #3c372a;
+  --run: #93b7f0;
+  --run-bg: #2e3540;
+  --shade: rgba(0, 0, 0, .55);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: #17181a;
-    --panel: #1f2023;
-    --sunk: #26282c;
-    --text: #e6e5e1;
-    --muted: #9a9993;
-    --line: #34363b;
-    --focus: #7f9fd1;
-    --pass: #6cc28f;
-    --pass-bg: #1f3a2b;
-    --changes: #e58a76;
-    --changes-bg: #42261f;
-    --pending: #8a8a86;
-    --pending-bg: #2c2d31;
-    --wait: #d9b45a;
-    --wait-bg: #3d3420;
-    --run: #8fb0e0;
-    --run-bg: #24324a;
+    --bg: #131416;
+    --panel: #1b1c1f;
+    --sunk: #24262a;
+    --text: #ededea;
+    --muted: #a9a8a2;
+    --line: #33353a;
+    --focus: #8ab4f8;
+    --pass: #7fd19e;
+    --pass-bg: #2b3933;
+    --changes: #f2937f;
+    --changes-bg: #3d2f2e;
+    --pending: #a3a3a0;
+    --pending-bg: #313234;
+    --wait: #e8c463;
+    --wait-bg: #3c372a;
+    --run: #93b7f0;
+    --run-bg: #2e3540;
+    --shade: rgba(0, 0, 0, .55);
   }
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.5 var(--sans); }
-a { color: inherit; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 2px; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 15px/1.55 var(--sans); font-variant-numeric: tabular-nums; }
+svg.i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; vertical-align: -3px; }
+a { color: inherit; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
 a:hover { text-decoration-color: var(--text); }
 button, select, input, textarea { font: inherit; color: inherit; }
-button { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
-button:hover { border-color: var(--muted); }
+button { display: inline-flex; align-items: center; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+button:hover { border-color: var(--muted); background: var(--sunk); }
 button.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+button.primary:hover { opacity: .88; }
 button:disabled { opacity: .5; cursor: default; }
-select, input[type="text"], input[type="search"], textarea { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; }
-textarea { width: 100%; resize: vertical; min-height: 80px; }
-:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
-code, pre { font-family: var(--mono); font-size: 12.5px; }
-pre { background: var(--sunk); padding: 10px 12px; border-radius: 6px; overflow: auto; }
-code { background: var(--sunk); padding: 1px 4px; border-radius: 4px; }
+button:disabled:hover { border-color: var(--line); background: var(--panel); }
+button.primary:disabled:hover { background: var(--text); }
+select, input[type="text"], input[type="search"], textarea { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; }
+textarea { width: 100%; resize: vertical; min-height: 84px; line-height: 1.5; }
+::placeholder { color: var(--muted); opacity: 1; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+code, pre { font-family: var(--mono); font-size: 13.5px; }
+pre { background: var(--sunk); padding: 10px 12px; border-radius: 6px; overflow: auto; line-height: 1.5; }
+code { background: var(--sunk); padding: 1px 5px; border-radius: 4px; }
 pre code { background: none; padding: 0; }
 table { border-collapse: collapse; width: 100%; }
-th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { font-weight: 600; color: var(--muted); font-size: 12px; }
-h1 { font-size: 20px; margin: 0 0 4px; }
-h2 { font-size: 16px; margin: 18px 0 8px; }
-h3 { font-size: 14px; margin: 14px 0 6px; }
-details > summary { cursor: pointer; color: var(--muted); }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: 13px; white-space: nowrap; }
+tbody tr:last-child td { border-bottom: 0; }
+h1 { font-size: 24px; line-height: 1.25; letter-spacing: -.015em; margin: 0 0 4px; }
+h2 { font-size: 20px; line-height: 1.3; letter-spacing: -.01em; margin: 18px 0 8px; }
+h3 { font-size: 15px; font-weight: 650; margin: 14px 0 8px; }
+p { margin: 0 0 12px; }
+ul, ol { margin: 0 0 12px; padding-left: 22px; }
+details > summary { cursor: pointer; color: var(--muted); font-weight: 500; }
+details > summary:hover { color: var(--text); }
 blockquote { margin: 8px 0; padding: 2px 12px; border-left: 3px solid var(--line); color: var(--muted); }
-#app { display: grid; grid-template-columns: 270px 1fr; height: 100%; }
+hr { border: 0; border-top: 1px solid var(--line); margin: 14px 0; }
+.kbd { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--panel); white-space: nowrap; }
+
+#app { display: grid; grid-template-columns: 250px 1fr; height: 100%; }
 #side { border-right: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; min-height: 0; }
-#side .top { padding: 14px 14px 8px; display: flex; flex-direction: column; gap: 8px; }
+#side .top { padding: 16px 16px 10px; display: flex; flex-direction: column; gap: 10px; }
 #side .brand { display: flex; justify-content: space-between; align-items: baseline; }
-#side .brand b { font-size: 16px; }
-#side nav a { display: flex; justify-content: space-between; padding: 6px 14px; text-decoration: none; }
-#side nav a.on, #runs a.on { background: var(--sunk); font-weight: 600; }
-#side .runs-head { padding: 10px 14px 6px; display: flex; gap: 6px; border-top: 1px solid var(--line); margin-top: 6px; }
-#side .runs-head input { flex: 1; min-width: 0; }
+#side .brand b { font-size: 17px; letter-spacing: -.01em; }
+#side nav a { display: flex; align-items: center; gap: 10px; padding: 7px 16px; text-decoration: none; color: var(--muted); font-weight: 500; }
+#side nav a .label { flex: 1; }
+#side nav a:hover { color: var(--text); }
+#side nav a.on { color: var(--text); background: var(--sunk); font-weight: 600; box-shadow: inset 3px 0 0 var(--text); }
+#side .runs-head { padding: 12px 16px 8px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); margin-top: 8px; }
+#side .runs-title { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; color: var(--muted); }
+#side .runs-title select { padding: 2px 4px; font-size: 13px; border-color: transparent; background: none; color: var(--muted); }
+#side .runs-title select:hover { color: var(--text); border-color: var(--line); }
+.search { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 6px; padding: 0 10px; background: var(--bg); color: var(--muted); }
+.search input { flex: 1; min-width: 0; border: 0; background: none; padding: 6px 0; }
+.search input:focus-visible { outline: none; }
+.search:focus-within { outline: 2px solid var(--focus); outline-offset: 1px; }
 #runs { list-style: none; margin: 0; padding: 0; overflow: auto; flex: 1; }
-#runs a { display: block; padding: 7px 14px; text-decoration: none; border-bottom: 1px solid var(--line); }
-#runs .feature { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#runs .meta { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 12px; }
-#side .foot { padding: 10px 14px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 12px; }
+#runs a { display: block; padding: 9px 16px; text-decoration: none; border-bottom: 1px solid var(--line); }
+#runs a:hover { background: var(--sunk); }
+#runs a.on { background: var(--sunk); box-shadow: inset 3px 0 0 var(--text); }
+#runs .feature { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-weight: 500; line-height: 1.35; margin-bottom: 5px; }
+#runs .meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
+#side .foot { padding: 10px 16px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 8px; color: var(--muted); font-size: 13px; }
+#side .foot button { margin-left: auto; }
+#side .foot span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#side .foot button { padding: 3px 8px; font-size: 13px; color: var(--muted); background: none; }
+#side .foot button:hover { color: var(--text); }
 #main { overflow: auto; min-width: 0; }
-.page { padding: 20px 24px 60px; max-width: 1400px; }
-.split { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; }
-.rail { display: flex; flex-direction: column; gap: 12px; }
-.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
-.card h3:first-child, .card h2:first-child { margin-top: 0; }
+.page { padding: 24px 28px 64px; max-width: 1400px; }
+
+.crumbs { font-size: 13px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.crumbs a { text-decoration: none; }
+.crumbs a:hover { text-decoration: underline; }
+.crumbs .sep { color: var(--muted); }
+.head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 4px 0 16px; }
+.head h1 { margin: 0; }
+.sub { color: var(--muted); margin: 0 0 16px; }
+.split { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+.rail { display: flex; flex-direction: column; gap: 14px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
+.card > h3:first-child, .card > h2:first-child, .card > .row:first-child > h3 { margin-top: 0; }
+.card > details > summary { margin: 0; }
+.tablecard { padding: 0; overflow: hidden; }
+.tablecard th, .tablecard td { padding: 10px 14px; }
+.tablecard th { background: var(--panel); }
+.stack > .card + .card { margin-top: 14px; }
 .muted { color: var(--muted); }
-.small { font-size: 12px; }
+.small { font-size: 13px; }
 .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.grow { flex: 1; }
-.count { background: var(--sunk); border-radius: 10px; padding: 0 7px; font-size: 12px; min-width: 20px; text-align: center; }
-.count.hot { background: var(--wait-bg); color: var(--wait); font-weight: 600; }
-.pill { display: inline-block; border-radius: 10px; padding: 0 8px; font-size: 12px; background: var(--pending-bg); color: var(--pending); white-space: nowrap; }
-.pill.pass, .pill.done, .pill.passed, .pill.MERGED, .pill.available, .pill.answered, .pill.resolved, .pill.accepted { background: var(--pass-bg); color: var(--pass); }
-.pill.changes, .pill.CHANGES, .pill.failed, .pill.capped, .pill.missing, .pill.DECLINED, .pill.rejected, .pill.closed, .pill.dropped { background: var(--changes-bg); color: var(--changes); }
+.grow { flex: 1; min-width: 0; }
+.count { background: var(--sunk); color: var(--muted); border-radius: 999px; padding: 0 7px; font-size: 13px; font-weight: 600; min-width: 22px; text-align: center; white-space: nowrap; }
+.count.hot { background: var(--wait-bg); color: var(--wait); }
+.pill { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 1px 9px 1px 7px; font-size: 13px; font-weight: 600; line-height: 1.6; white-space: nowrap; background: var(--pending-bg); color: var(--pending); vertical-align: middle; }
+.pill svg.i { width: 14px; height: 14px; stroke-width: 2.4; }
+.pill.sm { padding: 0 7px 0 5px; font-size: 12.5px; }
+.pill.pass, .pill.done, .pill.passed, .pill.PASS, .pill.MERGED, .pill.available, .pill.answered, .pill.resolved, .pill.accepted { background: var(--pass-bg); color: var(--pass); }
+.pill.changes, .pill.CHANGES, .pill.failed, .pill.capped, .pill.missing, .pill.DECLINED, .pill.rejected, .pill.closed, .pill.dropped, .pill.conflict { background: var(--changes-bg); color: var(--changes); }
 .pill.wait, .pill.open, .pill.clarify, .pill.confirm, .pill.QUESTION, .pill.partial, .pill.check_in_session, .pill.ready { background: var(--wait-bg); color: var(--wait); }
 .pill.running, .pill.produce, .pill.gate, .pill.planning, .pill.finishing, .pill.OPEN, .pill.merging, .pill.delivering, .pill.in_progress, .pill.in_review { background: var(--run-bg); color: var(--run); }
-.chips { display: flex; gap: 6px; overflow: auto; padding-bottom: 6px; margin-bottom: 12px; }
-.chip { border: 1px solid var(--line); background: var(--panel); border-radius: 16px; padding: 4px 12px; white-space: nowrap; cursor: pointer; }
-.chip.on { border-color: var(--text); font-weight: 600; }
-.options { display: grid; gap: 8px; margin: 10px 0; }
-.option { border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; cursor: pointer; background: var(--panel); text-align: left; }
+.tag { display: inline-block; font-size: 13px; padding: 0 8px; border-radius: 6px; background: var(--sunk); margin: 2px 4px 2px 0; line-height: 1.7; white-space: nowrap; }
+.prio { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.prio i { display: inline-flex; gap: 2px; align-items: flex-end; height: 12px; }
+.prio i b { width: 3px; border-radius: 1px; background: var(--line); }
+.prio i b:nth-child(1) { height: 5px; }
+.prio i b:nth-child(2) { height: 8px; }
+.prio i b:nth-child(3) { height: 12px; }
+.prio.high i b, .prio.medium i b:nth-child(-n+2), .prio.low i b:nth-child(1) { background: var(--text); }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 0 0 14px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+.stat .k { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.stat .v { font-size: 19px; font-weight: 650; letter-spacing: -.01em; margin-top: 2px; }
+.stat .v small { font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 4px; }
+.strip { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; background: var(--wait-bg); color: var(--text); border-radius: var(--radius); box-shadow: inset 3px 0 0 var(--wait); padding: 10px 14px; margin: 0 0 10px; }
+.strip > svg.i, .strip > b { color: var(--wait); }
+.strip a { color: inherit; font-weight: 500; }
+.tabs { display: inline-flex; gap: 2px; padding: 3px; border-radius: 7px; background: var(--sunk); margin: 0 0 12px; }
+.tabs button { border: 0; background: none; color: var(--muted); padding: 4px 12px; border-radius: 5px; }
+.tabs button:hover { color: var(--text); background: none; }
+.tabs button.on { background: var(--panel); color: var(--text); font-weight: 600; box-shadow: 0 0 0 1px var(--line); }
+
+.chips { display: flex; gap: 8px; overflow: auto; padding-bottom: 6px; margin-bottom: 12px; }
+.chip { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 6px 12px; white-space: nowrap; cursor: pointer; font-weight: 500; }
+.chip .k { font-family: var(--mono); font-size: 14px; font-weight: 600; }
+.chip.on { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); font-weight: 600; }
+.crumbs + h2 { margin-top: 8px; }
+.options { display: grid; gap: 8px; margin: 4px 0 12px; }
+.option { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; padding: 11px 14px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); text-align: left; cursor: pointer; font-weight: 400; white-space: normal; }
+.option:hover { background: var(--sunk); border-color: var(--line); }
 .option.recommended { border-color: var(--pass); box-shadow: inset 3px 0 0 var(--pass); }
-.option b { margin-right: 6px; }
-.thread { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 8px; }
-.message { margin: 6px 0; }
-.message .who { color: var(--muted); font-size: 12px; }
-.answer { position: sticky; bottom: 0; background: var(--panel); padding-top: 10px; }
-.tabs { display: flex; gap: 4px; margin: 12px 0; }
-.tabs button.on { background: var(--sunk); font-weight: 600; }
-.strip { display: flex; gap: 8px; align-items: center; background: var(--wait-bg); color: var(--wait); border-radius: 6px; padding: 6px 10px; margin: 6px 0; }
-.strip a { color: inherit; }
-.phases { display: flex; flex-direction: column; gap: 6px; }
-.phase { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); padding: 8px 12px; }
-.phase.sel { outline: 2px solid var(--focus); }
-.phase .head { display: flex; justify-content: space-between; align-items: center; }
-.phase.done .head b { color: var(--muted); }
-.lane { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-top: 1px dashed var(--line); }
-.lane:first-child { border-top: 0; }
-.lane.sel .lane-name { font-weight: 700; }
-.lane-name { width: 170px; flex: none; }
-.groups { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
-.group { border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 10px; min-width: 120px; cursor: pointer; background: var(--panel); position: relative; }
-.group.current { border-color: var(--run); }
-.group.sel { outline: 2px solid var(--focus); }
-.group .token { position: absolute; top: -7px; right: -7px; width: 14px; height: 14px; border-radius: 50%; background: var(--run); }
-.group .ask { position: absolute; top: -9px; right: 10px; background: var(--wait); color: var(--panel); border-radius: 50%; width: 18px; height: 18px; font-size: 12px; text-align: center; line-height: 18px; text-decoration: none; font-weight: 700; }
-.gates { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
-.gatechip { font-size: 11px; border-radius: 8px; padding: 0 6px; background: var(--pending-bg); color: var(--pending); }
-.gatechip.PASS { background: var(--pass-bg); color: var(--pass); }
-.gatechip.CHANGES { background: var(--changes-bg); color: var(--changes); }
-.gatechip.QUESTION { background: var(--wait-bg); color: var(--wait); }
-.arrow { color: var(--muted); align-self: center; }
+.option .letter { width: 28px; height: 28px; border-radius: 6px; display: grid; place-items: center; background: var(--sunk); font-family: var(--mono); font-weight: 700; }
+.option.recommended .letter { background: var(--pass-bg); color: var(--pass); }
+.option .body { min-width: 0; padding-top: 3px; }
+.option .body .pill { margin-left: 8px; }
+.thread { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 10px; }
+.message { margin: 8px 0; }
+.message .who { color: var(--muted); font-size: 13px; margin-bottom: 2px; }
+.answer { position: sticky; bottom: 0; background: var(--panel); padding-top: 12px; margin-top: 8px; }
+.answer textarea { background: var(--bg); }
+.actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.jobs td.id { font-family: var(--mono); font-weight: 700; white-space: nowrap; }
+.jobs td .r { display: block; font-size: 13px; color: var(--muted); }
+.pipe { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pipe > svg.i { width: 14px; height: 14px; color: var(--muted); }
+.step { display: inline-flex; align-items: baseline; gap: 6px; border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; font-size: 14px; font-weight: 600; background: var(--panel); white-space: nowrap; }
+.step span { font-weight: 500; color: var(--muted); font-size: 13px; }
+
+.phases { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 6px; border-radius: 6px; }
+.phase { display: flex; align-items: center; gap: 7px; padding: 8px 4px 9px; border-bottom: 3px solid var(--line); color: var(--muted); font-weight: 500; font-size: 14px; cursor: pointer; }
+.phase svg.i { color: var(--pending); }
+.phase.done { color: var(--text); border-color: var(--pass); }
+.phase.done svg.i { color: var(--pass); }
+.phase.running { color: var(--text); font-weight: 650; border-color: var(--run); }
+.phase.running svg.i { color: var(--run); }
+.phase.wait { color: var(--text); font-weight: 650; border-color: var(--wait); }
+.phase.wait svg.i { color: var(--wait); }
+.phase.failed { color: var(--text); font-weight: 650; border-color: var(--changes); }
+.phase.failed svg.i { color: var(--changes); }
+.phase.sel { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.lanes { margin-top: 4px; }
+.lane { display: grid; grid-template-columns: 190px 1fr; gap: 6px 14px; padding: 14px 0; border-top: 1px solid var(--line); align-items: start; }
+.lane:first-child { border-top: 0; padding-top: 8px; }
+.lane.sel .lane-name { box-shadow: inset 3px 0 0 var(--focus); padding-left: 10px; margin-left: -13px; }
+.lane-name .id { font-family: var(--mono); font-weight: 700; font-size: 14px; margin-right: 6px; text-decoration: none; }
+.lane-name .id:hover { text-decoration: underline; }
+.lane-name .t { display: block; font-weight: 550; line-height: 1.35; }
+.lane-name .r { display: block; font-size: 13px; color: var(--muted); }
+.lane-name .pill { margin-top: 6px; }
+.groups { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.group { position: relative; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px 9px; min-width: 150px; cursor: pointer; background: var(--panel); }
+.group:hover { background: var(--sunk); }
+.group.current { border-color: var(--run); box-shadow: inset 0 0 0 1px var(--run); }
+.group.sel { outline: 2px solid var(--focus); outline-offset: 2px; }
+.group .g { display: flex; justify-content: space-between; gap: 10px; font-weight: 600; font-size: 14px; }
+.group .g span { font-weight: 500; color: var(--muted); font-size: 13px; white-space: nowrap; }
+.group .token { position: absolute; top: -6px; right: -6px; width: 12px; height: 12px; border-radius: 50%; background: var(--run); box-shadow: 0 0 0 3px var(--panel); }
+.group .ask { position: absolute; top: -11px; right: 12px; width: 22px; height: 22px; border-radius: 50%; background: var(--wait); color: var(--bg); font-weight: 800; font-size: 13px; line-height: 22px; text-align: center; text-decoration: none; box-shadow: 0 0 0 3px var(--panel); }
+.gates { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; }
+.arrow { color: var(--muted); }
+.keys { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+
 .timeline { position: relative; overflow-x: auto; }
-.tl-row { display: flex; align-items: center; height: 26px; }
-.tl-name { width: 150px; flex: none; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-row { display: flex; align-items: center; height: 28px; }
+.tl-name { width: 150px; flex: none; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tl-track { position: relative; height: 18px; flex: 1; min-width: 0; }
 .tl-bar { position: absolute; top: 3px; height: 12px; border-radius: 3px; background: var(--run-bg); border: 1px solid var(--run); }
 .tl-bar.PASS { background: var(--pass-bg); border-color: var(--pass); }
@@ -172,32 +262,91 @@ blockquote { margin: 8px 0; padding: 2px 12px; border-left: 3px solid var(--line
 .tl-wait { position: absolute; top: 8px; height: 2px; background: var(--wait); }
 .tl-mark { position: absolute; top: 1px; width: 2px; height: 16px; background: var(--text); }
 .tl-gap { position: absolute; top: 0; height: 18px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Cpath d='M-1 7L7 -1' stroke='%23888' stroke-opacity='.55' stroke-width='1.5'/%3E%3C/svg%3E"); }
-.tl-gaplabel { position: absolute; top: -14px; font-size: 10px; color: var(--muted); white-space: nowrap; }
-.kv { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; }
-.kv dt { color: var(--muted); }
+.tl-gaplabel { position: absolute; top: -14px; font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 8px 14px; margin: 0; align-items: center; }
+.kv dt { color: var(--muted); font-size: 14px; }
 .kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.kv select, .kv input { width: 100%; }
 ul.plain { list-style: none; margin: 0; padding: 0; }
-ul.plain li { padding: 3px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
-ul.plain li:last-child { border-bottom: 0; }
+ul.plain li { padding: 6px 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+ul.plain li:first-child { border-top: 0; padding-top: 0; }
+ul.plain li:last-child { padding-bottom: 0; }
+ul.plain li svg.i { color: var(--muted); margin-right: 6px; }
+td.key { font-family: var(--mono); font-weight: 600; white-space: nowrap; }
+td.num { font-family: var(--mono); font-size: 14px; text-align: right; white-space: nowrap; }
+tr.total td { border-top: 1px solid var(--line); font-weight: 700; }
 .md > :first-child { margin-top: 0; }
+.md > :last-child { margin-bottom: 0; }
+.md p, .md li { max-width: 72ch; }
 .md table { margin: 8px 0; }
-.md img { max-width: 100%; }
-.modal { position: fixed; inset: 0; background: rgba(0, 0, 0, .35); display: flex; align-items: center; justify-content: center; z-index: 10; }
+.md img { max-width: 100%; border-radius: 6px; }
+.md input[type="checkbox"] { accent-color: var(--pass); }
+.modal { position: fixed; inset: 0; background: var(--shade); display: flex; align-items: center; justify-content: center; z-index: 10; padding: 16px; }
 .modal .card { width: min(900px, 92vw); max-height: 86vh; overflow: auto; }
-#toast { position: fixed; bottom: 16px; right: 16px; background: var(--changes-bg); color: var(--changes); border: 1px solid var(--changes); border-radius: 6px; padding: 8px 12px; display: none; max-width: 460px; z-index: 20; }
-.filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 14px; }
+#toast { position: fixed; bottom: 16px; right: 16px; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-left: 4px solid var(--wait); border-radius: 8px; padding: 10px 14px; display: none; max-width: 460px; z-index: 20; box-shadow: 0 8px 24px var(--shade); }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 14px; }
+.filters input[type="search"] { flex: 1; min-width: 180px; }
 .list-row { cursor: pointer; }
 .list-row:hover td { background: var(--sunk); }
-.empty { padding: 30px; text-align: center; color: var(--muted); }
-.copy { font-family: var(--mono); background: var(--sunk); padding: 4px 8px; border-radius: 6px; }
+td.title { font-weight: 500; }
+td.title .src { display: block; font-size: 13px; color: var(--muted); font-weight: 400; }
+.empty { padding: 32px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: var(--radius); }
+.copy { font-family: var(--mono); background: var(--sunk); padding: 6px 10px; border-radius: 6px; font-size: 14px; overflow-wrap: anywhere; }
+input.titlebox { width: 100%; font-size: 22px; font-weight: 650; letter-spacing: -.015em; line-height: 1.25; background: none; border-color: transparent; padding: 4px 8px; margin: 2px 0 10px -9px; }
+input.titlebox:hover { border-color: var(--line); }
+input.titlebox:focus { background: var(--panel); border-color: var(--line); }
+.foot-note { color: var(--muted); font-size: 13px; margin-top: 10px; }
+.impact { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); white-space: nowrap; }
+
+@media (prefers-reduced-motion: no-preference) {
+  button, a, .group, .chip, .option, .list-row td { transition: background-color .15s ease-out, border-color .15s ease-out, color .15s ease-out; }
+}
 @media (max-width: 900px) {
   #app { grid-template-columns: 1fr; }
   #side { display: none; }
   .split { grid-template-columns: 1fr; }
+  .page { padding: 16px 16px 48px; }
+  .phases { grid-template-columns: repeat(3, 1fr); }
+  .lane { grid-template-columns: 1fr; }
 }
+#runs .empty { border: 0; padding: 20px 16px; }
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+  <symbol id="i-fail" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-run" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.2-8.56"/></symbol>
+  <symbol id="i-dot" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
+  <symbol id="i-issue" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.5"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 8"/></symbol>
+  <symbol id="i-pr" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M6 8.5v7M18 15.5V10a3 3 0 0 0-3-3h-3"/><path d="m14 5-2 2 2 2"/></symbol>
+  <symbol id="i-repo" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15 9.5c-.5-1-1.6-1.5-3-1.5-1.7 0-3 .9-3 2s1.3 1.7 3 2 3 .9 3 2-1.3 2-3 2c-1.4 0-2.5-.5-3-1.5M12 6v2M12 16v2"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4"/></symbol>
+  <symbol id="i-reply" viewBox="0 0 24 24"><path d="M9 17 4 12l5-5"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+</svg>
 <div id="app">
   <aside id="side">
     <div class="top">
@@ -206,12 +355,14 @@ ul.plain li:last-child { border-bottom: 0; }
     </div>
     <nav id="nav"></nav>
     <div class="runs-head">
-      <input id="run-search" type="search" placeholder="Issue, repo or feature" aria-label="Search runs">
-      <select id="run-filter" aria-label="Which runs">
-        <option value="active">Active</option>
-        <option value="archived">Archived</option>
-        <option value="all">All</option>
-      </select>
+      <div class="runs-title"><span>Runs</span>
+        <select id="run-filter" aria-label="Which runs">
+          <option value="active">Active</option>
+          <option value="archived">Archived</option>
+          <option value="all">All</option>
+        </select>
+      </div>
+      <label class="search"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg><input id="run-search" type="search" placeholder="Issue, repo or feature" aria-label="Search runs"></label>
     </div>
     <ul id="runs"></ul>
     <div class="foot"><span id="prices"></span><button id="theme" title="Theme">Theme: system</button></div>
@@ -234,6 +385,7 @@ const state = {
   cache: {},
   rendered: "",
   busy: false,
+  newIssue: false,
   timer: null,
 };
 const PHASES = ["Intake", "Planner", "Confirm", "Jobs", "Finish", "Retrospective"];
@@ -267,8 +419,48 @@ function external(url, label) {
   return el("a", { href: url, target: "_blank", rel: "noopener noreferrer" }, label || url);
 }
 
-function pill(value, label) {
-  return el("span", { class: `pill ${value || ""}` }, label || value || "-");
+const ICON_FOR = {
+  pass: "check", done: "check", passed: "check", PASS: "check", MERGED: "check", available: "check", answered: "check", resolved: "check", accepted: "check",
+  changes: "x", CHANGES: "x", failed: "fail", capped: "fail", missing: "fail", DECLINED: "fail", rejected: "fail", closed: "fail", dropped: "fail", conflict: "fail",
+  wait: "clock", open: "clock", clarify: "clock", confirm: "clock", QUESTION: "clock", partial: "clock", check_in_session: "clock", ready: "play",
+  running: "run", produce: "run", gate: "run", planning: "run", finishing: "run", OPEN: "run", merging: "run", delivering: "run", in_progress: "run", in_review: "run",
+};
+const LABELS = { in_progress: "In progress", in_review: "In review", check_in_session: "Check in session", confirm: "Confirm plan", MERGED: "Merged", OPEN: "Open", DECLINED: "Declined", SUPERSEDED: "Superseded", QUESTION: "Question" };
+
+function icon(name) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", "i");
+  svg.setAttribute("aria-hidden", "true");
+  const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+  use.setAttribute("href", `#i-${name}`);
+  svg.append(use);
+  return svg;
+}
+
+function statusLabel(value) {
+  if (!value) return "–";
+  if (LABELS[value]) return LABELS[value];
+  if (/^[A-Z_]+$/.test(value)) return value;
+  const text = String(value).replace(/_/g, " ");
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function pill(value, label, extra) {
+  return el("span", { class: `pill ${value || ""}${extra ? ` ${extra}` : ""}` }, icon(ICON_FOR[value] || "dot"), label || statusLabel(value));
+}
+
+function issuePill(status) {
+  const shown = { open: "pending", closed: "closed" }[status] || status;
+  return pill(shown, statusLabel(status), "sm");
+}
+
+function prio(level, label) {
+  return el("span", { class: `prio ${level || ""}`, title: label || level }, el("i", {}, el("b"), el("b"), el("b")), label || statusLabel(level));
+}
+
+function crumbs(...parts) {
+  const shown = parts.flat().filter((part) => part !== null && part !== undefined && part !== "");
+  return el("div", { class: "crumbs" }, shown.flatMap((part, index) => [index ? el("span", { class: "sep" }, "·") : null, el("span", {}, part)]));
 }
 
 function toast(message) {
@@ -410,12 +602,19 @@ function md(text) {
   return root;
 }
 
+function costText(cost) {
+  const value = cost.cost === null || cost.cost === undefined ? "?" : `$${Number(cost.cost).toFixed(2)}`;
+  return `${cost.cost_complete === false ? "≥ " : ""}${value}`;
+}
+
+function tokensText(tokens) {
+  return tokens >= 1e6 ? `${(tokens / 1e6).toFixed(1)}M` : tokens >= 1e3 ? `${Math.round(tokens / 1e3)}k` : `${tokens || 0}`;
+}
+
 function money(cost) {
   if (!cost || !cost.tokens) return el("span", { class: "muted", title: "no tokens counted yet" }, "–");
-  const value = cost.cost === null || cost.cost === undefined ? "?" : `$${Number(cost.cost).toFixed(2)}`;
-  const tokens = cost.tokens >= 1e6 ? `${(cost.tokens / 1e6).toFixed(1)}M` : cost.tokens >= 1e3 ? `${Math.round(cost.tokens / 1e3)}k` : `${cost.tokens || 0}`;
   const date = cost.prices_date || (state.cache.meta && state.cache.meta.prices.date);
-  return el("span", { title: `estimated with the prices of ${date}` }, `${cost.cost_complete === false ? "≥ " : ""}${value} · ${tokens} tokens · prices of ${date}`);
+  return el("span", { title: `estimated with the prices of ${date}` }, `${costText(cost)} · ${tokensText(cost.tokens)} tokens · prices of ${date}`);
 }
 
 function shortTime(stamp) {
@@ -505,12 +704,13 @@ function renderSide() {
   const waiting = questions.filter((item) => item.status === "open").length;
   const review = Array.isArray(state.cache.improvementsOpen) ? state.cache.improvementsOpen.length : 0;
   const current = route();
-  const nav = (hash, label, count, on) => el("a", { href: hash, class: on ? "on" : "" }, label, count !== null ? el("span", { class: `count${count ? " hot" : ""}` }, count) : null);
+  const nav = (hash, name, label, count, on) => el("a", { href: hash, class: on ? "on" : "" }, icon(name), el("span", { class: "label" }, label),
+    count !== null ? el("span", { class: `count${count ? " hot" : ""}` }, count) : null);
   document.getElementById("nav").replaceChildren(
-    nav("#inbox", "Inbox", waiting, current.page === "inbox"),
-    nav("#issues", "Issues", null, current.page === "issues"),
-    nav("#projects", "Projects", null, current.page === "projects"),
-    nav("#improvements", "Improvements", review, current.page === "improvements"),
+    nav("#inbox", "inbox", "Inbox", waiting, current.page === "inbox"),
+    nav("#issues", "issue", "Issues", null, current.page === "issues"),
+    nav("#projects", "folder", "Projects", null, current.page === "projects"),
+    nav("#improvements", "spark", "Improvements", review, current.page === "improvements"),
   );
   const list = document.getElementById("runs");
   const runs = Array.isArray(state.cache.runs) ? state.cache.runs : [];
@@ -519,7 +719,7 @@ function renderSide() {
   list.replaceChildren(...(shown.length ? shown.map((run) => el("li", {},
     el("a", { href: `#${run.id}`, class: current.page === "run" && current.run === run.id ? "on" : "" },
       el("span", { class: "feature" }, run.feature),
-      el("span", { class: "meta" }, pill(run.status), run.issue_key || run.project, run.open_questions ? el("span", { class: "count hot" }, `${run.open_questions} ?`) : null, run.archived ? "archived" : null)))) :
+      el("span", { class: "meta" }, pill(run.status, null, "sm"), run.issue_key || run.project, run.open_questions ? el("span", { class: "count hot" }, `${run.open_questions} ?`) : null, run.archived ? "archived" : null)))) :
     [el("li", { class: "empty" }, "No runs")]));
 }
 
@@ -582,13 +782,13 @@ function questionView(question, onDone) {
   const card = el("div", { class: "card" });
   const where = [question.run ? el("a", { href: `#${question.run.id}` }, question.run.feature) : null,
     question.job_id ? el("a", { href: `#${question.run_id}/${question.job_id}` }, question.job_id) : null,
-    question.asked_by, pill(question.status)];
-  card.append(el("div", { class: "row muted small" }, where.filter(Boolean).flatMap((item, index) => index ? [" · ", item] : [item])));
+    question.asked_by ? `asked by ${question.asked_by}` : null, pill(question.status, null, "sm")];
+  card.append(crumbs(...where));
   card.append(el("h2", {}, plan ? "Approve the plan?" : parts.head || "Question"));
   if (plan) {
     card.append(el("p", { class: "muted" }, "Answer yes to build it, or say what to change."));
     card.append(pipelinesTable(question.jobs || []));
-    card.append(el("p", {}, el("a", { href: "#", onclick: (event) => { event.preventDefault(); openFile(question.plan); } }, "Read plan.md")));
+    card.append(el("p", {}, el("a", { href: "#", onclick: (event) => { event.preventDefault(); openFile(question.plan); } }, icon("file"), " Read plan.md")));
   } else {
     card.append(md(parts.body));
     if (parts.options.length) {
@@ -601,7 +801,7 @@ function questionView(question, onDone) {
           const area = document.querySelector(`[data-keep="answer-${question.id}"]`);
           if (area) area.focus();
         },
-      }, el("b", {}, option.letter), option.recommended ? el("span", { class: "pill pass" }, "recommended") : null, " ", inline(option.text)))));
+      }, el("span", { class: "letter" }, option.letter), el("span", { class: "body" }, inline(option.text), option.recommended ? pill("pass", "recommended", "sm") : null)))));
     }
   }
   const thread = question.thread || [];
@@ -628,12 +828,12 @@ function questionView(question, onDone) {
     area.addEventListener("keydown", (event) => {
       if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) { event.preventDefault(); send("answer"); }
     });
-    answerBox.append(area, el("div", { class: "row", style: "margin-top:6px" },
-      plan ? el("button", { class: "primary", onclick: () => send("answer", "yes") }, "Approve") : null,
-      el("button", { class: plan ? "" : "primary", onclick: () => send("answer") }, plan ? "Send changes" : "Send answer"),
-      el("button", { onclick: () => send("clarify"), disabled: question.status !== "open", title: "Ask the agent a follow-up instead of answering" }, "Ask back"),
-      el("span", { class: "muted small" }, "Ctrl or Cmd + Enter sends"),
-      question.status === "clarify" ? el("span", { class: "pill clarify" }, "waiting for the agent's reply") : null));
+    answerBox.append(area, el("div", { class: "actions" },
+      plan ? el("button", { class: "primary", onclick: () => send("answer", "yes") }, icon("check"), "Approve") : null,
+      el("button", { class: plan ? "" : "primary", onclick: () => send("answer") }, plan ? "Send changes" : [icon("send"), "Send answer"]),
+      el("button", { onclick: () => send("clarify"), disabled: question.status !== "open", title: "Ask the agent a follow-up instead of answering" }, icon("reply"), "Ask back"),
+      el("span", { class: "muted small" }, el("span", { class: "kbd" }, "Ctrl"), " + ", el("span", { class: "kbd" }, "Enter"), " sends"),
+      question.status === "clarify" ? pill("clarify", "waiting for the agent's reply", "sm") : null));
     card.append(answerBox);
   }
   return card;
@@ -644,11 +844,13 @@ function message(item) {
 }
 
 function pipelinesTable(jobList) {
-  return el("table", {}, el("thead", {}, el("tr", {}, ["Job", "Kind", "Repo", "Title", "After", "Pipeline"].map((name) => el("th", {}, name)))),
+  return el("table", { class: "jobs" }, el("thead", {}, el("tr", {}, ["Job", "Title", "After", "Pipeline"].map((name) => el("th", {}, name)))),
     el("tbody", {}, jobList.map((job) => el("tr", {},
-      el("td", {}, job.id), el("td", {}, job.kind), el("td", {}, job.repo || "–"), el("td", {}, job.title),
+      el("td", { class: "id" }, job.id),
+      el("td", {}, job.title, el("span", { class: "r" }, `${job.kind}${job.repo ? ` · ${job.repo}` : ""}`)),
       el("td", {}, (job.depends_on || []).join(", ") || "–"),
-      el("td", {}, job.groups.map((group) => `${group.step} [${group.gates.join(", ")}]`).join(" › "))))));
+      el("td", {}, el("div", { class: "pipe" }, job.groups.flatMap((group, index) => [index ? icon("arrow") : null,
+        el("span", { class: "step" }, group.step, group.gates.length ? el("span", {}, group.gates.join(", ")) : null)])))))));
 }
 
 function inboxPage(current) {
@@ -658,16 +860,21 @@ function inboxPage(current) {
   const items = all.slice().sort((a, b) => (a.status === "open" ? 0 : 1) - (b.status === "open" ? 0 : 1) || a.id - b.id);
   if (!items.length) {
     const running = (Array.isArray(state.cache.runs) ? state.cache.runs : []).filter((run) => ["running", "planning", "finishing"].includes(run.status));
-    return el("div", {}, el("h1", {}, "Inbox"), el("div", { class: "empty" }, "Nothing waits for you."),
-      el("h2", {}, "Working now"), running.length ? el("ul", { class: "plain" }, running.map((run) => el("li", {}, el("a", { href: `#${run.id}` }, run.feature), " ", pill(run.status), el("span", { class: "muted small" }, ` ${run.jobs_done}/${run.jobs} jobs`)))) : el("p", { class: "muted" }, "No run is working."));
+    return el("div", {}, el("h1", {}, "Inbox"), el("p", { class: "sub" }, "No question or plan waits for you."),
+      el("div", { class: "empty" }, "Nothing waits for you."),
+      el("h2", {}, "Working now"), running.length ? el("ul", { class: "plain" }, running.map((run) => el("li", {}, el("a", { href: `#${run.id}` }, run.feature), " ", pill(run.status, null, "sm"),
+        el("span", { class: "muted small" }, ` ${run.jobs_done} of ${run.jobs} jobs done`)))) : el("p", { class: "muted" }, "No run is working."));
   }
   const selected = items.find((item) => item.id === current.question) || items[0];
   const index = items.indexOf(selected);
   const next = () => { const after = items[index + 1] || items[0]; go(`#inbox/q${after.id}`); };
   const chips = el("div", { class: "chips", role: "tablist" }, items.map((item) => el("button", {
-    class: `chip${item === selected ? " on" : ""}`, role: "tab", onclick: () => go(`#inbox/q${item.id}`),
-  }, item.kind === "plan_confirm" ? "Plan" : `q${item.id}`, " · ", item.job_id || (item.run && item.run.issue_key) || item.run_id.slice(16), " ", pill(item.status))));
-  return el("div", {}, el("h1", {}, "Inbox"), chips, el("div", { class: "split" }, questionView(selected, next), jobRail(selected)));
+    class: `chip${item === selected ? " on" : ""}`, role: "tab", "aria-selected": item === selected ? "true" : "false", onclick: () => go(`#inbox/q${item.id}`),
+  }, el("span", { class: "k" }, item.kind === "plan_confirm" ? "Plan" : `q${item.id}`),
+    el("span", { class: "muted" }, item.job_id || (item.run && item.run.issue_key) || item.run_id.slice(16)), pill(item.status, null, "sm"))));
+  return el("div", {}, el("h1", {}, "Inbox"),
+    el("p", { class: "sub" }, `${items.length} ${items.length === 1 ? "thing waits" : "things wait"} for you. `, el("span", { class: "kbd" }, "←"), " ", el("span", { class: "kbd" }, "→"), " moves between them."),
+    chips, el("div", { class: "split" }, questionView(selected, next), jobRail(selected)));
 }
 
 function jobRail(question) {
@@ -695,7 +902,8 @@ function jobRail(question) {
 function fileList(paths) {
   const unique = [...new Set(paths.filter(Boolean))];
   if (!unique.length) return el("p", { class: "muted" }, "No files yet");
-  return el("ul", { class: "plain" }, unique.map((path) => el("li", {}, el("a", { href: "#", onclick: (event) => { event.preventDefault(); openFile(path); } }, path.replace(/^.*\/(runs|improve)\/[^/]+\//, "")))));
+  return el("ul", { class: "plain" }, unique.map((path) => el("li", {}, icon(/\.png$/i.test(path) ? "image" : "file"),
+    el("a", { href: "#", onclick: (event) => { event.preventDefault(); openFile(path); } }, path.replace(/^.*\/(runs|improve)\/[^/]+\//, "")))));
 }
 
 async function openFile(path) {
@@ -708,7 +916,7 @@ async function openFile(path) {
     })();
     const close = () => modal.remove();
     const modal = el("div", { class: "modal", onclick: (event) => { if (event.target === modal) close(); } },
-      el("div", { class: "card" }, el("div", { class: "row" }, el("b", { class: "grow" }, path.split("/").slice(-3).join("/")), el("button", { onclick: close }, "Close")), content));
+      el("div", { class: "card" }, el("div", { class: "row" }, el("b", { class: "grow" }, path.split("/").slice(-3).join("/")), el("button", { onclick: close }, icon("close"), "Close")), content));
     modal.addEventListener("keydown", (event) => { if (event.key === "Escape") close(); });
     document.body.append(modal);
     modal.querySelector("button").focus();
@@ -721,25 +929,40 @@ function runPage(current) {
   if (run.error) return failed(run);
   const [sentence, rest] = firstSentence(run.feature);
   const open = (run.questions || []).filter((item) => item.status === "open" || item.status === "clarify");
+  const jobList = run.jobs || [];
+  const done = jobList.filter((job) => job.stage === "done").length;
+  const verdicts = jobList.flatMap((job) => {
+    const group = job.groups.find((item) => item.position === job.group_pos);
+    return group ? Object.values(latestVerdicts(group)) : [];
+  });
+  const passed = verdicts.filter((verdict) => verdict === "PASS").length;
+  const changes = verdicts.filter((verdict) => verdict === "CHANGES").length;
+  const total = run.usage && run.usage.total && run.usage.total.tokens ? run.usage.total : null;
+  const stat = (name, label, value, note) => el("div", { class: "stat" }, el("div", { class: "k" }, icon(name), label), el("div", { class: "v" }, value, note ? el("small", {}, note) : null));
+  const archive = ["done", "failed"].includes(run.status) || run.archived_at ? el("button", { onclick: async () => {
+    try { await post(`/api/runs/${run.id}/archive`, { archived: !run.archived_at }); await refresh(); } catch (error) { toast(error.message); }
+  } }, icon("archive"), run.archived_at ? "Unarchive" : "Archive") : null;
   const header = el("div", {},
-    el("div", { class: "row muted small" }, run.project, " · ", run.id, run.issue_key ? [" · ", el("a", { href: `#issues/${run.issue_key}` }, run.issue_key)] : null, " · ", run.feature_branch),
-    el("div", { class: "row" }, el("h1", { class: "grow" }, sentence), pill(run.status), run.no_pr ? pill("", "no PR") : null,
-      ["done", "failed"].includes(run.status) || run.archived_at ? el("button", { onclick: async () => {
-        try { await post(`/api/runs/${run.id}/archive`, { archived: !run.archived_at }); await refresh(); } catch (error) { toast(error.message); }
-      } }, run.archived_at ? "Unarchive" : "Archive") : null),
-    rest ? el("details", {}, el("summary", {}, "More"), el("p", {}, rest)) : null,
-    open.map((item) => el("div", { class: "strip" }, el("b", {}, item.status === "clarify" ? "Follow-up" : "Waiting"),
+    crumbs(run.project, run.id, run.issue_key ? el("a", { href: `#issues/${run.issue_key}` }, run.issue_key) : null, run.feature_branch),
+    el("div", { class: "head" }, el("h1", { class: "grow" }, sentence), pill(run.status), run.no_pr ? pill("", "no PR") : null, archive),
+    rest ? el("details", { class: "sub" }, el("summary", {}, "More"), el("p", {}, rest)) : null,
+    el("div", { class: "stats" },
+      stat("layers", "Jobs", jobList.length ? `${done} of ${jobList.length}` : "–", jobList.length ? "done" : "no plan yet"),
+      stat("clock", "Waiting on you", String(open.length), open.length === 1 ? "question" : "questions"),
+      stat("check", "Gates this round", verdicts.length ? `${passed} pass` : "–", verdicts.length ? `${changes} changes` : "none yet"),
+      stat("coin", "Cost so far", total ? costText(total) : "–", total ? `${tokensText(total.tokens)} tokens` : "no tokens counted")),
+    open.map((item) => el("div", { class: "strip" }, icon("clock"), el("b", {}, item.status === "clarify" ? "Follow-up" : "Waiting on you"),
       el("a", { href: `#${run.id}/${item.job_id ? `${item.job_id}/` : ""}q${item.id}`, class: "grow" }, questionParts(item.text).head || item.text.split("\n")[0]),
-      item.job_id || "plan")));
+      el("span", { class: "muted small" }, [item.job_id || "plan", item.asked_by].filter(Boolean).join(" · ")))));
   const shownQuestion = current.question ? (state.cache.questions || []).find((item) => item.id === current.question) || (run.questions || []).find((item) => item.id === current.question) : null;
-  const tabs = el("div", { class: "tabs" }, [["loop", "Loop graph"], ["list", "List"], ["timeline", "Timeline"]].map(([key, label]) =>
-    el("button", { class: state.runView === key ? "on" : "", onclick: () => { state.runView = key; localStorage.setItem("factory-run-view", key); render(true); } }, label)));
+  const tabs = el("div", { class: "tabs", role: "tablist" }, [["loop", "Loop graph"], ["list", "List"], ["timeline", "Timeline"]].map(([key, label]) =>
+    el("button", { class: state.runView === key ? "on" : "", role: "tab", "aria-selected": state.runView === key ? "true" : "false", onclick: () => { state.runView = key; localStorage.setItem("factory-run-view", key); render(true); } }, label)));
   const body = state.runView === "list" ? listView(run) : state.runView === "timeline" ? timelineView(run) : loopView(run, current);
   const questionBlock = !shownQuestion ? null : ["open", "clarify"].includes(shownQuestion.status)
     ? questionView(Object.assign({ run: { id: run.id, feature: run.feature, status: run.status } }, shownQuestion), () => go(`#${run.id}`))
     : el("details", { class: "card" }, el("summary", {}, `Question q${shownQuestion.id} is ${shownQuestion.status}: `, questionParts(shownQuestion.text).head || shownQuestion.text.split("\n")[0],
       shownQuestion.answer ? ` → ${shownQuestion.answer}` : ""), questionView(Object.assign({ run: { id: run.id, feature: run.feature, status: run.status } }, shownQuestion)));
-  return el("div", {}, header, questionBlock,
+  return el("div", {}, header, questionBlock ? el("div", { style: "margin-bottom:16px" }, questionBlock) : null,
     el("div", { class: "split" }, el("div", {}, tabs, body), runRail(run, current)));
 }
 
@@ -777,6 +1000,12 @@ function latestVerdicts(group) {
   return found;
 }
 
+function gateChip(gate, verdict, group) {
+  const status = verdict || (group.phase === "gate" ? "running" : "");
+  const name = { PASS: "check", CHANGES: "x", QUESTION: "clock", running: "run" }[status] || "dot";
+  return el("span", { class: `pill sm ${status}`, title: verdict ? `${gate}: ${verdict}` : group.phase === "gate" ? `${gate}: judging` : `${gate}: not judged yet` }, icon(name), gate);
+}
+
 function loopView(run, current) {
   const states = phaseStates(run);
   const jobList = run.jobs || [];
@@ -789,32 +1018,37 @@ function loopView(run, current) {
   for (const item of run.questions || []) {
     if ((item.status === "open" || item.status === "clarify") && item.job_id) questionsByJob[item.job_id] = item;
   }
-  const lanes = el("div", {}, jobList.length ? jobList.map((job, jobIndex) => {
+  const lanes = el("div", { class: "lanes" }, jobList.length ? jobList.map((job, jobIndex) => {
     const groups = [];
     job.groups.forEach((group, groupIndex) => {
-      if (groupIndex) groups.push(el("span", { class: "arrow" }, "›"));
+      if (groupIndex) groups.push(el("span", { class: "arrow" }, icon("arrow")));
       const verdicts = latestVerdicts(group);
       const currentGroup = job.stage === "running" && group.position === job.group_pos;
       const asking = currentGroup && questionsByJob[job.id];
       groups.push(el("div", {
         class: `group${currentGroup ? " current" : ""}${selection.detail && selection.job === jobIndex && selection.group === groupIndex ? " sel" : ""}`,
+        title: `${group.step}: ${statusLabel(group.phase)}`,
         onclick: () => { Object.assign(selection, { phase: 3, job: jobIndex, group: groupIndex, detail: true, touched: true }); render(true); },
       }, currentGroup ? el("span", { class: "token", title: "the job is here" }) : null,
         asking ? el("a", { class: "ask", href: `#${run.id}/${job.id}/q${asking.id}`, title: "open its question", onclick: (event) => event.stopPropagation() }, "?") : null,
-        el("div", { class: "row" }, el("b", {}, group.step), el("span", { class: "muted small" }, group.round ? `r${group.round}/${group.max_round}` : "")),
-        el("div", { class: "gates" }, group.gates.map((gate) => el("span", { class: `gatechip ${verdicts[gate] || ""}` }, gate))),
-        el("div", { class: "small" }, pill(group.phase))));
+        el("div", { class: "g" }, group.step, el("span", {}, group.round ? `round ${group.round} of ${group.max_round}` : "not started")),
+        el("div", { class: "gates" }, group.gates.map((gate) => gateChip(gate, verdicts[gate], group)))));
     });
     return el("div", { class: `lane${selection.job === jobIndex ? " sel" : ""}` },
-      el("div", { class: "lane-name" }, el("a", { href: `#${run.id}/${job.id}` }, job.id), el("div", { class: "muted small" }, job.repo || "files"), pill(job.stage)),
+      el("div", { class: "lane-name" }, el("a", { href: `#${run.id}/${job.id}`, class: "id" }, job.id), el("span", { class: "t" }, job.title),
+        el("span", { class: "r" }, job.repo || "files job", (job.depends_on || []).length ? ` · after ${job.depends_on.join(", ")}` : ""),
+        pill(job.stage, null, "sm"), job.conflict ? [" ", pill("conflict", null, "sm")] : null),
       el("div", { class: "groups" }, groups));
-  }) : el("p", { class: "muted" }, "No jobs yet: the planner has not loaded a plan."));
-  const phases = el("div", { class: "phases", tabindex: 0, "data-keep": "loop", onkeydown: (event) => loopKeys(event, run) },
-    PHASES.map((name, index) => el("div", { class: `phase ${states[index]}${selection.phase === index ? " sel" : ""}`, onclick: () => { selection.phase = index; render(true); } },
-      el("div", { class: "head" }, el("b", {}, name), pill(states[index] || "pending")),
-      index === 3 ? lanes : null)));
-  return el("div", {}, phases, selection.detail ? stepDetail(run, jobList[selection.job], selection.group) : null,
-    el("p", { class: "muted small" }, "Keys: up and down walk the phases, j and k the jobs, left and right the groups, Enter opens a group, Esc closes."));
+  }) : el("p", { class: "muted", style: "margin:12px 0 0" }, "No jobs yet: the planner has not loaded a plan."));
+  const phaseIcon = { done: "check", running: "run", wait: "clock", failed: "fail" };
+  const phases = el("div", { class: "phases", tabindex: 0, "data-keep": "loop", "aria-label": "Run phases", onkeydown: (event) => loopKeys(event, run) },
+    PHASES.map((name, index) => el("div", {
+      class: `phase ${states[index] || "pending"}${selection.phase === index ? " sel" : ""}`,
+      title: `${name}: ${statusLabel(states[index] || "pending")}`,
+      onclick: () => { selection.phase = index; render(true); },
+    }, icon(phaseIcon[states[index]] || "dot"), name)));
+  return el("div", {}, el("div", { class: "card loop" }, phases, lanes), selection.detail ? stepDetail(run, jobList[selection.job], selection.group) : null,
+    el("p", { class: "keys" }, "Keys: up and down walk the phases, j and k the jobs, left and right the groups, Enter opens a group, Esc closes."));
 }
 
 function loopKeys(event, run) {
@@ -853,27 +1087,27 @@ function stepDetail(run, job, groupIndex) {
   const rounds = {};
   for (const verdict of group.verdicts || []) (rounds[verdict.round] = rounds[verdict.round] || []).push(verdict);
   return el("div", { class: "card", style: "margin-top:12px" },
-    el("div", { class: "row" }, el("h3", { class: "grow" }, `${job.id} · group ${group.position}: ${group.step}`), el("button", { onclick: () => { state.selection.detail = false; render(true); } }, "Close")),
+    el("div", { class: "row" }, el("h3", { class: "grow" }, `${job.id} · group ${group.position}: ${group.step}`), el("button", { onclick: () => { state.selection.detail = false; render(true); } }, icon("close"), "Close")),
     el("p", { class: "muted" }, `Phase ${group.phase}, round ${group.round} of ${group.max_round}${group.producer ? `, producer ${group.producer}` : ""}.`),
     describe(group.step), group.gates.map(describe),
     Object.keys(rounds).length ? el("table", {}, el("thead", {}, el("tr", {}, el("th", {}, "Round"), el("th", {}, "Verdicts"))),
       el("tbody", {}, Object.entries(rounds).map(([round, list]) => el("tr", {}, el("td", {}, round),
-        el("td", {}, list.map((verdict) => el("a", { href: "#", onclick: (event) => { event.preventDefault(); openFile(verdict.path); } }, pill(verdict.verdict, `${verdict.gate}: ${verdict.verdict}`))))))))
+        el("td", {}, el("div", { class: "row" }, list.map((verdict) => el("a", { href: "#", onclick: (event) => { event.preventDefault(); openFile(verdict.path); } }, pill(verdict.verdict, `${verdict.gate}: ${verdict.verdict}`, "sm")))))))))
       : el("p", { class: "muted" }, "No verdicts yet."));
 }
 
 function listView(run) {
   const jobList = run.jobs || [];
   if (!jobList.length) return el("p", { class: "muted" }, "No jobs yet.");
-  return el("table", {}, el("thead", {}, el("tr", {}, ["Job", "Kind", "Repo", "Stage", "Group", "Round", "After"].map((name) => el("th", {}, name)))),
+  return el("div", { class: "card tablecard" }, el("table", {}, el("thead", {}, el("tr", {}, ["Job", "Kind", "Repo", "Stage", "Group", "Round", "After"].map((name) => el("th", {}, name)))),
     el("tbody", {}, jobList.map((job) => {
       const group = job.groups.find((item) => item.position === job.group_pos);
       return el("tr", { class: "list-row", onclick: () => go(`#${run.id}/${job.id}`) },
         el("td", {}, el("b", {}, job.id), el("div", { class: "muted small" }, job.title)), el("td", {}, job.kind), el("td", {}, job.repo || "–"),
-        el("td", {}, pill(job.stage), job.conflict ? pill("changes", "conflict") : null),
-        el("td", {}, group ? `${group.position}. ${group.step} ` : "–", group ? pill(group.phase) : null),
-        el("td", {}, group ? `${group.round}/${group.max_round}` : "–"), el("td", {}, (job.depends_on || []).join(", ") || "–"));
-    })));
+        el("td", {}, el("div", { class: "row" }, pill(job.stage, null, "sm"), job.conflict ? pill("conflict", null, "sm") : null)),
+        el("td", {}, group ? `${group.position}. ${group.step} ` : "–", group ? pill(group.phase, null, "sm") : null),
+        el("td", {}, group ? `${group.round} of ${group.max_round}` : "–"), el("td", {}, (job.depends_on || []).join(", ") || "–"));
+    }))));
 }
 
 function timelineData(run) {
@@ -981,23 +1215,21 @@ function runRail(run, current) {
     rail.append(el("div", { class: "card" }, el("div", { class: "row" }, el("h3", { class: "grow" }, job.id), el("a", { href: `#${run.id}` }, "close")),
       el("p", {}, job.title),
       el("dl", { class: "kv small" }, el("dt", {}, "Kind"), el("dd", {}, job.kind), el("dt", {}, "Repo"), el("dd", {}, job.repo || "–"),
-        el("dt", {}, "Stage"), el("dd", {}, pill(job.stage)), el("dt", {}, "Branch"), el("dd", {}, job.branch || "–"),
+        el("dt", {}, "Stage"), el("dd", {}, pill(job.stage, null, "sm")), el("dt", {}, "Branch"), el("dd", {}, job.branch || "–"),
         el("dt", {}, "Cost"), el("dd", {}, usageByJob ? money(Object.assign({ prices_date: run.usage.prices.date }, usageByJob)) : "–")),
-      el("h3", {}, "Pipeline"), el("ul", { class: "plain" }, job.groups.map((group) => el("li", {}, `${group.position}. ${group.step} `, pill(group.phase),
-        el("span", { class: "muted small" }, ` round ${group.round}/${group.max_round}`), el("div", { class: "gates" }, group.gates.map((gate) => {
-          const verdict = latestVerdicts(group)[gate];
-          return el("span", { class: `gatechip ${verdict || ""}` }, `${gate}${verdict ? `: ${verdict}` : ""}`);
-        }))))),
+      el("h3", {}, "Pipeline"), el("ul", { class: "plain" }, job.groups.map((group) => el("li", {}, `${group.position}. ${group.step} `, pill(group.phase, null, "sm"),
+        el("span", { class: "muted small" }, ` round ${group.round} of ${group.max_round}`), el("div", { class: "gates" }, group.gates.map((gate) => gateChip(gate, latestVerdicts(group)[gate], group)))))),
       el("h3", {}, "Files"), fileList((run.files || []).filter((file) => file.name.startsWith(`jobs/${job.id}/`)).map((file) => file.path))));
   }
   const repos = run.repos || [];
   rail.append(el("div", { class: "card" }, el("h3", {}, "Repos"), repos.length ? el("ul", { class: "plain" }, repos.map((repo) => el("li", {},
-    el("b", {}, repo.name), " ", repo.pr_url ? external(repo.pr_url, "PR") : el("span", { class: "muted small" }, repo.can_push ? "no PR yet" : "cannot push"), " ",
-    repo.pr_state ? pill(repo.pr_state) : null, el("div", { class: "muted small" }, `base ${repo.base_branch}`)))) : el("p", { class: "muted" }, "None yet")));
+    el("div", { class: "row" }, icon("repo"), el("b", { class: "grow" }, repo.name), repo.pr_url ? external(repo.pr_url, "PR") : el("span", { class: "muted small" }, repo.can_push ? "no PR yet" : "cannot push"),
+      repo.pr_state ? pill(repo.pr_state, null, "sm") : null),
+    el("div", { class: "muted small" }, `base ${repo.base_branch}`)))) : el("p", { class: "muted" }, "None yet")));
   const usage = run.usage || {};
   rail.append(el("div", { class: "card" }, el("h3", {}, "Cost"), usage.total ? money(Object.assign({ prices_date: usage.prices.date }, usage.total)) : el("span", { class: "muted" }, "–"),
-    usage.by_node && Object.keys(usage.by_node).length ? el("table", { class: "small" }, el("tbody", {}, Object.entries(usage.by_node).map(([node, total]) =>
-      el("tr", {}, el("td", {}, node), el("td", {}, total.cost === null ? "?" : `$${Number(total.cost).toFixed(2)}`))))) : null));
+    usage.by_node && Object.keys(usage.by_node).length ? el("table", { class: "small", style: "margin-top:8px" }, el("tbody", {}, Object.entries(usage.by_node).map(([node, total]) =>
+      el("tr", {}, el("td", {}, node), el("td", { class: "num" }, total.cost === null ? "?" : `$${Number(total.cost).toFixed(2)}`))))) : null));
   rail.append(el("div", { class: "card" }, el("h3", {}, "Skips"), (run.skips || []).length ? el("ul", { class: "plain" }, run.skips.map((skip) => el("li", {},
     el("code", {}, skip.dependency), " ", skip.effect, skip.pr ? el("span", { class: "muted small" }, " (in the PR)") : null))) : el("p", { class: "muted" }, "None")));
   rail.append(el("div", { class: "card" }, el("h3", {}, "Run files"), fileList((run.files || []).filter((file) => !file.name.startsWith("jobs/")).map((file) => file.path))));
@@ -1005,7 +1237,7 @@ function runRail(run, current) {
   rail.append(el("div", { class: "card" }, el("h3", {}, "Answered questions"), answered.length ? el("ul", { class: "plain" }, answered.map((item) => el("li", {},
     el("a", { href: `#${run.id}/${item.job_id ? `${item.job_id}/` : ""}q${item.id}` }, questionParts(item.text).head || item.text.split("\n")[0]), el("div", { class: "muted small" }, `→ ${item.answer || ""}`)))) : el("p", { class: "muted" }, "None")));
   rail.append(el("div", { class: "card" }, el("details", {}, el("summary", {}, `Events (${(run.events || []).length})`),
-    el("ul", { class: "plain small" }, (run.events || []).slice(-80).reverse().map((event) => el("li", {}, el("span", { class: "muted" }, shortTime(event.at)), " ", el("code", {}, event.kind), event.job_id ? ` ${event.job_id}` : "",
+    el("ul", { class: "plain small", style: "margin-top:8px" }, (run.events || []).slice(-80).reverse().map((event) => el("li", {}, el("span", { class: "muted" }, shortTime(event.at)), " ", el("code", {}, event.kind), event.job_id ? ` ${event.job_id}` : "",
       " ", Object.entries(event.payload || {}).map(([key, value]) => `${key}=${typeof value === "object" ? JSON.stringify(value) : value}`).join(" ")))))));
   return rail;
 }
@@ -1016,35 +1248,44 @@ function issuesPage(current) {
   const filters = state.issueFilters;
   const change = (key) => (event) => { filters[key] = event.target.value; refresh(); };
   const projectNames = Array.isArray(state.cache.projects) ? state.cache.projects.filter((project) => !project.archived).map((project) => project.name) : [];
-  const form = el("details", { class: "card" }, el("summary", {}, "New issue"), (() => {
+  const form = !state.newIssue ? null : (() => {
     const fields = {
-      project: el("select", {}, projectNames.map((name) => el("option", { value: name, selected: name === state.project }, name))),
-      title: el("input", { type: "text", placeholder: "Title", "data-keep": "new-title" }),
-      type: el("select", {}, ["task", "feature", "bug", "research"].map((name) => el("option", {}, name))),
-      priority: el("select", {}, ["medium", "high", "low"].map((name) => el("option", {}, name))),
-      labels: el("input", { type: "text", placeholder: "labels, comma separated" }),
-      body: el("textarea", { placeholder: "What should be built? Markdown is fine." }),
+      project: el("select", { "aria-label": "Project" }, projectNames.map((name) => el("option", { value: name, selected: name === state.project }, name))),
+      title: el("input", { type: "text", placeholder: "Title", "aria-label": "Title", "data-keep": "new-title" }),
+      type: el("select", { "aria-label": "Type" }, ["task", "feature", "bug", "research"].map((name) => el("option", {}, name))),
+      priority: el("select", { "aria-label": "Priority" }, ["medium", "high", "low"].map((name) => el("option", {}, name))),
+      labels: el("input", { type: "text", placeholder: "labels, comma separated", "aria-label": "Labels", "data-keep": "new-labels" }),
+      body: el("textarea", { placeholder: "What should be built? Markdown is fine.", "aria-label": "Description", "data-keep": "new-body" }),
     };
-    return el("div", { style: "display:grid;gap:8px;margin-top:8px" }, el("div", { class: "row" }, fields.project, fields.type, fields.priority), fields.title, fields.labels, fields.body,
-      el("div", {}, el("button", { class: "primary", onclick: async () => {
-        try {
-          const created = await post("/api/issues", { project: fields.project.value, title: fields.title.value, type: fields.type.value, priority: fields.priority.value,
-            labels: fields.labels.value.split(",").map((label) => label.trim()).filter(Boolean), body: fields.body.value });
-          go(`#issues/${created.key}`);
-        } catch (error) { toast(error.message); }
-      } }, "Create")));
-  })());
-  return el("div", {}, el("h1", {}, "Issues"),
+    return el("div", { class: "card", style: "margin-bottom:14px" }, el("h3", {}, "New issue"),
+      el("div", { style: "display:grid;gap:8px" }, el("div", { class: "row" }, fields.project, fields.type, fields.priority), fields.title, fields.labels, fields.body,
+        el("div", { class: "actions" }, el("button", { class: "primary", onclick: async () => {
+          try {
+            const created = await post("/api/issues", { project: fields.project.value, title: fields.title.value, type: fields.type.value, priority: fields.priority.value,
+              labels: fields.labels.value.split(",").map((label) => label.trim()).filter(Boolean), body: fields.body.value });
+            state.newIssue = false;
+            go(`#issues/${created.key}`);
+          } catch (error) { toast(error.message); }
+        } }, icon("plus"), "Create"), el("button", { onclick: () => { state.newIssue = false; render(true); } }, "Cancel"))));
+  })();
+  const rows = Array.isArray(list) ? list.map((issue) => el("tr", { class: "list-row", onclick: () => go(`#issues/${issue.key}`) },
+    el("td", { class: "key" }, issue.key),
+    el("td", { class: "title" }, issue.title, issue.source !== "local" ? el("span", { class: "src" }, `mirror of ${issue.source} ${issue.external_key}`) : null),
+    el("td", {}, issuePill(issue.status)), el("td", {}, issue.type), el("td", {}, prio(issue.priority)),
+    el("td", {}, issue.labels.length ? issue.labels.map((label) => el("span", { class: "tag" }, label)) : el("span", { class: "muted" }, "–")))) : [];
+  return el("div", {}, el("div", { class: "head" }, el("h1", { class: "grow" }, "Issues"),
+    el("button", { class: state.newIssue ? "" : "primary", onclick: () => { state.newIssue = !state.newIssue; render(true); } }, icon("plus"), "New issue")),
+    el("p", { class: "sub" }, "Start a run from any issue with ", el("code", {}, "/factory <KEY>"), " in Claude Code."),
     el("div", { class: "filters" },
-      el("select", { onchange: change("status"), "aria-label": "Status" }, ["", "open", "ready", "in_progress", "in_review", "done", "closed"].map((value) => el("option", { value, selected: filters.status === value }, value || "any status"))),
-      el("select", { onchange: change("type"), "aria-label": "Type" }, ["", "feature", "bug", "task", "research", "improvement"].map((value) => el("option", { value, selected: filters.type === value }, value || "any type"))),
-      el("input", { type: "text", placeholder: "label", value: filters.label, onchange: change("label") }),
-      el("input", { type: "search", placeholder: "text", value: filters.q, onchange: change("q") })),
+      el("select", { onchange: change("status"), "aria-label": "Status" }, ["", "open", "ready", "in_progress", "in_review", "done", "closed"].map((value) => el("option", { value, selected: filters.status === value }, value ? statusLabel(value) : "Any status"))),
+      el("select", { onchange: change("type"), "aria-label": "Type" }, ["", "feature", "bug", "task", "research", "improvement"].map((value) => el("option", { value, selected: filters.type === value }, value ? statusLabel(value) : "Any type"))),
+      el("input", { type: "text", placeholder: "Label", "aria-label": "Label", value: filters.label, onchange: change("label") }),
+      el("input", { type: "search", placeholder: "Search title and text", "aria-label": "Search issues", value: filters.q, onchange: change("q") })),
     form,
-    !list ? el("p", { class: "muted" }, "Loading…") : list.error ? failed(list) : list.length ? el("table", {}, el("thead", {}, el("tr", {}, ["Key", "Title", "Status", "Type", "Priority", "Labels"].map((name) => el("th", {}, name)))),
-      el("tbody", {}, list.map((issue) => el("tr", { class: "list-row", onclick: () => go(`#issues/${issue.key}`) },
-        el("td", {}, el("b", {}, issue.key)), el("td", {}, issue.title, issue.source !== "local" ? el("span", { class: "muted small" }, ` · ${issue.source} ${issue.external_key}`) : null),
-        el("td", {}, pill(issue.status)), el("td", {}, issue.type), el("td", {}, issue.priority), el("td", {}, issue.labels.join(", ")))))) : el("div", { class: "empty" }, "No issues match."));
+    !list ? el("p", { class: "muted" }, "Loading…") : list.error ? failed(list) : rows.length ? [
+      el("div", { class: "card tablecard" }, el("table", {}, el("thead", {}, el("tr", {}, ["Key", "Title", "Status", "Type", "Priority", "Labels"].map((name) => el("th", {}, name)))), el("tbody", {}, rows))),
+      el("p", { class: "foot-note" }, `${rows.length} issue${rows.length === 1 ? "" : "s"} · click a row to open it`)]
+      : el("div", { class: "empty" }, "No issues match."));
 }
 
 function issueDetail(key) {
@@ -1057,44 +1298,47 @@ function issueDetail(key) {
   const editing = state.editingIssue === key;
   const command = `/factory ${key}`;
   const body = editing ? (() => {
-    const area = el("textarea", { rows: 14, "data-keep": `issue-body-${key}` });
+    const area = el("textarea", { rows: 14, "aria-label": "Issue text", "data-keep": `issue-body-${key}` });
     area.value = state.drafts[`issue-${key}`] !== undefined ? state.drafts[`issue-${key}`] : issue.body;
     area.addEventListener("input", () => { state.drafts[`issue-${key}`] = area.value; });
-    return el("div", {}, area, el("div", { class: "row" }, el("button", { class: "primary", onclick: async () => { await save({ body: area.value }); state.editingIssue = null; delete state.drafts[`issue-${key}`]; render(true); } }, "Save"),
+    return el("div", {}, area, el("div", { class: "actions" },
+      el("button", { class: "primary", onclick: async () => { await save({ body: area.value }); state.editingIssue = null; delete state.drafts[`issue-${key}`]; render(true); } }, icon("check"), "Save"),
       el("button", { onclick: () => { state.editingIssue = null; delete state.drafts[`issue-${key}`]; render(true); } }, "Cancel")));
-  })() : el("div", {}, md(issue.body || "_No description._"), el("button", { onclick: () => { state.editingIssue = key; render(true); } }, "Edit text"));
-  const title = el("input", { type: "text", value: issue.title, style: "width:100%;font-size:18px;font-weight:600", "data-keep": `issue-title-${key}`, onchange: (event) => save({ title: event.target.value }) });
+  })() : el("div", {}, md(issue.body || "_No description._"),
+    el("div", { class: "actions", style: "margin-top:14px" }, el("button", { onclick: () => { state.editingIssue = key; render(true); } }, icon("pen"), "Edit text")));
+  const title = el("input", { type: "text", class: "titlebox", value: issue.title, "aria-label": "Title", title: "Click to edit the title", "data-keep": `issue-title-${key}`, onchange: (event) => save({ title: event.target.value }) });
   const linkItem = (link) => {
-    if (link.kind === "run") return el("li", {}, "run ", el("a", { href: `#${link.ref}` }, link.ref));
-    if (link.kind === "pr") return el("li", {}, "PR ", external(link.ref));
-    if (link.kind === "issue") return el("li", {}, "issue ", el("a", { href: `#issues/${link.ref}` }, link.ref));
-    return el("li", {}, "improvement ", el("a", { href: "#improvements" }, link.ref));
+    if (link.kind === "run") return el("li", {}, icon("play"), "run ", el("a", { href: `#${link.ref}` }, link.ref));
+    if (link.kind === "pr") return el("li", {}, icon("pr"), "PR ", external(link.ref));
+    if (link.kind === "issue") return el("li", {}, icon("issue"), "issue ", el("a", { href: `#issues/${link.ref}` }, link.ref));
+    return el("li", {}, icon("spark"), "improvement ", el("a", { href: "#improvements" }, link.ref));
   };
-  return el("div", {}, el("div", { class: "row muted small" }, el("a", { href: "#issues" }, "Issues"), " · ", issue.project, " · ", key, issue.source !== "local" ? ` · mirror of ${issue.source} ${issue.external_key}` : ""),
+  return el("div", {}, crumbs(el("a", { href: "#issues" }, "Issues"), issue.project, key, issue.source !== "local" ? `mirror of ${issue.source} ${issue.external_key}` : null),
     title,
-    el("div", { class: "split", style: "margin-top:12px" }, el("div", { class: "card" }, body),
+    el("div", { class: "split" }, el("div", { class: "card" }, body),
       el("div", { class: "rail" },
         el("div", { class: "card" }, el("h3", {}, "Start a run"), el("div", { class: "row" }, el("span", { class: "copy grow" }, command),
-          el("button", { onclick: () => navigator.clipboard.writeText(command).then(() => toast("Copied"), () => toast(command)) }, "Copy")),
-          el("p", { class: "muted small" }, "Runs start in Claude Code, in a repo of the project.")),
+          el("button", { onclick: () => navigator.clipboard.writeText(command).then(() => toast("Copied"), () => toast(command)) }, icon("copy"), "Copy")),
+          el("p", { class: "muted small", style: "margin:8px 0 0" }, "Runs start in Claude Code, in a repo of the project.")),
         el("div", { class: "card" }, el("dl", { class: "kv" },
-          el("dt", {}, "Status"), el("dd", {}, el("select", { onchange: (event) => save({ status: event.target.value }) }, ["open", "ready", "in_progress", "in_review", "done", "closed"].map((value) => el("option", { selected: issue.status === value }, value)))),
-          el("dt", {}, "Priority"), el("dd", {}, el("select", { onchange: (event) => save({ priority: event.target.value }) }, ["high", "medium", "low"].map((value) => el("option", { selected: issue.priority === value }, value)))),
+          el("dt", {}, "Status"), el("dd", {}, el("select", { "aria-label": "Status", onchange: (event) => save({ status: event.target.value }) }, ["open", "ready", "in_progress", "in_review", "done", "closed"].map((value) => el("option", { value, selected: issue.status === value }, statusLabel(value))))),
+          el("dt", {}, "Priority"), el("dd", {}, el("select", { "aria-label": "Priority", onchange: (event) => save({ priority: event.target.value }) }, ["high", "medium", "low"].map((value) => el("option", { value, selected: issue.priority === value }, statusLabel(value))))),
           el("dt", {}, "Type"), el("dd", {}, issue.type),
-          el("dt", {}, "Labels"), el("dd", {}, el("input", { type: "text", value: issue.labels.join(", "), onchange: (event) => save({ labels: event.target.value.split(",").map((label) => label.trim()).filter(Boolean) }) })),
+          el("dt", {}, "Labels"), el("dd", {}, el("input", { type: "text", "aria-label": "Labels", placeholder: "comma separated", value: issue.labels.join(", "), onchange: (event) => save({ labels: event.target.value.split(",").map((label) => label.trim()).filter(Boolean) }) })),
           issue.external_url ? [el("dt", {}, "External"), el("dd", {}, external(issue.external_url, issue.external_status || "link"))] : null)),
         el("div", { class: "card" }, el("h3", {}, "Links"), issue.links.length ? el("ul", { class: "plain" }, issue.links.map(linkItem)) : el("p", { class: "muted" }, "None")),
-        el("div", { class: "card" }, el("details", {}, el("summary", {}, `History (${issue.history.length})`), el("ul", { class: "plain small" }, issue.history.slice().reverse().map((entry) =>
+        el("div", { class: "card" }, el("details", {}, el("summary", {}, `History (${issue.history.length})`), el("ul", { class: "plain small", style: "margin-top:8px" }, issue.history.slice().reverse().map((entry) =>
           el("li", {}, el("span", { class: "muted" }, shortTime(entry.at)), " ", el("code", {}, entry.kind), " ", Object.entries(entry.payload).filter(([name]) => name !== "issue").map(([name, value]) => `${name}=${typeof value === "object" ? JSON.stringify(value) : value}`).join(" ")))))))));
 }
 
 function projectsPage(current) {
   if (current.name) return projectDetail(current.name);
   const list = Array.isArray(state.cache.projects) ? state.cache.projects : [];
-  return el("div", {}, el("h1", {}, "Projects"), list.length ? el("table", {}, el("thead", {}, el("tr", {}, ["Name", "Key", "Repos", "Description"].map((name) => el("th", {}, name)))),
-    el("tbody", {}, list.map((project) => el("tr", { class: "list-row", onclick: () => go(`#projects/${project.name}`) },
-      el("td", {}, el("b", {}, project.name), project.archived ? el("span", { class: "muted small" }, " archived") : null), el("td", {}, project.key),
-      el("td", {}, project.repos.join(", ")), el("td", {}, project.description || ""))))) : el("div", { class: "empty" }, "No projects yet. Add one with factory project add."));
+  return el("div", {}, el("h1", {}, "Projects"), el("p", { class: "sub" }, "Read-only here. Add and change projects with the factory command."),
+    list.length ? el("div", { class: "card tablecard" }, el("table", {}, el("thead", {}, el("tr", {}, ["Name", "Key", "Repos", "Description"].map((name) => el("th", {}, name)))),
+      el("tbody", {}, list.map((project) => el("tr", { class: "list-row", onclick: () => go(`#projects/${project.name}`) },
+        el("td", {}, el("b", {}, project.name), project.archived ? el("span", { class: "muted small" }, " archived") : null), el("td", { class: "key" }, project.key),
+        el("td", {}, project.repos.join(", ")), el("td", {}, project.description || "")))))) : el("div", { class: "empty" }, "No projects yet. Add one with factory project add."));
 }
 
 function projectDetail(name) {
@@ -1102,21 +1346,21 @@ function projectDetail(name) {
   if (!project) return el("p", { class: "muted" }, "Loading…");
   if (project.error) return failed(project);
   const installs = project.installs || {};
-  const installRow = (entry, label) => el("li", {}, el("b", {}, label), " ", entry.version, " ", pill(entry.current ? "available" : "changes", entry.current ? "current" : "drift"),
+  const installRow = (entry, label) => el("li", {}, el("b", {}, label), " ", entry.version, " ", pill(entry.current ? "available" : "changes", entry.current ? "current" : "drift", "sm"),
     entry.changed && entry.changed.length ? el("div", { class: "muted small" }, `changed: ${entry.changed.join(", ")}`) : null,
     entry.missing && entry.missing.length ? el("div", { class: "muted small" }, `missing: ${entry.missing.join(", ")}`) : null);
   const steps = Object.values((project.catalogue || {}).steps || {});
   const templates = Object.values((project.catalogue || {}).pipelines || {});
-  return el("div", {}, el("div", { class: "row muted small" }, el("a", { href: "#projects" }, "Projects"), " · ", project.key),
+  return el("div", {}, crumbs(el("a", { href: "#projects" }, "Projects"), project.key),
     el("h1", {}, project.name), project.description ? el("p", { class: "muted" }, project.description) : null,
     project.warnings && project.warnings.length ? el("div", { class: "strip" }, project.warnings.join(" · ")) : null,
-    el("h2", {}, "Repos"), el("table", {}, el("thead", {}, el("tr", {}, ["Name", "Path", "Default branch", "Origin", "Role"].map((label) => el("th", {}, label)))),
+    el("h2", {}, "Repos"), el("div", { class: "card tablecard" }, el("table", {}, el("thead", {}, el("tr", {}, ["Name", "Path", "Default branch", "Origin", "Role"].map((label) => el("th", {}, label)))),
       el("tbody", {}, project.repos.map((repo) => el("tr", {}, el("td", {}, el("b", {}, repo.name)), el("td", {}, el("code", {}, repo.path || "–")), el("td", {}, repo.default_branch || "–"),
-        el("td", {}, repo.has_origin ? "yes" : "no"), el("td", {}, repo.role || ""))))),
+        el("td", {}, repo.has_origin ? "yes" : "no"), el("td", {}, repo.role || "")))))),
     el("h2", {}, "Integrations"), Object.entries(project.integrations || {}).map(([slot, entry]) => el("div", { class: "card", style: "margin-bottom:8px" },
       el("div", { class: "row" }, el("b", {}, slot.replace("_", " ")), el("span", {}, entry.adapter), Object.keys(entry.settings || {}).length ? el("span", { class: "muted small" }, Object.entries(entry.settings).map(([key, value]) => `${key}=${JSON.stringify(value)}`).join(" ")) : null),
       Object.keys(entry.capabilities || {}).length ? el("table", { class: "small" }, el("tbody", {}, Object.entries(entry.capabilities).map(([capability, info]) =>
-        el("tr", {}, el("td", {}, capability), el("td", {}, info.via), el("td", {}, pill(info.status === "not built" ? "missing" : info.status, info.status)), el("td", { class: "muted" }, info.reason || ""))))) : el("p", { class: "muted small" }, "No capabilities: nothing is pushed or fetched."))),
+        el("tr", {}, el("td", {}, capability), el("td", {}, info.via), el("td", {}, pill(info.status === "not built" ? "missing" : info.status, info.status, "sm")), el("td", { class: "muted" }, info.reason || ""))))) : el("p", { class: "muted small" }, "No capabilities: nothing is pushed or fetched."))),
     el("h2", {}, "Knowledge"), project.knowledge && Object.keys(project.knowledge).length ? el("dl", { class: "kv" },
       el("dt", {}, "Read first"), el("dd", {}, (project.knowledge.read_first || []).join(", ") || "–"),
       el("dt", {}, "Per repo"), el("dd", {}, Object.entries(project.knowledge.per_repo || {}).map(([repo, paths]) => `${repo}: ${paths.join(", ") || "–"}`).join(" · ")),
@@ -1125,8 +1369,8 @@ function projectDetail(name) {
       installs.plugin ? el("li", {}, el("b", {}, "plugin"), " ", el("span", { class: "muted small" }, "this dashboard runs from the plugin")) : null,
       installs.user ? installRow(installs.user, "user") : el("li", { class: "muted" }, "no user install"),
       (installs.repos || []).map((entry) => installRow(entry, `repo ${entry.repo || ""}`))),
-    el("h2", {}, "Catalogue"), el("table", { class: "small" }, el("thead", {}, el("tr", {}, ["Step", "Role", "Kinds", "Agent", "Model", "From", "Summary"].map((label) => el("th", {}, label)))),
-      el("tbody", {}, steps.map((step) => el("tr", {}, el("td", {}, el("b", {}, step.name)), el("td", {}, step.role), el("td", {}, step.kinds.join(", ")), el("td", {}, step.agent), el("td", {}, step.model || "–"), el("td", {}, step.level), el("td", {}, step.summary))))),
+    el("h2", {}, "Catalogue"), el("div", { class: "card tablecard" }, el("table", { class: "small" }, el("thead", {}, el("tr", {}, ["Step", "Role", "Kinds", "Agent", "Model", "From", "Summary"].map((label) => el("th", {}, label)))),
+      el("tbody", {}, steps.map((step) => el("tr", {}, el("td", {}, el("b", {}, step.name)), el("td", {}, step.role), el("td", {}, step.kinds.join(", ")), el("td", {}, step.agent), el("td", {}, step.model || "–"), el("td", {}, step.level), el("td", {}, step.summary)))))),
     el("h3", {}, "Templates"), el("ul", { class: "plain" }, templates.map((template) => el("li", {}, el("b", {}, template.name), " ", el("span", { class: "muted small" }, template.level), " ",
       template.pipeline.map((group) => `${group.step} [${group.gates.join(", ")}]`).join(" › "), el("div", { class: "muted small" }, template.when)))));
 }
@@ -1137,25 +1381,26 @@ function improvementsPage() {
   const items = Array.isArray(list) ? list.filter((item) => !filters.target || item.target === filters.target) : [];
   const targets = Array.isArray(list) ? [...new Set(list.map((item) => item.target))] : [];
   const actions = { open: [["accepted", "Accept"], ["rejected", "Reject"]], accepted: [["done", "Mark done"], ["rejected", "Reject"], ["open", "Back to review"]], rejected: [["open", "Back to review"]], done: [["open", "Back to review"]] };
-  return el("div", {}, el("h1", {}, "Improvements"),
+  const actionIcon = { accepted: "check", rejected: "x", done: "check", open: "reply" };
+  return el("div", {}, el("h1", {}, "Improvements"), el("p", { class: "sub" }, "Proposals from run retrospectives. Accepted ones are applied by ", el("code", {}, "/factory improve"), "."),
     el("div", { class: "filters" },
-      el("select", { onchange: (event) => { filters.status = event.target.value; refresh(); } }, ["open", "accepted", "rejected", "done", ""].map((value) => el("option", { value, selected: filters.status === value }, value || "any status"))),
-      el("select", { onchange: (event) => { filters.target = event.target.value; render(true); } }, ["", ...targets].map((value) => el("option", { value, selected: filters.target === value }, value || "any target")))),
+      el("select", { "aria-label": "Status", onchange: (event) => { filters.status = event.target.value; refresh(); } }, ["open", "accepted", "rejected", "done", ""].map((value) => el("option", { value, selected: filters.status === value }, value ? statusLabel(value) : "Any status"))),
+      el("select", { "aria-label": "Target", onchange: (event) => { filters.target = event.target.value; render(true); } }, ["", ...targets].map((value) => el("option", { value, selected: filters.target === value }, value || "Any target")))),
     !list ? el("p", { class: "muted" }, "Loading…") : list.error ? failed(list) : items.length ? items.map((item) => {
-      const note = el("input", { type: "text", placeholder: "why (optional)", "data-keep": `note-${item.id}`, style: "flex:1" });
+      const note = el("input", { type: "text", class: "grow", placeholder: "why (optional)", "aria-label": "Note", "data-keep": `note-${item.id}` });
       note.value = state.drafts[`note-${item.id}`] || item.note || "";
       note.addEventListener("input", () => { state.drafts[`note-${item.id}`] = note.value; });
-      return el("div", { class: "card", style: "margin-bottom:10px" },
-        el("div", { class: "row" }, el("b", { class: "grow" }, item.title), pill(item.impact === "high" ? "changes" : item.impact === "medium" ? "wait" : "", `${item.impact} impact`), pill(item.status)),
-        el("div", { class: "muted small" }, `#${item.id} · ${item.target}${item.repo ? ` (${item.repo})` : ""} · ${item.project} · from `, el("a", { href: `#${item.run_id}` }, item.run_id),
+      return el("div", { class: "card", style: "margin-bottom:14px" },
+        el("div", { class: "row" }, el("h3", { class: "grow", style: "margin:0" }, item.title), prio(item.impact, `${item.impact} impact`), pill(item.status, null, "sm")),
+        el("div", { class: "muted small", style: "margin-top:4px" }, `#${item.id} · ${item.target}${item.repo ? ` (${item.repo})` : ""} · ${item.project} · from `, el("a", { href: `#${item.run_id}` }, item.run_id),
           item.seen_in.length > 1 ? ` · seen in ${item.seen_in.length} runs` : "", item.issue_key ? [" · ", el("a", { href: `#issues/${item.issue_key}` }, item.issue_key)] : null,
           item.pr_url ? [" · ", external(item.pr_url, "PR")] : null),
-        item.location ? el("p", {}, el("code", {}, item.location)) : null,
+        item.location ? el("p", { style: "margin:8px 0 0" }, el("code", {}, item.location)) : null,
         el("h3", {}, "Evidence"), md(item.evidence), el("h3", {}, "Proposal"), md(item.proposal),
-        item.note ? el("p", { class: "muted" }, `Note: ${item.note}`) : null,
-        el("div", { class: "row" }, note, (actions[item.status] || []).map(([status, label]) => el("button", { class: status === "accepted" ? "primary" : "", onclick: async () => {
+        item.note ? el("p", { class: "muted", style: "margin:10px 0 0" }, `Note: ${item.note}`) : null,
+        el("div", { class: "actions", style: "margin-top:12px" }, note, (actions[item.status] || []).map(([status, label]) => el("button", { class: status === "accepted" ? "primary" : "", onclick: async () => {
           try { await post(`/api/improvements/${item.id}/decide`, { status, note: note.value || null }); delete state.drafts[`note-${item.id}`]; await refresh(); } catch (error) { toast(error.message); }
-        } }, label))));
+        } }, icon(actionIcon[status]), label))));
     }) : el("div", { class: "empty" }, "Nothing here."));
 }
 
@@ -1163,7 +1408,9 @@ function applyTheme() {
   const root = document.documentElement;
   if (state.theme === "system") root.removeAttribute("data-theme");
   else root.setAttribute("data-theme", state.theme);
-  document.getElementById("theme").textContent = `Theme: ${state.theme}`;
+  const button = document.getElementById("theme");
+  button.replaceChildren(icon({ system: "monitor", light: "sun", dark: "moon" }[state.theme] || "monitor"), { system: "System", light: "Light", dark: "Dark" }[state.theme] || "System");
+  button.title = `Theme: ${state.theme}. Click to change.`;
 }
 
 document.getElementById("theme").addEventListener("click", () => {

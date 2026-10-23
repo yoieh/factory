@@ -36,6 +36,7 @@ Read in this order and stop as soon as you can write the plan. Project knowledge
    - the files that define its dependencies, test command and lint, and its CI config
    - `git -C <path> log --oneline -20` for the commit style
    - the few files the change will touch, to confirm the names, paths and contracts you put in a spec
+   - when the issue or the code names a known gap, bug or limitation that the job removes: grep the repo's docs for it (`git -C <path> grep -n -i <distinctive phrase>` over docs and rules files) and put every place that records it in the spec's Scope
 
 Read code to confirm a fact you write down, not to learn the system. When `knowledge` lists nothing, plan from the repos' own docs and code, and say so in one line under "Risks and open points". Missing knowledge is never a reason to stop or ask. Change nothing in any repo.
 
@@ -130,7 +131,7 @@ Before you return, check every point and fix what fails:
 
 1. The json parses. Every job in it is in the table and has a `spec.md`. Every repo with a `code` job or in a `reads` list has facts with a test command and a worktree setup.
 2. Every spec has acceptance criteria and tests. It has a contract when another job depends on it or it uses another job's result, with the same text in both specs. It has notes for each step whose work the spec does not make clear (how `verify` starts the app, which bug `reproduce` shows).
-3. Every acceptance criterion of the issue is in at least one spec, or under "Outside the code", or under "Risks and open points" with the reason. Every design frame is named in one spec.
+3. Every acceptance criterion of the issue is in at least one spec, or under "Outside the code", or under "Risks and open points" with the reason. Every design frame is named in one spec, and every doc that records the fixed gap is in Scope.
 4. Every pipeline passes the rules `plan load` checks:
    - every step exists in `catalogue` and fits the job's kind; `step` is a `produce` step, every gate a `gate` step
    - 1 to 6 groups per job, 0 to 6 gates per group, no gate twice in one group; no gates only when the step has `gates_optional: true`; no `optional_gates` key anywhere in the plan

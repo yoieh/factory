@@ -18,6 +18,7 @@ AGENT_NODES = {
     "gate": "factory-reviewer",
     "retro": "factory-retro",
     "improver": "factory-improver",
+    "lander": "factory-lander",
 }
 
 
@@ -182,7 +183,7 @@ class ResultFieldsTest(FactoryCase):
         agents = self.cli("agents")
         for key in ("scope", "roles", "dedicated", "missing"):
             self.assertIn(key, agents)
-        self.assertEqual(sorted(agents["roles"]), sorted(["planner", "worker", "reviewer", "retro", "improver"]))
+        self.assertEqual(sorted(agents["roles"]), sorted(["planner", "worker", "reviewer", "retro", "improver", "lander"]))
         asked = self.cli("question", "ask", run["id"], QUESTION, "--job", "lead")
         self.cli("question", "clarify", str(asked["id"]), "Why?")
         waited = self.cli("question", "wait", run["id"], "--timeout", "0")

@@ -2,7 +2,7 @@
 
 A software factory for Claude Code. It turns an issue or a feature text into reviewed changes: a planner splits the work into small jobs, each job runs a pipeline of steps from a catalogue, agents work in their own git worktrees, and the results land in one feature branch per repo. The spec it is built from is in `factory-spec/` (start with `factory-spec/README.md`); the decisions taken during the build are in `factory-spec/DECISIONS.md`.
 
-This repo is the core: the `factory` CLI, the SQLite schema, the built-in catalogue, the `/factory` skill and its five agents, and the tests. It is also a Claude Code plugin and a one-plugin marketplace. It was built in phases (`factory-spec/BUILD-PROMPT.md`): the core state, the integrations and lifecycle, the plugin with the skill and agent installs, the dashboard, and a walk through the acceptance list end to end.
+This repo is the core: the `factory` CLI, the SQLite schema, the built-in catalogue, the `/factory` skill and its six agents, and the tests. It is also a Claude Code plugin and a one-plugin marketplace. It was built in phases (`factory-spec/BUILD-PROMPT.md`): the core state, the integrations and lifecycle, the plugin with the skill and agent installs, the dashboard, and a walk through the acceptance list end to end.
 
 ## Requirements
 
@@ -21,7 +21,7 @@ Claude Code 2.1.275 and later also take it in one step: `/plugin install factory
 
 Claude Code does not update plugins from this marketplace by itself unless you turn auto-update on in the **Marketplaces** tab of `/plugin`. To update by hand, choose **Update now** on the plugin in the **Installed** tab, or run `claude plugin update factory@factory` in a shell. An installed copy only changes when `version` in `.claude-plugin/plugin.json` changes, so every release bumps it.
 
-The plugin brings the `/factory` skill (its full name is `/factory:factory`; plain `/factory` works while no other command uses that name), the five agents (`factory:factory-planner`, `factory:factory-worker`, `factory:factory-reviewer`, `factory:factory-retro`, `factory:factory-improver`) and the `factory` command, which Claude Code puts on the Bash tool's PATH. Nothing else to set up: the first command creates the factory home. State never lives in the plugin folder, because that folder changes with every version and Claude Code deletes plugin data on uninstall; it lives in `~/.factory`.
+The plugin brings the `/factory` skill (its full name is `/factory:factory`; plain `/factory` works while no other command uses that name), the six agents (`factory:factory-planner`, `factory:factory-worker`, `factory:factory-reviewer`, `factory:factory-retro`, `factory:factory-improver`, `factory:factory-lander`) and the `factory` command, which Claude Code puts on the Bash tool's PATH. Nothing else to set up: the first command creates the factory home. State never lives in the plugin folder, because that folder changes with every version and Claude Code deletes plugin data on uninstall; it lives in `~/.factory`.
 
 The first time the plugin's CLI runs, it copies itself to `~/.factory/core/<version>/` and points `core/current` at it. The terminal command and the dashboard then run the same core as the plugin. To get the terminal command, run `sh install.sh` once from the plugin folder; `factory doctor` prints that command when the shim is missing or runs another version.
 
@@ -85,6 +85,7 @@ Every command prints one JSON value. Errors print `factory: <message>` on stderr
 | Steps and gates | `step sync|save`, `gate sync`, `gate human` |
 | Questions | `question ask|answer|clarify|reply|resolve|list|wait` |
 | Designs | `design links <path>`, `design target <run-id> --name <frame>`, `design check <run-id>` |
+| Landing | `land check|start|save|apply <run-id>` |
 | Retrospective | `retro load <run-id>`, `improvement list|decide|start|pr|prs` |
 | Usage | `usage sync [<run-id>]`, `usage show <run-id>` |
 | Skips and events | `skip add|list`, `event` |
@@ -154,6 +155,18 @@ The page polls every 3 seconds while visible and every 30 seconds when hidden. A
 
 The server binds 127.0.0.1 only and answers only requests whose `Host` is `127.0.0.1:<port>` or `localhost:<port>`, or a name listed in `config.json` `dashboard.hosts`, which stops DNS rebinding. POSTs must be `application/json`, and a POST with an `Origin` other than the dashboard's own is refused. Files are served only as `.md` or `.json` under `runs/`, `improve/` and `issues/`, and `.png` under `runs/` when the file starts with the PNG signature; paths are resolved first, so `..` and symlinks that leave those folders are refused. Answers and notes are limited to 4000 characters and issue bodies to 100 000. Project responses leave out paths outside the project's repos and the factory home, and show adapter settings marked `secret` as `***`. Markdown is rendered into page elements with every text escaped; only the `<details>` and `<summary>` of questions are rebuilt.
 
+## Landing PRs
+
+`/factory land <run-id>` gives a done run's open PRs one last review before they land. The `factory-lander` agent judges each PR as a whole: it runs the full test suite itself, reads the checks, the diff against the base branch and every open point, and writes `VERDICT: PASS` or `CHANGES`. Then `factory land apply` acts on that verdict as the project's `defaults.land` says:
+
+| `defaults.land` | On PASS |
+|---|---|
+| `off` (default) | Nothing. The verdict is only reported. |
+| `ready` | The draft PR is marked ready for review, and a person merges it. |
+| `merge` | The PR is merged with the code host's `merge_method` (default `squash`). |
+
+The core acts only when every check passes (a repo without CI counts on the lander's own test run), the PR merges cleanly, no reviewer asked for changes and the PR's head is still the commit the lander judged. It merges pinned to that commit, without admin rights, auto-merge or branch deletion, so branch protection still applies. `--dry-run` says what it would do. With `ready` or `merge`, Finish lands the run's PRs by itself once their checks are done. Only the user turns landing on, per project, with `factory project set <name> defaults.land '"merge"'`; the code host adapter needs the `pr_checks` and `land_pr` capabilities.
+
 ## Adapters
 
 Trackers, code hosts and design tools plug in through adapters, at most one per slot (`factory-spec/spec/07-integrations.md`). An adapter is a folder with `adapter.json` (what it can do, its settings and patterns) and `adapter.md` (what the orchestrator does for each capability). The built-in ones are in `catalogue/adapters/`; `local` (the central issue list) and `none` (no code host) are the defaults.
@@ -215,7 +228,7 @@ Prices are dollars per million tokens. Cache writes cost the input price times 1
 | Path | What |
 |---|---|
 | `.claude-plugin/` | The plugin manifest and the one-plugin marketplace. |
-| `skills/factory/SKILL.md`, `agents/` | The orchestrator skill and the five agents, as `factory-spec/prompts/` has them. |
+| `skills/factory/SKILL.md`, `agents/` | The orchestrator skill and the six agents, as `factory-spec/prompts/` has them. |
 | `bin/factory` | The CLI entry point. |
 | `install.sh` | The terminal install. |
 | `factory/cli.py` | Argument parsing, JSON output, exit codes. |
@@ -230,6 +243,7 @@ Prices are dollars per million tokens. Cache writes cost the input price times 1
 | `factory/jobs.py` | Plan load, the job and group state machine, step and gate sync. |
 | `factory/questions.py` | The question format and the question threads. |
 | `factory/designs.py` | Design links, frame file names, the PNG and scrub check. |
+| `factory/land.py` | Land: PR checks, land rounds, and acting on the lander's verdict. |
 | `factory/retro.py`, `factory/improvements.py` | `retro load`, improvement decisions, Improve groups and their PRs. |
 | `factory/usage.py` | Transcript reading, the price table, costs. |
 | `factory/skills.py` | Skill and agent copies, plugin folders, `factory agents`. |

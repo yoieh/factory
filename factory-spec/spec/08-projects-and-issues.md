@@ -38,7 +38,7 @@
     "process":   {"label": "issues and process"}
   },
   "defaults": {"parallel": 3, "max_rounds": 4, "confirm_plan": false, "branch_prefix": "feature/",
-               "require_code_review": true}
+               "require_code_review": true, "land": "off"}
 }
 ```
 
@@ -56,7 +56,7 @@ Keys:
 | `step_skills` | no | Per `skills_key` of a step, a list of `{path, when}` files the step's agent reads. |
 | `catalogue_dirs` | no | Extra catalogue folders (06). |
 | `improvement_targets` | no | Where accepted improvements go. Default: `factory`, `repo`, `process`; `knowledge` only when set. Per target: `repo` (a project repo, or none for `factory` and `process`), `base` (`current`, `default` or a branch name), `label`. |
-| `defaults` | no | Run defaults. |
+| `defaults` | no | Run defaults. `land` (`off`, `ready` or `merge`, default `off`) says what `land apply` does with a PR the lander passed: nothing, mark it ready for review, or merge it. Only the user turns it on, per project. |
 
 Validation: unknown keys at any level are an error, paths are expanded and must be absolute after expansion, repo paths must be git checkouts (a warning in `project show`, an error in `run new` for a repo the run uses). Credentials never go in project config; see 07 `settings`.
 

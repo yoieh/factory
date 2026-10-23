@@ -46,6 +46,7 @@
     "max_rounds": 4,
     "confirm_plan": true,
     "branch_prefix": "feature/",
-    "require_code_review": true
+    "require_code_review": true,
+    "land": "off"
   }
 }

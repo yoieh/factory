@@ -22,7 +22,7 @@
 | Core | The plugin folder, and `$FACTORY_HOME/core/<version>/` with a `current` symlink | `bin/factory` (CLI), `factory/` (Python package), `schema.sql`, `serve.py` + `dashboard.html`, built-in `catalogue/` and `adapters/`, `skills/` and `agents/` templates, tests. |
 | CLI | `factory` on the Bash tool's PATH from the plugin's `bin/`; in a terminal, a shim to `core/current/bin/factory` | The only writer of `factory.db`. Every command prints JSON on success. |
 | Skill | The plugin (`/factory`, canonical `/factory:factory`), or copies in `~/.claude/skills/factory/` (user) and `<repo>/.claude/skills/factory/` (repo) | The orchestrator loop. Finds the CLI, never writes state itself. |
-| Agents | The plugin (`factory:factory-planner`, ...), or copies in `~/.claude/agents/factory-*.md` and `<repo>/.claude/agents/` | Five generic agents: `factory-planner`, `factory-worker`, `factory-reviewer`, `factory-retro`, `factory-improver`. |
+| Agents | The plugin (`factory:factory-planner`, ...), or copies in `~/.claude/agents/factory-*.md` and `<repo>/.claude/agents/` | Six generic agents: `factory-planner`, `factory-worker`, `factory-reviewer`, `factory-retro`, `factory-improver`, `factory-lander`. |
 | Catalogue | built-in, then `$FACTORY_HOME/catalogue/`, then project dirs, then `<repo>/.factory/` | Step files, pipeline templates, adapters. Later entries override earlier ones by name. |
 | Dashboard | `factory serve [--port 8765]` | Inbox, runs, projects, issues, improvements. Answers questions and records decisions through the same functions as the CLI. |
 

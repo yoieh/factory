@@ -84,9 +84,9 @@ Every command prints one JSON value. Errors print `factory: <message>` on stderr
 | Plans and jobs | `plan load`, `job ready|start|show|agent|round|next|stage|rework|drop` |
 | Steps and gates | `step sync|save`, `gate sync`, `gate human` |
 | Questions | `question ask|answer|clarify|reply|resolve|list|wait` |
-| Connected agents | `agent add|list|show|remove`, `inbox [--project p] [--as name]`, `events [--since n] [--wait] [--as name]` |
+| Connected agents | `agent add|list|show|remove`, `inbox [--project p] [--as name] [--role r]`, `events [--since n] [--wait] [--as name]` |
 | Designs | `design links <path>`, `design target <run-id> --name <frame>`, `design check <run-id>` |
-| Landing | `land check|start|save|apply <run-id>`, after merge `land after|build|publish|watched <run-id>` |
+| Landing | `land check|start|save|fix|apply <run-id>`, after merge `land after|deploy|build|publish|watched <run-id>` |
 | Retrospective | `retro load <run-id>`, `improvement list|decide|start|pr|prs` |
 | Usage | `usage sync [<run-id>]`, `usage show <run-id>` |
 | Skips and events | `skip add|list`, `event` |
@@ -128,7 +128,7 @@ A job you give up is dropped with `factory job drop <run-id>/<job-id> "<reason>"
 
 ## Connecting agents
 
-Any outside agent can drive the factory for you: a voice assistant, another coding agent, a script. The factory does not know which agents exist or what they are. It knows a connected agent only by the name the agent passes, and what that agent may approve for you is set up in the agent, not here.
+Any outside agent can drive the factory for you: a voice assistant, another coding agent, a script. The factory does not know which agents exist or what they are. It knows a connected agent only by the name the agent passes and the roles you give it (below). What that agent may approve for you is set up in the agent, not here.
 
 ```sh
 factory agent add helper --description "Answers while I am away"   # optional: the first --by or --as registers the name too
@@ -138,6 +138,19 @@ factory inbox --as helper                  # everything that waits for you, acro
 factory question answer <id> "yes" --by helper
 factory improvement decide <id> rejected --note "Duplicates rule X" --by helper
 ```
+
+### PR work by role
+
+Agents can also do the work on a finished run's PRs: review them, fix what the review sends back, merge them, and deploy and watch them after the merge. Each kind of work is a role, and you give an agent the roles it may have:
+
+```sh
+factory agent add reviewer --roles review
+factory agent add fixer --roles fix
+factory agent add ops --roles merge,deploy
+factory inbox --as ops --role deploy        # the PRs that wait for a deploy
+```
+
+Every PR of a done run is an item in the inbox with `next`: `review`, `fix`, `merge`, `deploy`, or `decide` when a person must decide. Each item names the role that does it (`null` when it waits for you) and the `session` that does it, `/factory land <run-id> --repo <repo> --by <name>`, which the agent starts in Claude Code. That session passes `--by` to every land command, and the core lets the agent make only the moves of its roles: `land start` needs `review`, `land fix` needs `fix`, `land apply` needs `merge`, and the steps after merge need `deploy`. A move without the role is refused with the command that gives it. Whether a PR may be merged at all is still the project's `defaults.land`, and what runs after a merge is still the repo's `after_merge`: a role never turns those on. Without `--by` the session works for you and may make every move. Every move is logged with who made it, and the Agents page lists each agent's roles and moves.
 
 `factory inbox` lists the open questions of every run, each with its `kind` (`question`, `plan_confirm` or `human_gate`), the run and job, the question line, the options with the recommended one, and the exact command to answer or ask back, plus the improvements waiting for a decision. `factory events` follows the event log from a cursor, so an agent waits on one call instead of watching every run. An answer stored with `--by <name>` counts as yours: the orchestrator acts on it like an answer in its own chat. An agent decides improvements the same way: `improvement decide --by <name>` needs a `--note` with the reason, stores who decided in `decided_by` and logs it on the `improvement.decide` event, so every decision says whether you or which agent made it. Over the network, the dashboard serves the same as `/api/inbox`, `/api/events` and `/api/agents`, and its answer, follow-up and decide POSTs take `"by": "<name>"`.
 
@@ -184,6 +197,8 @@ The server binds 127.0.0.1 only and answers only requests whose `Host` is `127.0
 | `ready` | The draft PR is marked ready for review, and a person merges it. |
 | `merge` | The PR is merged with the code host's `merge_method` (default `squash`). |
 
+When the lander says CHANGES, the factory fixes the PR itself: `land fix` reworks the repo's last job with the review's Must fix items, the job's producer and gates run again, the fix is pushed to the same PR, and a new lander judges it. It does so at most `defaults.land_fixes` times per PR (default 2, 0 turns it off). A review with a `[human]` point, such as an open point of the PR, waits for you instead.
+
 The core acts only when every check passes (a repo without CI counts on the lander's own test run), the PR merges cleanly, no reviewer asked for changes and the PR's head is still the commit the lander judged. It merges pinned to that commit, without admin rights, auto-merge or branch deletion, so branch protection still applies. `--dry-run` says what it would do. With `ready` or `merge`, Finish lands the run's PRs by itself once their checks are done. Only the user turns landing on, per project, with `factory project set <name> defaults.land '"merge"'`; the code host adapter needs the `pr_checks` and `land_pr` capabilities.
 
 ### After merge
@@ -195,7 +210,10 @@ Once a PR is merged, by `land apply` or by a person, `/factory land <run-id>` ru
                                                        "artifact": ["build/game-windows.zip", "build/game-linux.zip"],
                                                        "release": "draft", "package": "off"}}
 {"name": "app", "path": "~/src/app", "after_merge": {"watch": true}}
+{"name": "api", "path": "~/src/api", "after_merge": {"deploy": "make deploy", "watch": true}}
 ```
+
+- `deploy`: for a repo that does not deploy by itself when its base branch moves. `factory land deploy` runs the command, after the repo's `setup`, in its own worktree at the merge commit and logs it to `land/<repo>/after/deploy.log`. It runs with the session's environment, so the deploy tool uses your own login; credentials never go in the config. The watcher starts when the deploy has returned.
 
 - `watch`: the `factory-watcher` agent follows the merge commit's deploy with the `deploy-watch` skill. When the deploy broke production, it rolls the broken services back and opens a remediation PR, which it never merges. Its verdict (`DEPLOY: VERIFIED`, `FAILED`, `RESTORED`, ...) is reported first when something went wrong.
 - `build` and `artifact`: the core builds the merge commit in its own worktree, with the repo's `setup` first, and keeps the artifact, one path or a list such as one zip per platform (a folder is zipped), in the run's `land/<repo>/after/`.

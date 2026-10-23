@@ -13,7 +13,7 @@ All pages share a sidebar: Inbox (count of open questions and plans to confirm),
 | Issues | `#issues`, `#issues/<KEY-n>` | Filterable list; one issue with body, links, history; create and edit. Shows the `/factory <KEY-n>` command to copy. |
 | Projects | `#projects`, `#projects/<name>` | Repos, integrations with availability, knowledge paths that exist, catalogue (steps and templates with their source), skill installs and drift. Read-only. |
 | Improvements | `#improvements` | Every improvement, filtered by status, target and project; evidence, proposal, run, `seen_in`; accept, reject, mark done, back to review, with a note. |
-| Agents | `#agents`, `#agents/<name>` | The connected agents (04): name, description, when connected and last seen, how many answers, follow-ups and improvement decisions; one agent with its latest answers, each linking to its question, and its latest improvement decisions with their notes. An improvement card says who decided it. Read-only. |
+| Agents | `#agents`, `#agents/<name>` | The connected agents (04): name, description, roles, last seen, how many answers, follow-ups, improvement decisions and PR moves; one agent with its roles, its latest answers, each linking to its question, its latest improvement decisions with their notes, and its latest PR moves (review, fix, merge, deploy), each linking to its run. An improvement card says who decided it. Read-only. |
 
 ### Loop graph with pipelines
 
@@ -42,7 +42,7 @@ GET (JSON):
 | `/api/projects`, `/api/projects/<name>` | Projects, resolved and redacted (08). |
 | `/api/catalogue?project=` | Merged catalogue. |
 | `/api/improvements?project=&status=` | Improvements. |
-| `/api/inbox?project=&as=` | `inbox` (04). |
+| `/api/inbox?project=&as=&role=` | `inbox` (04). |
 | `/api/events?since=&run=&kind=&limit=&wait=&timeout=&as=` | `events` (04); `kind` is comma-separated, `wait=1` waits at most `timeout` seconds (default 30, at most 60). |
 | `/api/agents`, `/api/agents/<name>` | `agent list`, `agent show`. |
 | `/api/file?path=` | A `.md` or `.json` file under `runs/`, `improve/` or `issues/`, as text. |

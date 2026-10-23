@@ -219,7 +219,8 @@ class AfterMergeTest(FactoryCase):
             ({"build": "make", "artifact": []}, "artifact must be a path or a non-empty list of paths"),
             ({"build": "make", "artifact": ["a/x.zip", "b/x.zip"]}, "every path needs its own file name"),
             ({"watch": "yes"}, "watch must be true or false"),
-            ({"deploy": True}, "unknown key 'deploy'"),
+            ({"deploy": True}, "deploy must be a non-empty string"),
+            ({"deploy_to": "prod"}, "unknown key 'deploy_to'"),
         ]
         for value, problem in cases:
             self.assertIn(problem, self.fails("project", "set", "shop", "repos.api.after_merge", json.dumps(value)), value)

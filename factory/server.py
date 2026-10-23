@@ -296,7 +296,7 @@ def get_routes(conn, route, query):
         statuses = [status for status in (single(query, "status", "") or "").split(",") if status]
         return improvements.listing(conn, None, project, statuses or None)
     if route == "/api/inbox":
-        return inbox.inbox(conn, project, single(query, "as"))
+        return inbox.inbox(conn, project, single(query, "as"), single(query, "role"))
     if route == "/api/events":
         since = single(query, "since")
         limit = single(query, "limit", "200")

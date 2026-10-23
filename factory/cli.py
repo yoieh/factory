@@ -290,19 +290,22 @@ def build():
     entry.add_argument("run_id")
     entry.add_argument("--timeout", type=float, default=1800)
 
-    agent = group(top, "agent", "Connected agents: outside tools that read the inbox and answer for the user.")
-    entry = add(agent, "add", cmd_agent_add, "Connect an agent by name, or change its description.")
+    agent = group(top, "agent", "Connected agents: outside tools that read the inbox, answer for the user and do PR work.")
+    entry = add(agent, "add", cmd_agent_add, "Connect an agent by name, or change its description or roles.")
     entry.add_argument("name")
     entry.add_argument("--description")
+    entry.add_argument("--roles", help="the PR work it may do: a comma list of review, fix, merge, deploy, or none")
     add(agent, "list", cmd_agent_list, "Connected agents with when they were last seen and what they answered.", table=True)
     entry = add(agent, "show", cmd_agent_show, "One connected agent and its latest answers and follow-ups.")
     entry.add_argument("name")
     entry = add(agent, "remove", cmd_agent_remove, "Forget a connected agent. Its answers keep its name.")
     entry.add_argument("name")
 
-    entry = add(top, "inbox", cmd_inbox, "Everything that waits for the user: open questions, plan confirms, human gates, improvements.")
+    entry = add(top, "inbox", cmd_inbox,
+                "Everything that waits: open questions, plan confirms, human gates, improvements and PR work.")
     entry.add_argument("--project")
     entry.add_argument("--as", dest="agent", help="the connected agent that reads; marks it seen")
+    entry.add_argument("--role", help="only the PR work of this role: review, fix, merge or deploy")
     entry = add(top, "events", cmd_events, "Events after a cursor, to follow the factory without polling every run.")
     entry.add_argument("--since", type=int, help="the cursor of the last call; without it, the latest events")
     entry.add_argument("--run")
@@ -333,7 +336,8 @@ def build():
     entry = add(design, "check", cmd_design_check, "Drop downloads that are not PNG and strip scrub patterns.")
     entry.add_argument("run_id")
 
-    land_group = group(top, "land", "Review a done run's PRs and mark them ready or merge them, as the project's defaults.land says.")
+    land_group = group(top, "land", "Review a done run's PRs, fix them, mark them ready or merge them, and run the steps after merge.")
+    by_help = "who does it: human (default) or a connected agent, which needs the role for it"
     entry = add(land_group, "check", cmd_land_check, "Read the checks, mergeability and head of the run's PRs.")
     entry.add_argument("run_id")
     entry.add_argument("--repo")
@@ -341,32 +345,51 @@ def build():
     entry = add(land_group, "start", cmd_land_start, "Open a new land round for a repo's PR: the lander's paths.")
     entry.add_argument("run_id")
     entry.add_argument("--repo", required=True)
+    entry.add_argument("--by", default="human", help=by_help)
     entry = add(land_group, "save", cmd_land_save,
                 "Store the lander's review file, or with --watch the watcher's watch file, from stdin when the harness refused its write.")
     entry.add_argument("run_id")
     entry.add_argument("--repo", required=True)
     entry.add_argument("--watch", action="store_true", help="store the watch file of the steps after merge")
+    entry.add_argument("--by", default="human", help=by_help)
+    entry = add(land_group, "fix", cmd_land_fix,
+                "Rework the repo's job with the Must fix items of a CHANGES review, up to defaults.land_fixes times per PR.")
+    entry.add_argument("run_id")
+    entry.add_argument("--repo", required=True)
+    entry.add_argument("--job", help="the job to rework; default the repo's last done code job")
+    entry.add_argument("--by", default="human", help=by_help)
     entry = add(land_group, "apply", cmd_land_apply,
                 "Act on the lander's verdict: mark the PR ready or merge it when every check passes and the mode allows it.")
     entry.add_argument("run_id")
     entry.add_argument("--repo", required=True)
     entry.add_argument("--dry-run", action="store_true", help="say what would happen and change nothing")
+    entry.add_argument("--by", default="human", help=by_help)
     entry = add(land_group, "after", cmd_land_after,
                 "Start the steps after a merged PR, as the repo's after_merge says: the merge commit, the tag and the paths.")
     entry.add_argument("run_id")
     entry.add_argument("--repo", required=True)
+    entry.add_argument("--by", default="human", help=by_help)
+    entry = add(land_group, "deploy", cmd_land_deploy, "Run the repo's deploy command at the merge commit, in its own worktree.")
+    entry.add_argument("run_id")
+    entry.add_argument("--repo", required=True)
+    entry.add_argument("--timeout", type=int, help="seconds the deploy may take (default 3600)")
+    entry.add_argument("--dry-run", action="store_true", help="say what would happen and change nothing")
+    entry.add_argument("--by", default="human", help=by_help)
     entry = add(land_group, "build", cmd_land_build, "Build the merge commit in its own worktree and keep the artifact.")
     entry.add_argument("run_id")
     entry.add_argument("--repo", required=True)
     entry.add_argument("--timeout", type=int, help="seconds the build may take (default 3600)")
+    entry.add_argument("--by", default="human", help=by_help)
     entry = add(land_group, "publish", cmd_land_publish,
                 "Upload the build as a release and a package, as the repo's after_merge says.")
     entry.add_argument("run_id")
     entry.add_argument("--repo", required=True)
     entry.add_argument("--dry-run", action="store_true", help="say what would happen and change nothing")
+    entry.add_argument("--by", default="human", help=by_help)
     entry = add(land_group, "watched", cmd_land_watched, "Read the watcher's deploy verdict.")
     entry.add_argument("run_id")
     entry.add_argument("--repo", required=True)
+    entry.add_argument("--by", default="human", help=by_help)
 
     retro_group = group(top, "retro", "The retrospective.")
     entry = add(retro_group, "load", cmd_retro_load, "Read retro.md into improvements.")
@@ -599,33 +622,41 @@ def cmd_land_check(conn, args):
 
 
 def cmd_land_start(conn, args):
-    return land.start(conn, args.run_id, args.repo)
+    return land.start(conn, args.run_id, args.repo, args.by)
 
 
 def cmd_land_save(conn, args):
     if args.watch:
-        return after.save_watch(conn, args.run_id, args.repo, sys.stdin.read())
-    return land.save(conn, args.run_id, args.repo, sys.stdin.read())
+        return after.save_watch(conn, args.run_id, args.repo, sys.stdin.read(), args.by)
+    return land.save(conn, args.run_id, args.repo, sys.stdin.read(), args.by)
+
+
+def cmd_land_fix(conn, args):
+    return land.fix(conn, args.run_id, args.repo, args.job, args.by)
 
 
 def cmd_land_apply(conn, args):
-    return land.apply(conn, args.run_id, args.repo, args.dry_run)
+    return land.apply(conn, args.run_id, args.repo, args.dry_run, args.by)
 
 
 def cmd_land_after(conn, args):
-    return after.start(conn, args.run_id, args.repo)
+    return after.start(conn, args.run_id, args.repo, args.by)
+
+
+def cmd_land_deploy(conn, args):
+    return after.deploy(conn, args.run_id, args.repo, args.timeout, args.dry_run, args.by)
 
 
 def cmd_land_build(conn, args):
-    return after.build(conn, args.run_id, args.repo, args.timeout)
+    return after.build(conn, args.run_id, args.repo, args.timeout, args.by)
 
 
 def cmd_land_publish(conn, args):
-    return after.publish(conn, args.run_id, args.repo, args.dry_run)
+    return after.publish(conn, args.run_id, args.repo, args.dry_run, args.by)
 
 
 def cmd_land_watched(conn, args):
-    return after.watched(conn, args.run_id, args.repo)
+    return after.watched(conn, args.run_id, args.repo, args.by)
 
 
 def cmd_design_links(conn, args):
@@ -830,7 +861,7 @@ def cmd_question_wait(conn, args):
 
 
 def cmd_agent_add(conn, args):
-    return connected.add(conn, args.name, args.description)
+    return connected.add(conn, args.name, args.description, args.roles)
 
 
 def cmd_agent_list(conn, args):
@@ -846,7 +877,7 @@ def cmd_agent_remove(conn, args):
 
 
 def cmd_inbox(conn, args):
-    return inbox.inbox(conn, args.project, args.agent)
+    return inbox.inbox(conn, args.project, args.agent, args.role)
 
 
 def cmd_events(conn, args):
@@ -873,7 +904,7 @@ TABLE_COLUMNS = {
     "project": ["name", "key", "repos", "archived", "description"],
     "question": ["id", "run_id", "job_id", "asked_by", "status"],
     "improvement": ["id", "run_id", "target", "impact", "status", "title"],
-    "agent": ["name", "seen_at", "answers", "follow_ups", "description"],
+    "agent": ["name", "roles", "seen_at", "answers", "follow_ups", "pr_work", "description"],
 }
 
 

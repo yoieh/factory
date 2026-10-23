@@ -6,7 +6,7 @@ One SQLite database, `$FACTORY_HOME/factory.db`, WAL mode, `foreign_keys = ON`, 
 
 - `meta(key, value)` holds `schema_version`.
 - On connect the core runs every migration above the stored version inside one transaction, then stores the new version. Foreign keys are off during a migration, so a table rebuild cannot cascade, and `foreign_key_check` must pass before the commit.
-- Version 2 rebuilds `jobs` to add the stage `dropped`. Version 3 adds `connected_agents` and fills it from the authors of earlier answers and follow-ups. The schema below is version 3.
+- Version 2 rebuilds `jobs` to add the stage `dropped`. Version 3 adds `connected_agents` and fills it from the authors of earlier answers and follow-ups. Version 4 adds `improvements.decided_by`. Version 5 adds `connected_agents.roles`. The schema below is version 5.
 - Migrations only add tables, columns and indexes, or rebuild a table with a copy when a CHECK changes. They never drop user data.
 
 ## Schema
@@ -172,7 +172,8 @@ CREATE TABLE IF NOT EXISTS connected_agents (
   name        TEXT PRIMARY KEY,
   description TEXT,
   added_at    TEXT NOT NULL,
-  seen_at     TEXT
+  seen_at     TEXT,
+  roles       TEXT NOT NULL DEFAULT '[]'   -- JSON list of review, fix, merge, deploy; added by migration 0005
 );
 
 CREATE TABLE IF NOT EXISTS events (

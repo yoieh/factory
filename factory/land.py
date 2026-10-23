@@ -1,19 +1,26 @@
+import datetime
 import json
 import os
 import re
 import time
 
-from . import FactoryError, adapters, db, runs
+from . import FactoryError, adapters, connected, db, jobs, runs
 from .util import git, git_origin, read_text, write_json, write_text
 
 POLL = 30
 VERDICT_RE = re.compile(r"^VERDICT: (PASS|CHANGES)\s*$")
 ROUND_RE = re.compile(r"^round-([0-9]+)$")
 WAITING = "pending"
+FIXES = 2
+FRESH_HOURS = 24
 
 
 def mode_of(project):
     return (project.get("defaults") or {}).get("land", "off")
+
+
+def fixes_of(project):
+    return (project.get("defaults") or {}).get("land_fixes", FIXES)
 
 
 def host_capability(project, capability):
@@ -67,8 +74,11 @@ def check(conn, run_id, repo_name=None, wait=0):
     selected = with_prs(conn, run_id, repo_name)
     deadline = time.monotonic() + max(wait or 0, 0)
     while True:
-        results = [dict(read_checks(project, repo), repo=repo["repo"], url=repo["pr_url"],
-                        after=after.todo(project, run_id, repo["repo"])) for repo in selected]
+        results = []
+        for repo in selected:
+            found = read_checks(project, repo)
+            results.append(dict(found, repo=repo["repo"], url=repo["pr_url"], after=after.todo(project, run_id, repo["repo"]),
+                                next=work(conn, run, repo, project, found.get("state"))))
         waiting = [found["repo"] for found in results if is_waiting(found)]
         left = deadline - time.monotonic()
         if not waiting or left <= 0:
@@ -98,7 +108,8 @@ def repo_test(project, repo_name):
     return (entry or {}).get("test") or "none"
 
 
-def start(conn, run_id, repo_name):
+def start(conn, run_id, repo_name, by="human"):
+    by = connected.allow(conn, by, "review")
     run = runs.get(conn, run_id)
     if run["status"] != "done":
         raise FactoryError(f"run {run_id} is {run['status']}; land a run only when it is done")
@@ -124,7 +135,7 @@ def start(conn, run_id, repo_name):
     previous = [round_paths(run_id, repo_name, earlier)["round_dir"] for earlier in done]
     with db.tx(conn):
         db.event(conn, "land.start", run_id, repo=repo_name, round=number, head_sha=head, checks=found["checks"],
-                 mode=mode_of(project))
+                 mode=mode_of(project), by=by)
     return {
         "mode": mode_of(project),
         "repo": repo_name,
@@ -142,22 +153,94 @@ def start(conn, run_id, repo_name):
     }
 
 
-def last_start(conn, run_id, repo_name):
-    for (payload,) in conn.execute(
-            "SELECT payload FROM events WHERE run_id = ? AND kind = 'land.start' ORDER BY id DESC", (run_id,)):
+def last_event(conn, run_id, kind, repo_name, round_number=None):
+    for at, payload in conn.execute(
+            "SELECT at, payload FROM events WHERE run_id = ? AND kind = ? ORDER BY id DESC", (run_id, kind)):
         data = json.loads(payload)
-        if data.get("repo") == repo_name:
-            return data
-    raise FactoryError(f"repo {repo_name} of run {run_id} has no land round; run land start first")
+        if data.get("repo") == repo_name and round_number in (None, data.get("round")) and not data.get("dry_run"):
+            return dict(data, at=at)
+    return None
 
 
-def save(conn, run_id, repo_name, text):
+def merged_lately(conn, run_id, repo_name):
+    since = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=FRESH_HOURS)).strftime("%Y-%m-%dT%H:%M:%S")
+    for kind, field, value in (("run.pr_state", "state", "MERGED"), ("land.apply", "action", "merged")):
+        found = last_event(conn, run_id, kind, repo_name)
+        if found and found.get(field) == value and found["at"] >= since:
+            return True
+    return False
+
+
+def last_start(conn, run_id, repo_name):
+    found = last_event(conn, run_id, "land.start", repo_name)
+    if not found:
+        raise FactoryError(f"repo {repo_name} of run {run_id} has no land round; run land start first")
+    return found
+
+
+def work(conn, run, repo, project, state=None):
+    """What a PR waits for next, and which role does it: None when it waits for a person or for nothing."""
+    from . import after
+
+    run_id, repo_name = run["id"], repo["repo"]
+
+    def waits(next_step, role, reason, **extra):
+        return dict({"next": next_step, "role": role, "reason": reason}, **extra)
+
+    state = state or repo.get("pr_state") or "OPEN"
+    if state == "MERGED":
+        todo = after.todo(project, run_id, repo_name)
+        if todo and not os.path.isfile(after.state_file(run_id, repo_name)) and not merged_lately(conn, run_id, repo_name):
+            return waits("none", None, f"merged more than {FRESH_HOURS} hours ago, before any step after merge ran")
+        if todo:
+            return waits("deploy", "deploy", f"merged; steps after merge left: {', '.join(todo)}", steps=todo)
+        return waits("none", None, "merged")
+    if state != "OPEN":
+        return waits("none", None, f"the PR is {state}")
+    started = last_event(conn, run_id, "land.start", repo_name)
+    if run["status"] != "done":
+        fixing = started and last_event(conn, run_id, "land.fix", repo_name, started["round"])
+        if fixing:
+            return waits("fixing", None, f"job {fixing['job']} fixes land round {started['round']} "
+                                         f"(fix {fixing['fix']} of {fixing['fixes']})", round=started["round"])
+        return waits("none", None, f"the run is {run['status']}")
+    if not started:
+        return waits("review", "review", "no land review yet", round=None)
+    paths = round_paths(run_id, repo_name, started["round"])
+    verdict = verdict_of(paths["review_file"])
+    seen = dict(round=started["round"], verdict=verdict, review_file=paths["review_file"], head_sha=started["head_sha"])
+    if verdict in ("MISSING", "INVALID"):
+        return waits("review", "review", f"land round {started['round']} has no verdict yet",
+                     busy={"by": started.get("by", "human"), "at": started["at"]}, **seen)
+    head = git(["rev-parse", "HEAD"], repo["feature_worktree"], check=False) if os.path.isdir(repo["feature_worktree"]) else None
+    if head and head != started["head_sha"]:
+        return waits("review", "review", f"new commits since land round {started['round']}", **seen)
+    mode = mode_of(project)
+    if verdict == "CHANGES":
+        reason = fixable(conn, run_id, repo_name, project, paths["review_file"])
+        if reason:
+            return waits("decide", None, reason, **seen)
+        items = must_fix(paths["review_file"])
+        return waits("fix", "fix", f"{len(items)} Must fix item(s); fix {fixes_done(conn, run_id, repo_name) + 1} "
+                                   f"of {fixes_of(project)}", **seen)
+    applied = last_event(conn, run_id, "land.apply", repo_name, started["round"])
+    if mode == "off":
+        return waits("merge", None, f"the review passed; landing is off for project {project['name']}, "
+                                    "so a person merges the PR", **seen)
+    if applied and applied["action"] == "ready":
+        return waits("merge", None, "marked ready for review; a person merges the PR", **seen)
+    reasons = (applied or {}).get("reasons") or []
+    return waits("merge", "merge", "; ".join(reasons) or "the review passed", **seen)
+
+
+def save(conn, run_id, repo_name, text, by="human"):
+    by = connected.allow(conn, by, "review")
     runs.get(conn, run_id)
     started = last_start(conn, run_id, repo_name)
     path = round_paths(run_id, repo_name, started["round"])["review_file"]
     write_text(path, text if text.endswith("\n") else text + "\n")
     with db.tx(conn):
-        db.event(conn, "land.save", run_id, repo=repo_name, round=started["round"])
+        db.event(conn, "land.save", run_id, repo=repo_name, round=started["round"], by=by)
     return {"saved": path}
 
 
@@ -196,9 +279,10 @@ def blockers(project, mode, verdict, found, head):
     return reasons
 
 
-def apply(conn, run_id, repo_name, dry_run=False):
+def apply(conn, run_id, repo_name, dry_run=False, by="human"):
     from . import after
 
+    by = connected.check_author(by) if dry_run else connected.allow(conn, by, "merge")
     run = runs.get(conn, run_id)
     project = runs.current_project(run)
     repo = with_prs(conn, run_id, repo_name)[0]
@@ -229,10 +313,86 @@ def apply(conn, run_id, repo_name, dry_run=False):
                 reasons.append(f"land_pr of {host['adapter']}: {outcome['reason']}")
     with db.tx(conn):
         db.event(conn, "land.apply", run_id, repo=repo_name, round=started["round"], verdict=verdict, mode=mode,
-                 action=action, reasons=reasons, dry_run=dry_run)
+                 action=action, reasons=reasons, dry_run=dry_run, by=by)
     result = {"repo": repo_name, "url": repo["pr_url"], "mode": mode, "verdict": verdict, "action": action,
               "reasons": reasons, "round": started["round"], "review_file": paths["review_file"], "issues_done": [],
               "after": after.todo(project, run_id, repo_name) if action in ("merged", "would_merge") else []}
     if action == "merged":
         result["issues_done"] = runs.check_prs(conn, run_id, force=True)["issues_done"]
     return result
+
+
+def must_fix(path):
+    found, inside = [], False
+    for line in read_text(path).splitlines():
+        if line.startswith("## "):
+            inside = line.strip().lower() == "## must fix"
+        elif inside and line.lstrip().startswith("- "):
+            found.append(line.lstrip()[2:].strip())
+    return found
+
+
+def fixes_done(conn, run_id, repo_name):
+    return conn.execute(
+        "SELECT COUNT(*) FROM events WHERE run_id = ? AND kind = 'land.fix' AND json_extract(payload, '$.repo') = ?",
+        (run_id, repo_name),
+    ).fetchone()[0]
+
+
+def fixable(conn, run_id, repo_name, project, review_file):
+    """Why a CHANGES review cannot be fixed by the factory itself, or None when it can."""
+    items = must_fix(review_file)
+    human = [item for item in items if item.startswith("[human]")]
+    if human:
+        return f"the review has {len(human)} point(s) a person must decide first"
+    if not items:
+        return "the review says CHANGES but lists no Must fix item"
+    allowed, done = fixes_of(project), fixes_done(conn, run_id, repo_name)
+    if done >= allowed:
+        return f"the factory already fixed this PR {done} time(s), the most defaults.land_fixes allows ({allowed})"
+    return None
+
+
+def fix_job(conn, run_id, repo_name, job_id):
+    found = [job for job in jobs.job_rows(conn, run_id) if job["kind"] == "code" and job["repo"] == repo_name]
+    if job_id:
+        found = [job for job in found if job["id"] == job_id]
+        if not found:
+            raise FactoryError(f"run {run_id} has no code job {job_id} in repo {repo_name}")
+    found = [job for job in found if job["stage"] in ("done", "dropped")]
+    if not found:
+        raise FactoryError(f"repo {repo_name} of run {run_id} has no done code job to rework")
+    done = [job for job in found if job["stage"] == "done"]
+    return (done or found)[-1]
+
+
+def fix(conn, run_id, repo_name, job_id=None, by="human"):
+    by = connected.allow(conn, by, "fix")
+    run = runs.get(conn, run_id)
+    project = runs.current_project(run)
+    with_prs(conn, run_id, repo_name)
+    started = last_start(conn, run_id, repo_name)
+    review_file = round_paths(run_id, repo_name, started["round"])["review_file"]
+    verdict = verdict_of(review_file)
+    if verdict != "CHANGES":
+        raise FactoryError(f"land round {started['round']} of {repo_name} says {verdict}; land fix acts on CHANGES")
+    for (payload,) in conn.execute("SELECT payload FROM events WHERE run_id = ? AND kind = 'land.fix'", (run_id,)):
+        data = json.loads(payload)
+        if data.get("repo") == repo_name and data.get("round") == started["round"]:
+            raise FactoryError(f"land round {started['round']} of {repo_name} is already being fixed by job {data['job']}; "
+                               "land again once the run is done")
+    reason = fixable(conn, run_id, repo_name, project, review_file)
+    if reason:
+        raise FactoryError(f"{reason}; a person decides, then /factory rework")
+    job = fix_job(conn, run_id, repo_name, job_id)
+    items = "\n".join(f"- {item}" for item in must_fix(review_file))
+    note = (f"The review of the whole PR asks for changes before it lands (land round {started['round']}). "
+            f"Fix every Must fix item below, run the repo's full test suite, and commit. "
+            f"The whole review is in {review_file}.\n\n## Must fix\n\n{items}")
+    shown = jobs.rework(conn, f"{run_id}/{job['id']}", note)
+    number = fixes_done(conn, run_id, repo_name) + 1
+    with db.tx(conn):
+        db.event(conn, "land.fix", run_id, job["id"], repo=repo_name, round=started["round"], job=job["id"], fix=number,
+                 fixes=fixes_of(project), by=by)
+    return {"repo": repo_name, "round": started["round"], "job": job["id"], "fix": number, "fixes": fixes_of(project),
+            "review_file": review_file, "rework": shown}

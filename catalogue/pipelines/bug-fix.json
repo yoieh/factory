@@ -1,0 +1,10 @@
+{
+  "name": "bug-fix",
+  "description": "A bug fix in one repo: a failing test first, then the smallest fix, checked by behaviour.",
+  "kinds": ["code"],
+  "when": "The job fixes a bug that a test can show. Use code-change when no test can show the bug.",
+  "pipeline": [
+    {"step": "reproduce", "gates": ["review-code"]},
+    {"step": "fix", "gates": ["review-code", "verify"], "optional_gates": ["review-security", "review-arch", "approve"]}
+  ]
+}

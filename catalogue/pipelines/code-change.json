@@ -1,0 +1,9 @@
+{
+  "name": "code-change",
+  "description": "A change in one repo: build, then review.",
+  "kinds": ["code"],
+  "when": "Most code changes in one repo, such as a feature, an endpoint, a refactor or a small change.",
+  "pipeline": [
+    {"step": "build", "gates": ["review-code"], "optional_gates": ["review-security", "review-arch", "review-ux", "review-ui", "verify", "approve"]}
+  ]
+}

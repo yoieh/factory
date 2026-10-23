@@ -1,0 +1,15 @@
+{
+  "name": "local",
+  "slot": "tracker",
+  "version": 1,
+  "vendors": [],
+  "capabilities": {
+    "fetch_issue": {
+      "via": "core"
+    }
+  },
+  "settings": {},
+  "patterns": {
+    "key_pattern": "^[A-Z][A-Z0-9]{1,9}-[0-9]+$"
+  }
+}

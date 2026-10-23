@@ -1,0 +1,12 @@
+{
+  "name": "factory",
+  "description": "A one-plugin marketplace for the software factory.",
+  "owner": {"name": "factory"},
+  "plugins": [
+    {
+      "name": "factory",
+      "source": "./",
+      "description": "The /factory orchestrator skill, its five agents and the factory CLI."
+    }
+  ]
+}

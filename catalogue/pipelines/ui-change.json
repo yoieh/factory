@@ -1,0 +1,9 @@
+{
+  "name": "ui-change",
+  "description": "A user interface change: build, then code, UX and UI review, against the design when there is one.",
+  "kinds": ["code"],
+  "when": "The job changes screens, flows, forms or components a user sees, with or without a design.",
+  "pipeline": [
+    {"step": "build", "gates": ["review-code", "review-ux", "review-ui"], "optional_gates": ["review-security", "review-arch", "verify", "approve"]}
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "shop",
+  "key": "SHOP",
+  "description": "Web shop: the orders API and the customer web app",
+  "repos": [
+    {"name": "api", "path": "~/src/shop/api", "remote": "git@github.com:example/shop-api.git",
+     "default_branch": "main", "role": "service: orders and payments API", "test": "make test", "setup": "make deps"},
+    {"name": "web", "path": "~/src/shop/web", "remote": "git@github.com:example/shop-web.git",
+     "default_branch": "main", "role": "frontend: customer web app", "test": "npm test", "setup": "npm ci"}
+  ],
+  "integrations": {
+    "tracker": {"adapter": "github-issues", "repository": "example/shop-api", "write": false},
+    "code_host": {"adapter": "github", "draft": true, "reviewers": ["example/shop-reviewers"]}
+  },
+  "knowledge": {
+    "label": "shop docs",
+    "read_first": ["~/src/shop/api/docs/overview.md"],
+    "per_repo": ["~/src/shop/{repo}/docs/README.md"],
+    "architecture": ["~/src/shop/api/docs/architecture.md"]
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "name": "figma",
+  "slot": "design",
+  "version": 1,
+  "vendors": ["figma"],
+  "capabilities": {
+    "fetch_design": {
+      "via": "mcp",
+      "requires": {
+        "mcp": [
+          "mcp__*[Ff]igma*__get_metadata",
+          "mcp__*[Ff]igma*__get_screenshot",
+          "mcp__*[Ff]igma*__get_design_context"
+        ],
+        "bin": [
+          "curl"
+        ]
+      }
+    }
+  },
+  "settings": {
+    "max_frames": {
+      "type": "int",
+      "default": 8
+    },
+    "max_dimension": {
+      "type": "int",
+      "default": 1600
+    }
+  },
+  "patterns": {
+    "design_url": "https://(?:www\\.)?figma\\.com/(?:file|design|proto|board|slides|make)/[0-9A-Za-z]{22,128}(?:[/?][^\\s\"'<>)\\]]*[^\\s\"'<>)\\].,;:!?])?",
+    "scrub": [
+      "https?://(?:www\\.|mcp\\.)?figma\\.com/api/mcp/asset/[^\\s\"'`<>)\\]]*",
+      "https?://(?:localhost|127\\.0\\.0\\.1):3845/assets/[^\\s\"'`<>)\\]]*",
+      "https?://s3-alpha(?:-sig)?\\.figma\\.com/[^\\s\"'`<>)\\]]*",
+      "https?://[\\w.-]*figma[\\w.-]*\\.amazonaws\\.com/[^\\s\"'`<>)\\]]*",
+      "https?://[^\\s\"'`<>)\\]]*[?&](?:X-Amz-Signature|X-Amz-Credential|Signature|Expires)=[^\\s\"'`<>)\\]]*"
+    ]
+  }
+}

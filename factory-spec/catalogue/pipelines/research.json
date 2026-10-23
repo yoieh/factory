@@ -1,0 +1,9 @@
+{
+  "name": "research",
+  "description": "Questions answered with graded evidence in out/findings.md. No code changes.",
+  "kinds": ["files"],
+  "when": "The job must find something out before or instead of building, such as how a part works, why it fails or what an option would cost.",
+  "pipeline": [
+    {"step": "research", "gates": ["review-findings"], "optional_gates": ["approve"]}
+  ]
+}

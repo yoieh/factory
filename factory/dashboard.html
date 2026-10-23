@@ -1,0 +1,1204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>factory</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f6f6f3;
+  --panel: #ffffff;
+  --sunk: #efeee9;
+  --text: #1f1f1c;
+  --muted: #6d6c66;
+  --line: #e2e0d9;
+  --focus: #4a6fa5;
+  --pass: #2e7d4f;
+  --pass-bg: #e3f1e8;
+  --changes: #b4432f;
+  --changes-bg: #f7e4df;
+  --pending: #8f8e88;
+  --pending-bg: #ecebe6;
+  --wait: #a87d12;
+  --wait-bg: #f6edd3;
+  --run: #4a6fa5;
+  --run-bg: #e3eaf4;
+  --radius: 8px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #17181a;
+  --panel: #1f2023;
+  --sunk: #26282c;
+  --text: #e6e5e1;
+  --muted: #9a9993;
+  --line: #34363b;
+  --focus: #7f9fd1;
+  --pass: #6cc28f;
+  --pass-bg: #1f3a2b;
+  --changes: #e58a76;
+  --changes-bg: #42261f;
+  --pending: #8a8a86;
+  --pending-bg: #2c2d31;
+  --wait: #d9b45a;
+  --wait-bg: #3d3420;
+  --run: #8fb0e0;
+  --run-bg: #24324a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #17181a;
+    --panel: #1f2023;
+    --sunk: #26282c;
+    --text: #e6e5e1;
+    --muted: #9a9993;
+    --line: #34363b;
+    --focus: #7f9fd1;
+    --pass: #6cc28f;
+    --pass-bg: #1f3a2b;
+    --changes: #e58a76;
+    --changes-bg: #42261f;
+    --pending: #8a8a86;
+    --pending-bg: #2c2d31;
+    --wait: #d9b45a;
+    --wait-bg: #3d3420;
+    --run: #8fb0e0;
+    --run-bg: #24324a;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.5 var(--sans); }
+a { color: inherit; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 2px; }
+a:hover { text-decoration-color: var(--text); }
+button, select, input, textarea { font: inherit; color: inherit; }
+button { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+button:hover { border-color: var(--muted); }
+button.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+button:disabled { opacity: .5; cursor: default; }
+select, input[type="text"], input[type="search"], textarea { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; }
+textarea { width: 100%; resize: vertical; min-height: 80px; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+code, pre { font-family: var(--mono); font-size: 12.5px; }
+pre { background: var(--sunk); padding: 10px 12px; border-radius: 6px; overflow: auto; }
+code { background: var(--sunk); padding: 1px 4px; border-radius: 4px; }
+pre code { background: none; padding: 0; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: 12px; }
+h1 { font-size: 20px; margin: 0 0 4px; }
+h2 { font-size: 16px; margin: 18px 0 8px; }
+h3 { font-size: 14px; margin: 14px 0 6px; }
+details > summary { cursor: pointer; color: var(--muted); }
+blockquote { margin: 8px 0; padding: 2px 12px; border-left: 3px solid var(--line); color: var(--muted); }
+#app { display: grid; grid-template-columns: 270px 1fr; height: 100%; }
+#side { border-right: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; min-height: 0; }
+#side .top { padding: 14px 14px 8px; display: flex; flex-direction: column; gap: 8px; }
+#side .brand { display: flex; justify-content: space-between; align-items: baseline; }
+#side .brand b { font-size: 16px; }
+#side nav a { display: flex; justify-content: space-between; padding: 6px 14px; text-decoration: none; }
+#side nav a.on, #runs a.on { background: var(--sunk); font-weight: 600; }
+#side .runs-head { padding: 10px 14px 6px; display: flex; gap: 6px; border-top: 1px solid var(--line); margin-top: 6px; }
+#side .runs-head input { flex: 1; min-width: 0; }
+#runs { list-style: none; margin: 0; padding: 0; overflow: auto; flex: 1; }
+#runs a { display: block; padding: 7px 14px; text-decoration: none; border-bottom: 1px solid var(--line); }
+#runs .feature { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#runs .meta { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 12px; }
+#side .foot { padding: 10px 14px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 12px; }
+#main { overflow: auto; min-width: 0; }
+.page { padding: 20px 24px 60px; max-width: 1400px; }
+.split { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; }
+.rail { display: flex; flex-direction: column; gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+.card h3:first-child, .card h2:first-child { margin-top: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.grow { flex: 1; }
+.count { background: var(--sunk); border-radius: 10px; padding: 0 7px; font-size: 12px; min-width: 20px; text-align: center; }
+.count.hot { background: var(--wait-bg); color: var(--wait); font-weight: 600; }
+.pill { display: inline-block; border-radius: 10px; padding: 0 8px; font-size: 12px; background: var(--pending-bg); color: var(--pending); white-space: nowrap; }
+.pill.pass, .pill.done, .pill.passed, .pill.MERGED, .pill.available, .pill.answered, .pill.resolved, .pill.accepted { background: var(--pass-bg); color: var(--pass); }
+.pill.changes, .pill.CHANGES, .pill.failed, .pill.capped, .pill.missing, .pill.DECLINED, .pill.rejected, .pill.closed, .pill.dropped { background: var(--changes-bg); color: var(--changes); }
+.pill.wait, .pill.open, .pill.clarify, .pill.confirm, .pill.QUESTION, .pill.partial, .pill.check_in_session, .pill.ready { background: var(--wait-bg); color: var(--wait); }
+.pill.running, .pill.produce, .pill.gate, .pill.planning, .pill.finishing, .pill.OPEN, .pill.merging, .pill.delivering, .pill.in_progress, .pill.in_review { background: var(--run-bg); color: var(--run); }
+.chips { display: flex; gap: 6px; overflow: auto; padding-bottom: 6px; margin-bottom: 12px; }
+.chip { border: 1px solid var(--line); background: var(--panel); border-radius: 16px; padding: 4px 12px; white-space: nowrap; cursor: pointer; }
+.chip.on { border-color: var(--text); font-weight: 600; }
+.options { display: grid; gap: 8px; margin: 10px 0; }
+.option { border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; cursor: pointer; background: var(--panel); text-align: left; }
+.option.recommended { border-color: var(--pass); box-shadow: inset 3px 0 0 var(--pass); }
+.option b { margin-right: 6px; }
+.thread { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 8px; }
+.message { margin: 6px 0; }
+.message .who { color: var(--muted); font-size: 12px; }
+.answer { position: sticky; bottom: 0; background: var(--panel); padding-top: 10px; }
+.tabs { display: flex; gap: 4px; margin: 12px 0; }
+.tabs button.on { background: var(--sunk); font-weight: 600; }
+.strip { display: flex; gap: 8px; align-items: center; background: var(--wait-bg); color: var(--wait); border-radius: 6px; padding: 6px 10px; margin: 6px 0; }
+.strip a { color: inherit; }
+.phases { display: flex; flex-direction: column; gap: 6px; }
+.phase { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); padding: 8px 12px; }
+.phase.sel { outline: 2px solid var(--focus); }
+.phase .head { display: flex; justify-content: space-between; align-items: center; }
+.phase.done .head b { color: var(--muted); }
+.lane { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-top: 1px dashed var(--line); }
+.lane:first-child { border-top: 0; }
+.lane.sel .lane-name { font-weight: 700; }
+.lane-name { width: 170px; flex: none; }
+.groups { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+.group { border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 10px; min-width: 120px; cursor: pointer; background: var(--panel); position: relative; }
+.group.current { border-color: var(--run); }
+.group.sel { outline: 2px solid var(--focus); }
+.group .token { position: absolute; top: -7px; right: -7px; width: 14px; height: 14px; border-radius: 50%; background: var(--run); }
+.group .ask { position: absolute; top: -9px; right: 10px; background: var(--wait); color: var(--panel); border-radius: 50%; width: 18px; height: 18px; font-size: 12px; text-align: center; line-height: 18px; text-decoration: none; font-weight: 700; }
+.gates { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.gatechip { font-size: 11px; border-radius: 8px; padding: 0 6px; background: var(--pending-bg); color: var(--pending); }
+.gatechip.PASS { background: var(--pass-bg); color: var(--pass); }
+.gatechip.CHANGES { background: var(--changes-bg); color: var(--changes); }
+.gatechip.QUESTION { background: var(--wait-bg); color: var(--wait); }
+.arrow { color: var(--muted); align-self: center; }
+.timeline { position: relative; overflow-x: auto; }
+.tl-row { display: flex; align-items: center; height: 26px; }
+.tl-name { width: 150px; flex: none; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-track { position: relative; height: 18px; flex: 1; min-width: 0; }
+.tl-bar { position: absolute; top: 3px; height: 12px; border-radius: 3px; background: var(--run-bg); border: 1px solid var(--run); }
+.tl-bar.PASS { background: var(--pass-bg); border-color: var(--pass); }
+.tl-bar.CHANGES { background: var(--changes-bg); border-color: var(--changes); }
+.tl-bar.live { border-style: dashed; }
+.tl-wait { position: absolute; top: 8px; height: 2px; background: var(--wait); }
+.tl-mark { position: absolute; top: 1px; width: 2px; height: 16px; background: var(--text); }
+.tl-gap { position: absolute; top: 0; height: 18px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Cpath d='M-1 7L7 -1' stroke='%23888' stroke-opacity='.55' stroke-width='1.5'/%3E%3C/svg%3E"); }
+.tl-gaplabel { position: absolute; top: -14px; font-size: 10px; color: var(--muted); white-space: nowrap; }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+ul.plain { list-style: none; margin: 0; padding: 0; }
+ul.plain li { padding: 3px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+ul.plain li:last-child { border-bottom: 0; }
+.md > :first-child { margin-top: 0; }
+.md table { margin: 8px 0; }
+.md img { max-width: 100%; }
+.modal { position: fixed; inset: 0; background: rgba(0, 0, 0, .35); display: flex; align-items: center; justify-content: center; z-index: 10; }
+.modal .card { width: min(900px, 92vw); max-height: 86vh; overflow: auto; }
+#toast { position: fixed; bottom: 16px; right: 16px; background: var(--changes-bg); color: var(--changes); border: 1px solid var(--changes); border-radius: 6px; padding: 8px 12px; display: none; max-width: 460px; z-index: 20; }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 14px; }
+.list-row { cursor: pointer; }
+.list-row:hover td { background: var(--sunk); }
+.empty { padding: 30px; text-align: center; color: var(--muted); }
+.copy { font-family: var(--mono); background: var(--sunk); padding: 4px 8px; border-radius: 6px; }
+@media (max-width: 900px) {
+  #app { grid-template-columns: 1fr; }
+  #side { display: none; }
+  .split { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="side">
+    <div class="top">
+      <div class="brand"><b>factory</b><span id="version" class="muted small"></span></div>
+      <select id="project" aria-label="Project"></select>
+    </div>
+    <nav id="nav"></nav>
+    <div class="runs-head">
+      <input id="run-search" type="search" placeholder="Issue, repo or feature" aria-label="Search runs">
+      <select id="run-filter" aria-label="Which runs">
+        <option value="active">Active</option>
+        <option value="archived">Archived</option>
+        <option value="all">All</option>
+      </select>
+    </div>
+    <ul id="runs"></ul>
+    <div class="foot"><span id="prices"></span><button id="theme" title="Theme">Theme: system</button></div>
+  </aside>
+  <main id="main"></main>
+</div>
+<div id="toast" role="alert"></div>
+<script>
+"use strict";
+const state = {
+  project: localStorage.getItem("factory-project") || "",
+  runFilter: localStorage.getItem("factory-run-filter") || "active",
+  search: "",
+  theme: localStorage.getItem("factory-theme") || "system",
+  drafts: {},
+  runView: localStorage.getItem("factory-run-view") || "loop",
+  issueFilters: { status: "", type: "", label: "", q: "" },
+  improvementFilters: { status: "open", target: "" },
+  selection: { phase: 3, job: 0, group: 0, detail: false },
+  cache: {},
+  rendered: "",
+  busy: false,
+  timer: null,
+};
+const PHASES = ["Intake", "Planner", "Confirm", "Jobs", "Finish", "Retrospective"];
+const OPTION = /^\s*[-*]\s+\*\*([A-Z])(?:\s*\(([^)]*)\))?\s*:?\s*\*\*\s*:?\s*(.*)$/;
+
+function el(tag, attrs, ...children) {
+  const node = document.createElement(tag);
+  for (const [key, value] of Object.entries(attrs || {})) {
+    if (value === null || value === undefined || value === false) continue;
+    if (key === "class") node.className = value;
+    else if (key === "text") node.textContent = value;
+    else if (key.startsWith("on")) node.addEventListener(key.slice(2), value);
+    else if (key === "href") node.setAttribute("href", safeHref(value));
+    else node.setAttribute(key, value === true ? "" : value);
+  }
+  for (const child of children.flat()) {
+    if (child === null || child === undefined || child === false) continue;
+    node.append(child instanceof Node ? child : document.createTextNode(String(child)));
+  }
+  return node;
+}
+
+function safeHref(value) {
+  const text = String(value);
+  if (text.startsWith("#")) return text;
+  if (/^https?:\/\//i.test(text)) return text;
+  return "#";
+}
+
+function external(url, label) {
+  return el("a", { href: url, target: "_blank", rel: "noopener noreferrer" }, label || url);
+}
+
+function pill(value, label) {
+  return el("span", { class: `pill ${value || ""}` }, label || value || "-");
+}
+
+function toast(message) {
+  const box = document.getElementById("toast");
+  box.textContent = message;
+  box.style.display = "block";
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => { box.style.display = "none"; }, 6000);
+}
+
+async function api(path) {
+  const response = await fetch(path, { headers: { Accept: "application/json" } });
+  const data = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+  if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+  return data;
+}
+
+async function post(path, body) {
+  const response = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const data = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+  if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+  return data;
+}
+
+function query(params) {
+  const parts = Object.entries(params).filter(([, value]) => value !== "" && value !== null && value !== undefined)
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
+  return parts.length ? `?${parts.join("&")}` : "";
+}
+
+function inline(text) {
+  const out = [];
+  const pattern = /(`[^`]+`)|(\*\*[^*]+\*\*)|(\*[^*\s][^*]*\*)|(_[^_\s][^_]*_)|(\[[^\]]+\]\([^)\s]+\))/g;
+  let last = 0;
+  let match;
+  while ((match = pattern.exec(text))) {
+    if (match.index > last) out.push(document.createTextNode(text.slice(last, match.index)));
+    const token = match[0];
+    if (match[1]) out.push(el("code", {}, token.slice(1, -1)));
+    else if (match[2]) out.push(el("strong", {}, inline(token.slice(2, -2))));
+    else if (match[3] || match[4]) out.push(el("em", {}, inline(token.slice(1, -1))));
+    else {
+      const link = /^\[([^\]]+)\]\(([^)\s]+)\)$/.exec(token);
+      const href = link[2];
+      out.push(/^https?:\/\//i.test(href) ? external(href, link[1]) : href.startsWith("#") ? el("a", { href }, link[1]) : document.createTextNode(link[1]));
+    }
+    last = match.index + token.length;
+  }
+  if (last < text.length) out.push(document.createTextNode(text.slice(last)));
+  return out;
+}
+
+function md(text) {
+  const root = el("div", { class: "md" });
+  const lines = String(text || "").replace(/\r\n?/g, "\n").split("\n");
+  const stack = [root];
+  let index = 0;
+  const target = () => stack[stack.length - 1];
+  while (index < lines.length) {
+    const line = lines[index];
+    const trimmed = line.trim();
+    if (/^<details>\s*$/i.test(trimmed) || /^<details>\s*<summary>/i.test(trimmed)) {
+      const details = el("details");
+      const summary = /<summary>(.*?)<\/summary>/i.exec(trimmed);
+      details.append(el("summary", {}, summary ? summary[1] : "Details"));
+      target().append(details);
+      stack.push(details);
+      index += 1;
+      continue;
+    }
+    if (/^<summary>(.*?)<\/summary>$/i.test(trimmed) && target().tagName === "DETAILS") {
+      target().querySelector("summary").textContent = /^<summary>(.*?)<\/summary>$/i.exec(trimmed)[1];
+      index += 1;
+      continue;
+    }
+    if (/^<\/details>$/i.test(trimmed)) {
+      if (stack.length > 1) stack.pop();
+      index += 1;
+      continue;
+    }
+    if (/^```/.test(trimmed)) {
+      const body = [];
+      index += 1;
+      while (index < lines.length && !/^```/.test(lines[index].trim())) { body.push(lines[index]); index += 1; }
+      index += 1;
+      target().append(el("pre", {}, el("code", {}, body.join("\n"))));
+      continue;
+    }
+    if (!trimmed) { index += 1; continue; }
+    const heading = /^(#{1,6})\s+(.*)$/.exec(trimmed);
+    if (heading) {
+      target().append(el(`h${Math.min(heading[1].length + 1, 6)}`, {}, inline(heading[2])));
+      index += 1;
+      continue;
+    }
+    if (/^\|.*\|$/.test(trimmed) && index + 1 < lines.length && /^\|[\s:|-]+\|$/.test(lines[index + 1].trim())) {
+      const cells = (row) => row.trim().slice(1, -1).split("|").map((cell) => cell.trim());
+      const table = el("table", {}, el("thead", {}, el("tr", {}, cells(trimmed).map((cell) => el("th", {}, inline(cell))))));
+      const body = el("tbody");
+      index += 2;
+      while (index < lines.length && /^\|.*\|$/.test(lines[index].trim())) {
+        body.append(el("tr", {}, cells(lines[index]).map((cell) => el("td", {}, inline(cell)))));
+        index += 1;
+      }
+      table.append(body);
+      target().append(table);
+      continue;
+    }
+    if (/^>\s?/.test(trimmed)) {
+      const body = [];
+      while (index < lines.length && /^>\s?/.test(lines[index].trim())) { body.push(lines[index].trim().replace(/^>\s?/, "")); index += 1; }
+      target().append(el("blockquote", {}, md(body.join("\n"))));
+      continue;
+    }
+    if (/^([-*]|\d+[.)])\s+/.test(trimmed)) {
+      const ordered = /^\d/.test(trimmed);
+      const list = el(ordered ? "ol" : "ul");
+      while (index < lines.length && /^\s*([-*]|\d+[.)])\s+/.test(lines[index])) {
+        const item = lines[index].replace(/^\s*([-*]|\d+[.)])\s+/, "");
+        const box = /^\[( |x|X)\]\s+(.*)$/.exec(item);
+        list.append(el("li", {}, box ? [el("input", { type: "checkbox", disabled: true, checked: box[1] !== " " }), " ", inline(box[2])] : inline(item)));
+        index += 1;
+        while (index < lines.length && /^\s{2,}\S/.test(lines[index]) && !/^\s*([-*]|\d+[.)])\s+/.test(lines[index])) {
+          list.lastChild.append(" ", ...inline(lines[index].trim()));
+          index += 1;
+        }
+      }
+      target().append(list);
+      continue;
+    }
+    const paragraph = [];
+    while (index < lines.length && lines[index].trim() && !/^(#{1,6}\s|```|>|<\/?details|\|.*\||\s*([-*]|\d+[.)])\s+)/.test(lines[index].trim())) {
+      paragraph.push(lines[index].trim());
+      index += 1;
+    }
+    if (!paragraph.length) { paragraph.push(trimmed); index += 1; }
+    target().append(el("p", {}, inline(paragraph.join(" "))));
+  }
+  return root;
+}
+
+function money(cost) {
+  if (!cost || !cost.tokens) return el("span", { class: "muted", title: "no tokens counted yet" }, "–");
+  const value = cost.cost === null || cost.cost === undefined ? "?" : `$${Number(cost.cost).toFixed(2)}`;
+  const tokens = cost.tokens >= 1e6 ? `${(cost.tokens / 1e6).toFixed(1)}M` : cost.tokens >= 1e3 ? `${Math.round(cost.tokens / 1e3)}k` : `${cost.tokens || 0}`;
+  const date = cost.prices_date || (state.cache.meta && state.cache.meta.prices.date);
+  return el("span", { title: `estimated with the prices of ${date}` }, `${cost.cost_complete === false ? "≥ " : ""}${value} · ${tokens} tokens · prices of ${date}`);
+}
+
+function shortTime(stamp) {
+  if (!stamp) return "";
+  const date = new Date(stamp);
+  return date.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function firstSentence(text) {
+  const match = /^(.+?[.!?])(\s|$)/.exec(text || "");
+  return match ? [match[1], (text || "").slice(match[1].length).trim()] : [text || "", ""];
+}
+
+function route() {
+  const hash = decodeURIComponent(location.hash.replace(/^#/, ""));
+  const parts = hash.split("/").filter(Boolean);
+  if (!parts.length || parts[0] === "inbox") return { page: "inbox", question: parts[1] && parts[1].startsWith("q") ? Number(parts[1].slice(1)) : null };
+  if (parts[0] === "issues") return { page: "issues", key: parts[1] || null };
+  if (parts[0] === "projects") return { page: "projects", name: parts[1] || null };
+  if (parts[0] === "improvements") return { page: "improvements" };
+  const run = parts[0];
+  let job = null;
+  let questionId = null;
+  for (const part of parts.slice(1)) {
+    if (/^q\d+$/.test(part)) questionId = Number(part.slice(1));
+    else job = part;
+  }
+  return { page: "run", run, job, question: questionId };
+}
+
+function go(hash) {
+  if (location.hash !== hash) location.hash = hash;
+  else render(true);
+}
+
+async function load(key, path) {
+  try {
+    state.cache[key] = await api(path);
+  } catch (error) {
+    state.cache[key] = { error: error.message };
+  }
+  return state.cache[key];
+}
+
+async function refresh() {
+  if (state.busy) return;
+  state.busy = true;
+  try {
+    const current = route();
+    const tasks = [
+      load("meta", "/api/meta"),
+      load("projects", "/api/projects"),
+      load("runs", `/api/runs${query({ project: state.project, archived: state.runFilter === "active" ? "" : state.runFilter === "archived" ? "1" : "all" })}`),
+      load("questions", `/api/questions${query({ project: state.project, status: "open,clarify" })}`),
+      load("improvementsOpen", `/api/improvements${query({ project: state.project, status: "open" })}`),
+    ];
+    if (current.page === "run") tasks.push(load(`run:${current.run}`, `/api/runs/${encodeURIComponent(current.run)}`));
+    if (current.page === "issues") {
+      tasks.push(load("issues", `/api/issues${query({ project: state.project, ...state.issueFilters })}`));
+      if (current.key) tasks.push(load(`issue:${current.key}`, `/api/issues/${current.key}`));
+    }
+    if (current.page === "projects" && current.name) tasks.push(load(`project:${current.name}`, `/api/projects/${current.name}`));
+    if (current.page === "improvements") tasks.push(load("improvements", `/api/improvements${query({ project: state.project, status: state.improvementFilters.status })}`));
+    await Promise.all(tasks);
+    renderSide();
+    render(false);
+  } finally {
+    state.busy = false;
+    clearTimeout(state.timer);
+    state.timer = setTimeout(refresh, document.hidden ? 30000 : 3000);
+  }
+}
+
+function renderSide() {
+  const meta = state.cache.meta || {};
+  document.getElementById("version").textContent = meta.version ? `v${meta.version}` : "";
+  document.getElementById("prices").textContent = meta.prices ? `prices of ${meta.prices.date}` : "";
+  const picker = document.getElementById("project");
+  const names = Array.isArray(state.cache.projects) ? state.cache.projects.map((project) => project.name) : [];
+  const wanted = JSON.stringify(names);
+  if (picker.dataset.names !== wanted) {
+    picker.replaceChildren(el("option", { value: "" }, "All projects"), ...names.map((name) => el("option", { value: name }, name)));
+    picker.dataset.names = wanted;
+  }
+  picker.value = state.project;
+  const questions = Array.isArray(state.cache.questions) ? state.cache.questions : [];
+  const waiting = questions.filter((item) => item.status === "open").length;
+  const review = Array.isArray(state.cache.improvementsOpen) ? state.cache.improvementsOpen.length : 0;
+  const current = route();
+  const nav = (hash, label, count, on) => el("a", { href: hash, class: on ? "on" : "" }, label, count !== null ? el("span", { class: `count${count ? " hot" : ""}` }, count) : null);
+  document.getElementById("nav").replaceChildren(
+    nav("#inbox", "Inbox", waiting, current.page === "inbox"),
+    nav("#issues", "Issues", null, current.page === "issues"),
+    nav("#projects", "Projects", null, current.page === "projects"),
+    nav("#improvements", "Improvements", review, current.page === "improvements"),
+  );
+  const list = document.getElementById("runs");
+  const runs = Array.isArray(state.cache.runs) ? state.cache.runs : [];
+  const needle = state.search.toLowerCase();
+  const shown = runs.filter((run) => !needle || [run.id, run.feature, run.issue_key, run.project, run.feature_branch].join(" ").toLowerCase().includes(needle));
+  list.replaceChildren(...(shown.length ? shown.map((run) => el("li", {},
+    el("a", { href: `#${run.id}`, class: current.page === "run" && current.run === run.id ? "on" : "" },
+      el("span", { class: "feature" }, run.feature),
+      el("span", { class: "meta" }, pill(run.status), run.issue_key || run.project, run.open_questions ? el("span", { class: "count hot" }, `${run.open_questions} ?`) : null, run.archived ? "archived" : null)))) :
+    [el("li", { class: "empty" }, "No runs")]));
+}
+
+function render(force) {
+  const current = route();
+  const main = document.getElementById("main");
+  const views = { inbox: inboxPage, run: runPage, issues: issuesPage, projects: projectsPage, improvements: improvementsPage };
+  const signature = JSON.stringify([current, state.cache[cacheKey(current)], current.page === "inbox" || current.page === "run" ? state.cache.questions : null, state.selection, state.runView, state.issueFilters, state.improvementFilters, state.project]);
+  if (!force && signature === state.rendered) return;
+  state.rendered = signature;
+  const active = document.activeElement;
+  const keep = active && active.dataset && active.dataset.keep ? { id: active.dataset.keep, start: active.selectionStart, end: active.selectionEnd } : null;
+  const scroll = main.scrollTop;
+  main.replaceChildren(el("div", { class: "page" }, views[current.page](current)));
+  main.scrollTop = scroll;
+  if (keep) {
+    const again = main.querySelector(`[data-keep="${CSS.escape(keep.id)}"]`);
+    if (again) {
+      again.focus();
+      if (typeof keep.start === "number" && again.setSelectionRange) again.setSelectionRange(keep.start, keep.end);
+    }
+  }
+}
+
+function cacheKey(current) {
+  if (current.page === "run") return `run:${current.run}`;
+  if (current.page === "issues") return current.key ? `issue:${current.key}` : "issues";
+  if (current.page === "projects") return current.name ? `project:${current.name}` : "projects";
+  if (current.page === "improvements") return "improvements";
+  return "questions";
+}
+
+function failed(data) {
+  return data && data.error ? el("div", { class: "card" }, el("b", {}, "Could not load: "), data.error) : null;
+}
+
+function questionParts(text) {
+  const lines = String(text || "").split("\n");
+  const first = lines.findIndex((line) => line.trim());
+  const head = first >= 0 ? lines[first].trim().replace(/^QUESTION:\s*/i, "") : "";
+  const rest = [];
+  const options = [];
+  for (const line of lines.slice(first + 1)) {
+    const match = OPTION.exec(line);
+    if (match) options.push({ letter: match[1], recommended: /recommended/i.test(match[2] || ""), text: match[3] });
+    else rest.push(line);
+  }
+  return { head, body: rest.join("\n").replace(/\*\*Options\*\*\s*\n/, ""), options };
+}
+
+function draftArea(id, placeholder) {
+  const area = el("textarea", { "data-keep": `answer-${id}`, placeholder, rows: 3, oninput: (event) => { state.drafts[id] = event.target.value; } });
+  area.value = state.drafts[id] || "";
+  return area;
+}
+
+function questionView(question, onDone) {
+  const parts = questionParts(question.text);
+  const plan = question.kind === "plan_confirm";
+  const card = el("div", { class: "card" });
+  const where = [question.run ? el("a", { href: `#${question.run.id}` }, question.run.feature) : null,
+    question.job_id ? el("a", { href: `#${question.run_id}/${question.job_id}` }, question.job_id) : null,
+    question.asked_by, pill(question.status)];
+  card.append(el("div", { class: "row muted small" }, where.filter(Boolean).flatMap((item, index) => index ? [" · ", item] : [item])));
+  card.append(el("h2", {}, plan ? "Approve the plan?" : parts.head || "Question"));
+  if (plan) {
+    card.append(el("p", { class: "muted" }, "Answer yes to build it, or say what to change."));
+    card.append(pipelinesTable(question.jobs || []));
+    card.append(el("p", {}, el("a", { href: "#", onclick: (event) => { event.preventDefault(); openFile(question.plan); } }, "Read plan.md")));
+  } else {
+    card.append(md(parts.body));
+    if (parts.options.length) {
+      card.append(el("div", { class: "options" }, parts.options.map((option) => el("button", {
+        class: `option${option.recommended ? " recommended" : ""}`,
+        onclick: () => {
+          const current = state.drafts[question.id] || "";
+          state.drafts[question.id] = /^[A-D](:|$)/.test(current) ? current.replace(/^[A-D]/, option.letter) : option.letter + (current ? `: ${current}` : "");
+          render(true);
+          const area = document.querySelector(`[data-keep="answer-${question.id}"]`);
+          if (area) area.focus();
+        },
+      }, el("b", {}, option.letter), option.recommended ? el("span", { class: "pill pass" }, "recommended") : null, " ", inline(option.text)))));
+    }
+  }
+  const thread = question.thread || [];
+  if (thread.length) {
+    const box = el("div", { class: "thread" });
+    const older = thread.slice(0, -1);
+    if (older.length) box.append(el("details", {}, el("summary", {}, `${older.length} earlier message${older.length > 1 ? "s" : ""}`), older.map(message)));
+    box.append(message(thread[thread.length - 1]));
+    card.append(box);
+  }
+  if (question.status === "open" || question.status === "clarify") {
+    const answerBox = el("div", { class: "answer" });
+    const area = draftArea(question.id, plan ? "What to change (or press Approve)" : "A letter, a letter with a note (B: keep the old field), or free text");
+    const send = async (kind, text) => {
+      const value = (text !== undefined ? text : area.value).trim();
+      if (!value) { toast("Write something first"); return; }
+      try {
+        await post(`/api/questions/${question.id}/${kind}`, { text: value });
+        delete state.drafts[question.id];
+        await refresh();
+        if (onDone) onDone();
+      } catch (error) { toast(error.message); }
+    };
+    area.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) { event.preventDefault(); send("answer"); }
+    });
+    answerBox.append(area, el("div", { class: "row", style: "margin-top:6px" },
+      plan ? el("button", { class: "primary", onclick: () => send("answer", "yes") }, "Approve") : null,
+      el("button", { class: plan ? "" : "primary", onclick: () => send("answer") }, plan ? "Send changes" : "Send answer"),
+      el("button", { onclick: () => send("clarify"), disabled: question.status !== "open", title: "Ask the agent a follow-up instead of answering" }, "Ask back"),
+      el("span", { class: "muted small" }, "Ctrl or Cmd + Enter sends"),
+      question.status === "clarify" ? el("span", { class: "pill clarify" }, "waiting for the agent's reply") : null));
+    card.append(answerBox);
+  }
+  return card;
+}
+
+function message(item) {
+  return el("div", { class: "message" }, el("div", { class: "who" }, `${item.kind} · ${item.author} · ${shortTime(item.at)}`), md(item.text));
+}
+
+function pipelinesTable(jobList) {
+  return el("table", {}, el("thead", {}, el("tr", {}, ["Job", "Kind", "Repo", "Title", "After", "Pipeline"].map((name) => el("th", {}, name)))),
+    el("tbody", {}, jobList.map((job) => el("tr", {},
+      el("td", {}, job.id), el("td", {}, job.kind), el("td", {}, job.repo || "–"), el("td", {}, job.title),
+      el("td", {}, (job.depends_on || []).join(", ") || "–"),
+      el("td", {}, job.groups.map((group) => `${group.step} [${group.gates.join(", ")}]`).join(" › "))))));
+}
+
+function inboxPage(current) {
+  const all = Array.isArray(state.cache.questions) ? state.cache.questions : [];
+  const error = failed(state.cache.questions);
+  if (error) return error;
+  const items = all.slice().sort((a, b) => (a.status === "open" ? 0 : 1) - (b.status === "open" ? 0 : 1) || a.id - b.id);
+  if (!items.length) {
+    const running = (Array.isArray(state.cache.runs) ? state.cache.runs : []).filter((run) => ["running", "planning", "finishing"].includes(run.status));
+    return el("div", {}, el("h1", {}, "Inbox"), el("div", { class: "empty" }, "Nothing waits for you."),
+      el("h2", {}, "Working now"), running.length ? el("ul", { class: "plain" }, running.map((run) => el("li", {}, el("a", { href: `#${run.id}` }, run.feature), " ", pill(run.status), el("span", { class: "muted small" }, ` ${run.jobs_done}/${run.jobs} jobs`)))) : el("p", { class: "muted" }, "No run is working."));
+  }
+  const selected = items.find((item) => item.id === current.question) || items[0];
+  const index = items.indexOf(selected);
+  const next = () => { const after = items[index + 1] || items[0]; go(`#inbox/q${after.id}`); };
+  const chips = el("div", { class: "chips", role: "tablist" }, items.map((item) => el("button", {
+    class: `chip${item === selected ? " on" : ""}`, role: "tab", onclick: () => go(`#inbox/q${item.id}`),
+  }, item.kind === "plan_confirm" ? "Plan" : `q${item.id}`, " · ", item.job_id || (item.run && item.run.issue_key) || item.run_id.slice(16), " ", pill(item.status))));
+  return el("div", {}, el("h1", {}, "Inbox"), chips, el("div", { class: "split" }, questionView(selected, next), jobRail(selected)));
+}
+
+function jobRail(question) {
+  const rail = el("div", { class: "rail" });
+  const job = question.job;
+  if (!job) {
+    rail.append(el("div", { class: "card" }, el("h3", {}, "Run"), el("dl", { class: "kv" },
+      el("dt", {}, "Feature"), el("dd", {}, question.run ? question.run.feature : question.run_id),
+      el("dt", {}, "Status"), el("dd", {}, pill(question.run && question.run.status)))));
+    return rail;
+  }
+  const group = job.groups.find((item) => item.position === job.group_pos) || job.groups[0];
+  const files = [];
+  if (question.path) files.push(question.path);
+  for (const verdict of (group && group.verdicts) || []) files.push(verdict.path);
+  rail.append(el("div", { class: "card" }, el("h3", {}, el("a", { href: `#${question.run_id}/${job.id}` }, job.id)), el("dl", { class: "kv" },
+    el("dt", {}, "Stage"), el("dd", {}, pill(job.stage)),
+    el("dt", {}, "Group"), el("dd", {}, group ? `${group.position}. ${group.step}` : "–"),
+    el("dt", {}, "Round"), el("dd", {}, group ? `${group.round} of ${group.max_round}` : "–"),
+    el("dt", {}, "Repo"), el("dd", {}, job.repo || "files job"))),
+    el("div", { class: "card" }, el("h3", {}, "Files"), fileList(files)));
+  return rail;
+}
+
+function fileList(paths) {
+  const unique = [...new Set(paths.filter(Boolean))];
+  if (!unique.length) return el("p", { class: "muted" }, "No files yet");
+  return el("ul", { class: "plain" }, unique.map((path) => el("li", {}, el("a", { href: "#", onclick: (event) => { event.preventDefault(); openFile(path); } }, path.replace(/^.*\/(runs|improve)\/[^/]+\//, "")))));
+}
+
+async function openFile(path) {
+  try {
+    const image = /\.png$/i.test(path);
+    const content = image ? el("img", { src: `/api/image${query({ path })}`, alt: path }) : (() => {
+      const box = el("div", {}, el("p", { class: "muted" }, "Loading…"));
+      api(`/api/file${query({ path })}`).then((data) => box.replaceChildren(/\.json$/i.test(path) ? el("pre", {}, data.text) : md(data.text))).catch((error) => box.replaceChildren(el("p", {}, error.message)));
+      return box;
+    })();
+    const close = () => modal.remove();
+    const modal = el("div", { class: "modal", onclick: (event) => { if (event.target === modal) close(); } },
+      el("div", { class: "card" }, el("div", { class: "row" }, el("b", { class: "grow" }, path.split("/").slice(-3).join("/")), el("button", { onclick: close }, "Close")), content));
+    modal.addEventListener("keydown", (event) => { if (event.key === "Escape") close(); });
+    document.body.append(modal);
+    modal.querySelector("button").focus();
+  } catch (error) { toast(error.message); }
+}
+
+function runPage(current) {
+  const run = state.cache[`run:${current.run}`];
+  if (!run) return el("p", { class: "muted" }, "Loading…");
+  if (run.error) return failed(run);
+  const [sentence, rest] = firstSentence(run.feature);
+  const open = (run.questions || []).filter((item) => item.status === "open" || item.status === "clarify");
+  const header = el("div", {},
+    el("div", { class: "row muted small" }, run.project, " · ", run.id, run.issue_key ? [" · ", el("a", { href: `#issues/${run.issue_key}` }, run.issue_key)] : null, " · ", run.feature_branch),
+    el("div", { class: "row" }, el("h1", { class: "grow" }, sentence), pill(run.status), run.no_pr ? pill("", "no PR") : null,
+      ["done", "failed"].includes(run.status) || run.archived_at ? el("button", { onclick: async () => {
+        try { await post(`/api/runs/${run.id}/archive`, { archived: !run.archived_at }); await refresh(); } catch (error) { toast(error.message); }
+      } }, run.archived_at ? "Unarchive" : "Archive") : null),
+    rest ? el("details", {}, el("summary", {}, "More"), el("p", {}, rest)) : null,
+    open.map((item) => el("div", { class: "strip" }, el("b", {}, item.status === "clarify" ? "Follow-up" : "Waiting"),
+      el("a", { href: `#${run.id}/${item.job_id ? `${item.job_id}/` : ""}q${item.id}`, class: "grow" }, questionParts(item.text).head || item.text.split("\n")[0]),
+      item.job_id || "plan")));
+  const shownQuestion = current.question ? (state.cache.questions || []).find((item) => item.id === current.question) || (run.questions || []).find((item) => item.id === current.question) : null;
+  const tabs = el("div", { class: "tabs" }, [["loop", "Loop graph"], ["list", "List"], ["timeline", "Timeline"]].map(([key, label]) =>
+    el("button", { class: state.runView === key ? "on" : "", onclick: () => { state.runView = key; localStorage.setItem("factory-run-view", key); render(true); } }, label)));
+  const body = state.runView === "list" ? listView(run) : state.runView === "timeline" ? timelineView(run) : loopView(run, current);
+  const questionBlock = !shownQuestion ? null : ["open", "clarify"].includes(shownQuestion.status)
+    ? questionView(Object.assign({ run: { id: run.id, feature: run.feature, status: run.status } }, shownQuestion), () => go(`#${run.id}`))
+    : el("details", { class: "card" }, el("summary", {}, `Question q${shownQuestion.id} is ${shownQuestion.status}: `, questionParts(shownQuestion.text).head || shownQuestion.text.split("\n")[0],
+      shownQuestion.answer ? ` → ${shownQuestion.answer}` : ""), questionView(Object.assign({ run: { id: run.id, feature: run.feature, status: run.status } }, shownQuestion)));
+  return el("div", {}, header, questionBlock,
+    el("div", { class: "split" }, el("div", {}, tabs, body), runRail(run, current)));
+}
+
+function approves(answer) {
+  return ["yes", "y", "approve", "approved", "ok", "okay"].includes((answer || "").trim().toLowerCase().replace(/[.!]+$/, ""));
+}
+
+function phaseStates(run) {
+  const statuses = (run.history || []).map((entry) => entry.to);
+  const planQuestion = (run.questions || []).filter((item) => item.kind === "plan_confirm").pop();
+  const planAnswered = run.status === "confirm" && planQuestion && ["answered", "resolved"].includes(planQuestion.status);
+  const hasJobs = (run.jobs || []).length > 0;
+  const retro = (run.files || []).some((file) => file.name === "retro.md");
+  const status = run.status;
+  const after = (wanted) => statuses.includes(wanted);
+  const states = ["done", "", "", "", "", ""];
+  states[1] = planAnswered && !approves(planQuestion.answer) ? "running" : hasJobs ? "done" : status === "planning" ? "running" : "pending";
+  states[2] = !run.confirm_plan ? (hasJobs && status !== "planning" ? "done" : "pending")
+    : planAnswered ? (approves(planQuestion.answer) ? "done" : "pending") : status === "confirm" ? "wait" : after("running") ? "done" : "pending";
+  states[3] = status === "running" ? "running" : ["finishing", "done"].includes(status) ? "done" : "pending";
+  states[4] = status === "finishing" ? "running" : status === "done" ? "done" : "pending";
+  states[5] = retro ? "done" : ["done", "failed"].includes(status) ? "running" : "pending";
+  if (status === "failed") {
+    const last = states.findIndex((value) => value === "pending");
+    states[Math.max(1, last === -1 ? 5 : last)] = "failed";
+  }
+  return states;
+}
+
+function latestVerdicts(group) {
+  const found = {};
+  for (const verdict of group.verdicts || []) {
+    if (verdict.round === group.round) found[verdict.gate] = verdict.verdict;
+  }
+  return found;
+}
+
+function loopView(run, current) {
+  const states = phaseStates(run);
+  const jobList = run.jobs || [];
+  const selection = state.selection;
+  if (current.job) {
+    const position = jobList.findIndex((job) => job.id === current.job);
+    if (position >= 0 && position !== selection.job && !selection.touched) selection.job = position;
+  }
+  const questionsByJob = {};
+  for (const item of run.questions || []) {
+    if ((item.status === "open" || item.status === "clarify") && item.job_id) questionsByJob[item.job_id] = item;
+  }
+  const lanes = el("div", {}, jobList.length ? jobList.map((job, jobIndex) => {
+    const groups = [];
+    job.groups.forEach((group, groupIndex) => {
+      if (groupIndex) groups.push(el("span", { class: "arrow" }, "›"));
+      const verdicts = latestVerdicts(group);
+      const currentGroup = job.stage === "running" && group.position === job.group_pos;
+      const asking = currentGroup && questionsByJob[job.id];
+      groups.push(el("div", {
+        class: `group${currentGroup ? " current" : ""}${selection.detail && selection.job === jobIndex && selection.group === groupIndex ? " sel" : ""}`,
+        onclick: () => { Object.assign(selection, { phase: 3, job: jobIndex, group: groupIndex, detail: true, touched: true }); render(true); },
+      }, currentGroup ? el("span", { class: "token", title: "the job is here" }) : null,
+        asking ? el("a", { class: "ask", href: `#${run.id}/${job.id}/q${asking.id}`, title: "open its question", onclick: (event) => event.stopPropagation() }, "?") : null,
+        el("div", { class: "row" }, el("b", {}, group.step), el("span", { class: "muted small" }, group.round ? `r${group.round}/${group.max_round}` : "")),
+        el("div", { class: "gates" }, group.gates.map((gate) => el("span", { class: `gatechip ${verdicts[gate] || ""}` }, gate))),
+        el("div", { class: "small" }, pill(group.phase))));
+    });
+    return el("div", { class: `lane${selection.job === jobIndex ? " sel" : ""}` },
+      el("div", { class: "lane-name" }, el("a", { href: `#${run.id}/${job.id}` }, job.id), el("div", { class: "muted small" }, job.repo || "files"), pill(job.stage)),
+      el("div", { class: "groups" }, groups));
+  }) : el("p", { class: "muted" }, "No jobs yet: the planner has not loaded a plan."));
+  const phases = el("div", { class: "phases", tabindex: 0, "data-keep": "loop", onkeydown: (event) => loopKeys(event, run) },
+    PHASES.map((name, index) => el("div", { class: `phase ${states[index]}${selection.phase === index ? " sel" : ""}`, onclick: () => { selection.phase = index; render(true); } },
+      el("div", { class: "head" }, el("b", {}, name), pill(states[index] || "pending")),
+      index === 3 ? lanes : null)));
+  return el("div", {}, phases, selection.detail ? stepDetail(run, jobList[selection.job], selection.group) : null,
+    el("p", { class: "muted small" }, "Keys: up and down walk the phases, j and k the jobs, left and right the groups, Enter opens a group, Esc closes."));
+}
+
+function loopKeys(event, run) {
+  const selection = state.selection;
+  const jobList = run.jobs || [];
+  const job = jobList[selection.job];
+  const handled = { ArrowUp: () => { selection.phase = Math.max(0, selection.phase - 1); },
+    ArrowDown: () => { selection.phase = Math.min(PHASES.length - 1, selection.phase + 1); },
+    j: () => { selection.job = Math.min(jobList.length - 1, selection.job + 1); selection.group = 0; selection.phase = 3; },
+    k: () => { selection.job = Math.max(0, selection.job - 1); selection.group = 0; selection.phase = 3; },
+    ArrowLeft: () => { selection.group = Math.max(0, selection.group - 1); },
+    ArrowRight: () => { selection.group = Math.min(job ? job.groups.length - 1 : 0, selection.group + 1); },
+    Enter: () => { selection.detail = true; },
+    Escape: () => { selection.detail = false; } }[event.key];
+  if (!handled) return;
+  event.preventDefault();
+  selection.touched = true;
+  handled();
+  render(true);
+}
+
+function stepDetail(run, job, groupIndex) {
+  if (!job) return null;
+  const group = job.groups[groupIndex];
+  if (!group) return null;
+  const steps = run.steps || {};
+  const step = (name) => steps[name] || { name };
+  const describe = (name) => {
+    const entry = step(name);
+    return el("div", { class: "card" }, el("div", { class: "row" }, el("b", { class: "grow" }, name), pill("", entry.role || "")),
+      el("p", {}, entry.summary || ""),
+      el("dl", { class: "kv small" }, el("dt", {}, "Run by"), el("dd", {}, entry.agent || "–"), el("dt", {}, "Model"), el("dd", {}, entry.model || "the agent's own"),
+        el("dt", {}, "From"), el("dd", {}, entry.level || "–")),
+      entry.focus && entry.focus.length ? el("details", {}, el("summary", {}, "Focus"), el("ul", {}, entry.focus.map((item) => el("li", {}, inline(item))))) : null);
+  };
+  const rounds = {};
+  for (const verdict of group.verdicts || []) (rounds[verdict.round] = rounds[verdict.round] || []).push(verdict);
+  return el("div", { class: "card", style: "margin-top:12px" },
+    el("div", { class: "row" }, el("h3", { class: "grow" }, `${job.id} · group ${group.position}: ${group.step}`), el("button", { onclick: () => { state.selection.detail = false; render(true); } }, "Close")),
+    el("p", { class: "muted" }, `Phase ${group.phase}, round ${group.round} of ${group.max_round}${group.producer ? `, producer ${group.producer}` : ""}.`),
+    describe(group.step), group.gates.map(describe),
+    Object.keys(rounds).length ? el("table", {}, el("thead", {}, el("tr", {}, el("th", {}, "Round"), el("th", {}, "Verdicts"))),
+      el("tbody", {}, Object.entries(rounds).map(([round, list]) => el("tr", {}, el("td", {}, round),
+        el("td", {}, list.map((verdict) => el("a", { href: "#", onclick: (event) => { event.preventDefault(); openFile(verdict.path); } }, pill(verdict.verdict, `${verdict.gate}: ${verdict.verdict}`))))))))
+      : el("p", { class: "muted" }, "No verdicts yet."));
+}
+
+function listView(run) {
+  const jobList = run.jobs || [];
+  if (!jobList.length) return el("p", { class: "muted" }, "No jobs yet.");
+  return el("table", {}, el("thead", {}, el("tr", {}, ["Job", "Kind", "Repo", "Stage", "Group", "Round", "After"].map((name) => el("th", {}, name)))),
+    el("tbody", {}, jobList.map((job) => {
+      const group = job.groups.find((item) => item.position === job.group_pos);
+      return el("tr", { class: "list-row", onclick: () => go(`#${run.id}/${job.id}`) },
+        el("td", {}, el("b", {}, job.id), el("div", { class: "muted small" }, job.title)), el("td", {}, job.kind), el("td", {}, job.repo || "–"),
+        el("td", {}, pill(job.stage), job.conflict ? pill("changes", "conflict") : null),
+        el("td", {}, group ? `${group.position}. ${group.step} ` : "–", group ? pill(group.phase) : null),
+        el("td", {}, group ? `${group.round}/${group.max_round}` : "–"), el("td", {}, (job.depends_on || []).join(", ") || "–"));
+    })));
+}
+
+function timelineData(run) {
+  const events = run.events || [];
+  const now = Date.now();
+  const time = (stamp) => new Date(stamp).getTime();
+  const lanes = [];
+  const runLane = { name: "run", bars: [], marks: [], waits: [] };
+  const statusEvents = events.filter((event) => event.kind === "run.status");
+  const created = time(run.created_at);
+  const phaseOf = (status) => ({ planning: "planning", confirm: "confirm", finishing: "finish" })[status];
+  let cursor = { status: "planning", at: created };
+  for (const event of statusEvents) {
+    if (phaseOf(cursor.status)) runLane.bars.push({ start: cursor.at, end: time(event.at), label: phaseOf(cursor.status), kind: "" });
+    cursor = { status: event.payload.to, at: time(event.at) };
+  }
+  if (phaseOf(cursor.status)) runLane.bars.push({ start: cursor.at, end: now, label: phaseOf(cursor.status), kind: "", live: true });
+  for (const event of events.filter((item) => item.kind === "retro.load")) runLane.marks.push({ at: time(event.at), label: "retrospective" });
+  lanes.push(runLane);
+  for (const job of run.jobs || []) {
+    const lane = { name: job.id, bars: [], marks: [], waits: [] };
+    const own = events.filter((event) => event.job_id === job.id);
+    const groupsByPosition = Object.fromEntries(job.groups.map((group) => [group.position, group]));
+    let open = null;
+    for (const event of own) {
+      const at = time(event.at);
+      if (event.kind === "job.round" || (event.kind === "group.phase" && event.payload.to === "gate")) {
+        if (open) lane.bars.push(Object.assign(open, { end: at }));
+        const group = groupsByPosition[event.payload.group] || {};
+        if (event.kind === "job.round") open = { start: at, label: `${group.step || ""} r${event.payload.round}`, kind: "", group: event.payload.group, round: event.payload.round };
+        else {
+          const round = open ? open.round : group.round;
+          const verdicts = (group.verdicts || []).filter((item) => item.round === round).map((item) => item.verdict);
+          open = { start: at, label: `gates r${round}`, kind: verdicts.includes("CHANGES") ? "CHANGES" : verdicts.length ? "PASS" : "", gate: true, group: event.payload.group, round };
+        }
+      } else if (event.kind === "group.phase" && ["passed", "capped"].includes(event.payload.to) && open) {
+        lane.bars.push(Object.assign(open, { end: at }));
+        open = null;
+      } else if (event.kind === "job.stage" && ["merging", "delivering", "done"].includes(event.payload.to)) {
+        if (open) { lane.bars.push(Object.assign(open, { end: at })); open = null; }
+        lane.marks.push({ at, label: event.payload.to });
+      }
+    }
+    if (open) lane.bars.push(Object.assign(open, { end: now, live: true }));
+    for (const question of (run.questions || []).filter((item) => item.job_id === job.id)) {
+      const end = question.answered_at ? time(question.answered_at) : ["open", "clarify"].includes(question.status) ? now : time(question.asked_at);
+      lane.waits.push({ start: time(question.asked_at), end });
+    }
+    lanes.push(lane);
+  }
+  return lanes;
+}
+
+function timelineView(run) {
+  const lanes = timelineData(run);
+  const spans = lanes.flatMap((lane) => [...lane.bars, ...lane.waits, ...lane.marks.map((mark) => ({ start: mark.at, end: mark.at }))]);
+  if (!spans.length) return el("p", { class: "muted" }, "Nothing has happened yet.");
+  const sorted = spans.map((span) => [span.start, Math.max(span.end, span.start)]).sort((a, b) => a[0] - b[0]);
+  const blocks = [];
+  for (const [start, end] of sorted) {
+    const last = blocks[blocks.length - 1];
+    if (last && start <= last[1]) last[1] = Math.max(last[1], end);
+    else blocks.push([start, end]);
+  }
+  const busy = blocks.reduce((sum, [start, end]) => sum + Math.max(end - start, 1000), 0);
+  const width = 100;
+  const gapWidth = 4;
+  const threshold = Math.max(30 * 60 * 1000, busy / 8);
+  const gaps = [];
+  for (let index = 1; index < blocks.length; index += 1) {
+    if (blocks[index][0] - blocks[index - 1][1] > threshold) gaps.push([blocks[index - 1][1], blocks[index][0]]);
+  }
+  const first = blocks[0][0];
+  const last = blocks[blocks.length - 1][1];
+  const visible = Math.max(last - first - gaps.reduce((sum, [start, end]) => sum + end - start, 0), 1000);
+  const scale = (width - gaps.length * gapWidth) / visible;
+  const x = (at) => {
+    let offset = 0;
+    let cut = 0;
+    for (const [start, end] of gaps) {
+      if (at >= end) { offset += gapWidth; cut += end - start; }
+      else if (at > start) return (start - first - cut) * scale + offset + ((at - start) / (end - start)) * gapWidth;
+    }
+    return (at - first - cut) * scale + offset;
+  };
+  const length = (ms) => ms > 86400000 ? `${Math.round(ms / 86400000)} d` : ms > 3600000 ? `${Math.round(ms / 3600000)} h` : `${Math.round(ms / 60000)} min`;
+  const pct = (value) => `${Math.min(100, Math.max(0, value)).toFixed(3)}%`;
+  const rows = lanes.map((lane) => el("div", { class: "tl-row" }, el("div", { class: "tl-name", title: lane.name }, lane.name),
+    el("div", { class: "tl-track" },
+      gaps.map(([start]) => el("div", { class: "tl-gap", style: `left:${pct(x(start))};width:${pct(gapWidth)}` })),
+      lane.waits.map((wait) => el("div", { class: "tl-wait", title: "waiting for an answer", style: `left:${pct(x(wait.start))};width:max(2px, ${pct(x(wait.end) - x(wait.start))})` })),
+      lane.bars.map((bar) => el("div", { class: `tl-bar ${bar.kind}${bar.live ? " live" : ""}`, title: `${bar.label}: ${shortTime(bar.start)} – ${bar.live ? "now" : shortTime(bar.end)}`, style: `left:${pct(x(bar.start))};width:max(4px, ${pct(x(bar.end) - x(bar.start))})` })),
+      lane.marks.map((mark) => el("div", { class: "tl-mark", title: `${mark.label} ${shortTime(mark.at)}`, style: `left:${pct(x(mark.at))}` })))));
+  const labels = gaps.length ? el("div", { class: "tl-row" }, el("div", { class: "tl-name" }), el("div", { class: "tl-track" },
+    gaps.map(([start, end]) => el("span", { class: "tl-gaplabel", style: `left:${pct(x(start))}` }, length(end - start))))) : null;
+  return el("div", { class: "card timeline" }, labels, rows,
+    el("p", { class: "muted small" }, `From ${shortTime(first)} to ${shortTime(last)}. Green: gates passed, red: changes asked, dashed: still running, yellow: waiting for an answer, hatched: a long idle stretch.`));
+}
+
+function runRail(run, current) {
+  const rail = el("div", { class: "rail" });
+  const job = current.job ? (run.jobs || []).find((item) => item.id === current.job) : null;
+  if (job) {
+    const usageByJob = run.usage && run.usage.by_job ? run.usage.by_job[job.id] : null;
+    rail.append(el("div", { class: "card" }, el("div", { class: "row" }, el("h3", { class: "grow" }, job.id), el("a", { href: `#${run.id}` }, "close")),
+      el("p", {}, job.title),
+      el("dl", { class: "kv small" }, el("dt", {}, "Kind"), el("dd", {}, job.kind), el("dt", {}, "Repo"), el("dd", {}, job.repo || "–"),
+        el("dt", {}, "Stage"), el("dd", {}, pill(job.stage)), el("dt", {}, "Branch"), el("dd", {}, job.branch || "–"),
+        el("dt", {}, "Cost"), el("dd", {}, usageByJob ? money(Object.assign({ prices_date: run.usage.prices.date }, usageByJob)) : "–")),
+      el("h3", {}, "Pipeline"), el("ul", { class: "plain" }, job.groups.map((group) => el("li", {}, `${group.position}. ${group.step} `, pill(group.phase),
+        el("span", { class: "muted small" }, ` round ${group.round}/${group.max_round}`), el("div", { class: "gates" }, group.gates.map((gate) => {
+          const verdict = latestVerdicts(group)[gate];
+          return el("span", { class: `gatechip ${verdict || ""}` }, `${gate}${verdict ? `: ${verdict}` : ""}`);
+        }))))),
+      el("h3", {}, "Files"), fileList((run.files || []).filter((file) => file.name.startsWith(`jobs/${job.id}/`)).map((file) => file.path))));
+  }
+  const repos = run.repos || [];
+  rail.append(el("div", { class: "card" }, el("h3", {}, "Repos"), repos.length ? el("ul", { class: "plain" }, repos.map((repo) => el("li", {},
+    el("b", {}, repo.name), " ", repo.pr_url ? external(repo.pr_url, "PR") : el("span", { class: "muted small" }, repo.can_push ? "no PR yet" : "cannot push"), " ",
+    repo.pr_state ? pill(repo.pr_state) : null, el("div", { class: "muted small" }, `base ${repo.base_branch}`)))) : el("p", { class: "muted" }, "None yet")));
+  const usage = run.usage || {};
+  rail.append(el("div", { class: "card" }, el("h3", {}, "Cost"), usage.total ? money(Object.assign({ prices_date: usage.prices.date }, usage.total)) : el("span", { class: "muted" }, "–"),
+    usage.by_node && Object.keys(usage.by_node).length ? el("table", { class: "small" }, el("tbody", {}, Object.entries(usage.by_node).map(([node, total]) =>
+      el("tr", {}, el("td", {}, node), el("td", {}, total.cost === null ? "?" : `$${Number(total.cost).toFixed(2)}`))))) : null));
+  rail.append(el("div", { class: "card" }, el("h3", {}, "Skips"), (run.skips || []).length ? el("ul", { class: "plain" }, run.skips.map((skip) => el("li", {},
+    el("code", {}, skip.dependency), " ", skip.effect, skip.pr ? el("span", { class: "muted small" }, " (in the PR)") : null))) : el("p", { class: "muted" }, "None")));
+  rail.append(el("div", { class: "card" }, el("h3", {}, "Run files"), fileList((run.files || []).filter((file) => !file.name.startsWith("jobs/")).map((file) => file.path))));
+  const answered = (run.questions || []).filter((item) => ["answered", "resolved"].includes(item.status));
+  rail.append(el("div", { class: "card" }, el("h3", {}, "Answered questions"), answered.length ? el("ul", { class: "plain" }, answered.map((item) => el("li", {},
+    el("a", { href: `#${run.id}/${item.job_id ? `${item.job_id}/` : ""}q${item.id}` }, questionParts(item.text).head || item.text.split("\n")[0]), el("div", { class: "muted small" }, `→ ${item.answer || ""}`)))) : el("p", { class: "muted" }, "None")));
+  rail.append(el("div", { class: "card" }, el("details", {}, el("summary", {}, `Events (${(run.events || []).length})`),
+    el("ul", { class: "plain small" }, (run.events || []).slice(-80).reverse().map((event) => el("li", {}, el("span", { class: "muted" }, shortTime(event.at)), " ", el("code", {}, event.kind), event.job_id ? ` ${event.job_id}` : "",
+      " ", Object.entries(event.payload || {}).map(([key, value]) => `${key}=${typeof value === "object" ? JSON.stringify(value) : value}`).join(" ")))))));
+  return rail;
+}
+
+function issuesPage(current) {
+  if (current.key) return issueDetail(current.key);
+  const list = state.cache.issues;
+  const filters = state.issueFilters;
+  const change = (key) => (event) => { filters[key] = event.target.value; refresh(); };
+  const projectNames = Array.isArray(state.cache.projects) ? state.cache.projects.filter((project) => !project.archived).map((project) => project.name) : [];
+  const form = el("details", { class: "card" }, el("summary", {}, "New issue"), (() => {
+    const fields = {
+      project: el("select", {}, projectNames.map((name) => el("option", { value: name, selected: name === state.project }, name))),
+      title: el("input", { type: "text", placeholder: "Title", "data-keep": "new-title" }),
+      type: el("select", {}, ["task", "feature", "bug", "research"].map((name) => el("option", {}, name))),
+      priority: el("select", {}, ["medium", "high", "low"].map((name) => el("option", {}, name))),
+      labels: el("input", { type: "text", placeholder: "labels, comma separated" }),
+      body: el("textarea", { placeholder: "What should be built? Markdown is fine." }),
+    };
+    return el("div", { style: "display:grid;gap:8px;margin-top:8px" }, el("div", { class: "row" }, fields.project, fields.type, fields.priority), fields.title, fields.labels, fields.body,
+      el("div", {}, el("button", { class: "primary", onclick: async () => {
+        try {
+          const created = await post("/api/issues", { project: fields.project.value, title: fields.title.value, type: fields.type.value, priority: fields.priority.value,
+            labels: fields.labels.value.split(",").map((label) => label.trim()).filter(Boolean), body: fields.body.value });
+          go(`#issues/${created.key}`);
+        } catch (error) { toast(error.message); }
+      } }, "Create")));
+  })());
+  return el("div", {}, el("h1", {}, "Issues"),
+    el("div", { class: "filters" },
+      el("select", { onchange: change("status"), "aria-label": "Status" }, ["", "open", "ready", "in_progress", "in_review", "done", "closed"].map((value) => el("option", { value, selected: filters.status === value }, value || "any status"))),
+      el("select", { onchange: change("type"), "aria-label": "Type" }, ["", "feature", "bug", "task", "research", "improvement"].map((value) => el("option", { value, selected: filters.type === value }, value || "any type"))),
+      el("input", { type: "text", placeholder: "label", value: filters.label, onchange: change("label") }),
+      el("input", { type: "search", placeholder: "text", value: filters.q, onchange: change("q") })),
+    form,
+    !list ? el("p", { class: "muted" }, "Loading…") : list.error ? failed(list) : list.length ? el("table", {}, el("thead", {}, el("tr", {}, ["Key", "Title", "Status", "Type", "Priority", "Labels"].map((name) => el("th", {}, name)))),
+      el("tbody", {}, list.map((issue) => el("tr", { class: "list-row", onclick: () => go(`#issues/${issue.key}`) },
+        el("td", {}, el("b", {}, issue.key)), el("td", {}, issue.title, issue.source !== "local" ? el("span", { class: "muted small" }, ` · ${issue.source} ${issue.external_key}`) : null),
+        el("td", {}, pill(issue.status)), el("td", {}, issue.type), el("td", {}, issue.priority), el("td", {}, issue.labels.join(", ")))))) : el("div", { class: "empty" }, "No issues match."));
+}
+
+function issueDetail(key) {
+  const issue = state.cache[`issue:${key}`];
+  if (!issue) return el("p", { class: "muted" }, "Loading…");
+  if (issue.error) return failed(issue);
+  const save = async (fields) => {
+    try { await post(`/api/issues/${key}`, fields); await refresh(); } catch (error) { toast(error.message); }
+  };
+  const editing = state.editingIssue === key;
+  const command = `/factory ${key}`;
+  const body = editing ? (() => {
+    const area = el("textarea", { rows: 14, "data-keep": `issue-body-${key}` });
+    area.value = state.drafts[`issue-${key}`] !== undefined ? state.drafts[`issue-${key}`] : issue.body;
+    area.addEventListener("input", () => { state.drafts[`issue-${key}`] = area.value; });
+    return el("div", {}, area, el("div", { class: "row" }, el("button", { class: "primary", onclick: async () => { await save({ body: area.value }); state.editingIssue = null; delete state.drafts[`issue-${key}`]; render(true); } }, "Save"),
+      el("button", { onclick: () => { state.editingIssue = null; delete state.drafts[`issue-${key}`]; render(true); } }, "Cancel")));
+  })() : el("div", {}, md(issue.body || "_No description._"), el("button", { onclick: () => { state.editingIssue = key; render(true); } }, "Edit text"));
+  const title = el("input", { type: "text", value: issue.title, style: "width:100%;font-size:18px;font-weight:600", "data-keep": `issue-title-${key}`, onchange: (event) => save({ title: event.target.value }) });
+  const linkItem = (link) => {
+    if (link.kind === "run") return el("li", {}, "run ", el("a", { href: `#${link.ref}` }, link.ref));
+    if (link.kind === "pr") return el("li", {}, "PR ", external(link.ref));
+    if (link.kind === "issue") return el("li", {}, "issue ", el("a", { href: `#issues/${link.ref}` }, link.ref));
+    return el("li", {}, "improvement ", el("a", { href: "#improvements" }, link.ref));
+  };
+  return el("div", {}, el("div", { class: "row muted small" }, el("a", { href: "#issues" }, "Issues"), " · ", issue.project, " · ", key, issue.source !== "local" ? ` · mirror of ${issue.source} ${issue.external_key}` : ""),
+    title,
+    el("div", { class: "split", style: "margin-top:12px" }, el("div", { class: "card" }, body),
+      el("div", { class: "rail" },
+        el("div", { class: "card" }, el("h3", {}, "Start a run"), el("div", { class: "row" }, el("span", { class: "copy grow" }, command),
+          el("button", { onclick: () => navigator.clipboard.writeText(command).then(() => toast("Copied"), () => toast(command)) }, "Copy")),
+          el("p", { class: "muted small" }, "Runs start in Claude Code, in a repo of the project.")),
+        el("div", { class: "card" }, el("dl", { class: "kv" },
+          el("dt", {}, "Status"), el("dd", {}, el("select", { onchange: (event) => save({ status: event.target.value }) }, ["open", "ready", "in_progress", "in_review", "done", "closed"].map((value) => el("option", { selected: issue.status === value }, value)))),
+          el("dt", {}, "Priority"), el("dd", {}, el("select", { onchange: (event) => save({ priority: event.target.value }) }, ["high", "medium", "low"].map((value) => el("option", { selected: issue.priority === value }, value)))),
+          el("dt", {}, "Type"), el("dd", {}, issue.type),
+          el("dt", {}, "Labels"), el("dd", {}, el("input", { type: "text", value: issue.labels.join(", "), onchange: (event) => save({ labels: event.target.value.split(",").map((label) => label.trim()).filter(Boolean) }) })),
+          issue.external_url ? [el("dt", {}, "External"), el("dd", {}, external(issue.external_url, issue.external_status || "link"))] : null)),
+        el("div", { class: "card" }, el("h3", {}, "Links"), issue.links.length ? el("ul", { class: "plain" }, issue.links.map(linkItem)) : el("p", { class: "muted" }, "None")),
+        el("div", { class: "card" }, el("details", {}, el("summary", {}, `History (${issue.history.length})`), el("ul", { class: "plain small" }, issue.history.slice().reverse().map((entry) =>
+          el("li", {}, el("span", { class: "muted" }, shortTime(entry.at)), " ", el("code", {}, entry.kind), " ", Object.entries(entry.payload).filter(([name]) => name !== "issue").map(([name, value]) => `${name}=${typeof value === "object" ? JSON.stringify(value) : value}`).join(" ")))))))));
+}
+
+function projectsPage(current) {
+  if (current.name) return projectDetail(current.name);
+  const list = Array.isArray(state.cache.projects) ? state.cache.projects : [];
+  return el("div", {}, el("h1", {}, "Projects"), list.length ? el("table", {}, el("thead", {}, el("tr", {}, ["Name", "Key", "Repos", "Description"].map((name) => el("th", {}, name)))),
+    el("tbody", {}, list.map((project) => el("tr", { class: "list-row", onclick: () => go(`#projects/${project.name}`) },
+      el("td", {}, el("b", {}, project.name), project.archived ? el("span", { class: "muted small" }, " archived") : null), el("td", {}, project.key),
+      el("td", {}, project.repos.join(", ")), el("td", {}, project.description || ""))))) : el("div", { class: "empty" }, "No projects yet. Add one with factory project add."));
+}
+
+function projectDetail(name) {
+  const project = state.cache[`project:${name}`];
+  if (!project) return el("p", { class: "muted" }, "Loading…");
+  if (project.error) return failed(project);
+  const installs = project.installs || {};
+  const installRow = (entry, label) => el("li", {}, el("b", {}, label), " ", entry.version, " ", pill(entry.current ? "available" : "changes", entry.current ? "current" : "drift"),
+    entry.changed && entry.changed.length ? el("div", { class: "muted small" }, `changed: ${entry.changed.join(", ")}`) : null,
+    entry.missing && entry.missing.length ? el("div", { class: "muted small" }, `missing: ${entry.missing.join(", ")}`) : null);
+  const steps = Object.values((project.catalogue || {}).steps || {});
+  const templates = Object.values((project.catalogue || {}).pipelines || {});
+  return el("div", {}, el("div", { class: "row muted small" }, el("a", { href: "#projects" }, "Projects"), " · ", project.key),
+    el("h1", {}, project.name), project.description ? el("p", { class: "muted" }, project.description) : null,
+    project.warnings && project.warnings.length ? el("div", { class: "strip" }, project.warnings.join(" · ")) : null,
+    el("h2", {}, "Repos"), el("table", {}, el("thead", {}, el("tr", {}, ["Name", "Path", "Default branch", "Origin", "Role"].map((label) => el("th", {}, label)))),
+      el("tbody", {}, project.repos.map((repo) => el("tr", {}, el("td", {}, el("b", {}, repo.name)), el("td", {}, el("code", {}, repo.path || "–")), el("td", {}, repo.default_branch || "–"),
+        el("td", {}, repo.has_origin ? "yes" : "no"), el("td", {}, repo.role || ""))))),
+    el("h2", {}, "Integrations"), Object.entries(project.integrations || {}).map(([slot, entry]) => el("div", { class: "card", style: "margin-bottom:8px" },
+      el("div", { class: "row" }, el("b", {}, slot.replace("_", " ")), el("span", {}, entry.adapter), Object.keys(entry.settings || {}).length ? el("span", { class: "muted small" }, Object.entries(entry.settings).map(([key, value]) => `${key}=${JSON.stringify(value)}`).join(" ")) : null),
+      Object.keys(entry.capabilities || {}).length ? el("table", { class: "small" }, el("tbody", {}, Object.entries(entry.capabilities).map(([capability, info]) =>
+        el("tr", {}, el("td", {}, capability), el("td", {}, info.via), el("td", {}, pill(info.status === "not built" ? "missing" : info.status, info.status)), el("td", { class: "muted" }, info.reason || ""))))) : el("p", { class: "muted small" }, "No capabilities: nothing is pushed or fetched."))),
+    el("h2", {}, "Knowledge"), project.knowledge && Object.keys(project.knowledge).length ? el("dl", { class: "kv" },
+      el("dt", {}, "Read first"), el("dd", {}, (project.knowledge.read_first || []).join(", ") || "–"),
+      el("dt", {}, "Per repo"), el("dd", {}, Object.entries(project.knowledge.per_repo || {}).map(([repo, paths]) => `${repo}: ${paths.join(", ") || "–"}`).join(" · ")),
+      el("dt", {}, "Architecture"), el("dd", {}, (project.knowledge.architecture || []).join(", ") || "–")) : el("p", { class: "muted" }, "No knowledge paths."),
+    el("h2", {}, "Skill installs"), el("ul", { class: "plain" },
+      installs.plugin ? el("li", {}, el("b", {}, "plugin"), " ", el("span", { class: "muted small" }, "this dashboard runs from the plugin")) : null,
+      installs.user ? installRow(installs.user, "user") : el("li", { class: "muted" }, "no user install"),
+      (installs.repos || []).map((entry) => installRow(entry, `repo ${entry.repo || ""}`))),
+    el("h2", {}, "Catalogue"), el("table", { class: "small" }, el("thead", {}, el("tr", {}, ["Step", "Role", "Kinds", "Agent", "Model", "From", "Summary"].map((label) => el("th", {}, label)))),
+      el("tbody", {}, steps.map((step) => el("tr", {}, el("td", {}, el("b", {}, step.name)), el("td", {}, step.role), el("td", {}, step.kinds.join(", ")), el("td", {}, step.agent), el("td", {}, step.model || "–"), el("td", {}, step.level), el("td", {}, step.summary))))),
+    el("h3", {}, "Templates"), el("ul", { class: "plain" }, templates.map((template) => el("li", {}, el("b", {}, template.name), " ", el("span", { class: "muted small" }, template.level), " ",
+      template.pipeline.map((group) => `${group.step} [${group.gates.join(", ")}]`).join(" › "), el("div", { class: "muted small" }, template.when)))));
+}
+
+function improvementsPage() {
+  const list = state.cache.improvements;
+  const filters = state.improvementFilters;
+  const items = Array.isArray(list) ? list.filter((item) => !filters.target || item.target === filters.target) : [];
+  const targets = Array.isArray(list) ? [...new Set(list.map((item) => item.target))] : [];
+  const actions = { open: [["accepted", "Accept"], ["rejected", "Reject"]], accepted: [["done", "Mark done"], ["rejected", "Reject"], ["open", "Back to review"]], rejected: [["open", "Back to review"]], done: [["open", "Back to review"]] };
+  return el("div", {}, el("h1", {}, "Improvements"),
+    el("div", { class: "filters" },
+      el("select", { onchange: (event) => { filters.status = event.target.value; refresh(); } }, ["open", "accepted", "rejected", "done", ""].map((value) => el("option", { value, selected: filters.status === value }, value || "any status"))),
+      el("select", { onchange: (event) => { filters.target = event.target.value; render(true); } }, ["", ...targets].map((value) => el("option", { value, selected: filters.target === value }, value || "any target")))),
+    !list ? el("p", { class: "muted" }, "Loading…") : list.error ? failed(list) : items.length ? items.map((item) => {
+      const note = el("input", { type: "text", placeholder: "why (optional)", "data-keep": `note-${item.id}`, style: "flex:1" });
+      note.value = state.drafts[`note-${item.id}`] || item.note || "";
+      note.addEventListener("input", () => { state.drafts[`note-${item.id}`] = note.value; });
+      return el("div", { class: "card", style: "margin-bottom:10px" },
+        el("div", { class: "row" }, el("b", { class: "grow" }, item.title), pill(item.impact === "high" ? "changes" : item.impact === "medium" ? "wait" : "", `${item.impact} impact`), pill(item.status)),
+        el("div", { class: "muted small" }, `#${item.id} · ${item.target}${item.repo ? ` (${item.repo})` : ""} · ${item.project} · from `, el("a", { href: `#${item.run_id}` }, item.run_id),
+          item.seen_in.length > 1 ? ` · seen in ${item.seen_in.length} runs` : "", item.issue_key ? [" · ", el("a", { href: `#issues/${item.issue_key}` }, item.issue_key)] : null,
+          item.pr_url ? [" · ", external(item.pr_url, "PR")] : null),
+        item.location ? el("p", {}, el("code", {}, item.location)) : null,
+        el("h3", {}, "Evidence"), md(item.evidence), el("h3", {}, "Proposal"), md(item.proposal),
+        item.note ? el("p", { class: "muted" }, `Note: ${item.note}`) : null,
+        el("div", { class: "row" }, note, (actions[item.status] || []).map(([status, label]) => el("button", { class: status === "accepted" ? "primary" : "", onclick: async () => {
+          try { await post(`/api/improvements/${item.id}/decide`, { status, note: note.value || null }); delete state.drafts[`note-${item.id}`]; await refresh(); } catch (error) { toast(error.message); }
+        } }, label))));
+    }) : el("div", { class: "empty" }, "Nothing here."));
+}
+
+function applyTheme() {
+  const root = document.documentElement;
+  if (state.theme === "system") root.removeAttribute("data-theme");
+  else root.setAttribute("data-theme", state.theme);
+  document.getElementById("theme").textContent = `Theme: ${state.theme}`;
+}
+
+document.getElementById("theme").addEventListener("click", () => {
+  state.theme = { system: "light", light: "dark", dark: "system" }[state.theme] || "system";
+  localStorage.setItem("factory-theme", state.theme);
+  applyTheme();
+});
+document.getElementById("project").addEventListener("change", (event) => {
+  state.project = event.target.value;
+  localStorage.setItem("factory-project", state.project);
+  refresh();
+});
+document.getElementById("run-filter").value = state.runFilter;
+document.getElementById("run-filter").addEventListener("change", (event) => {
+  state.runFilter = event.target.value;
+  localStorage.setItem("factory-run-filter", state.runFilter);
+  refresh();
+});
+document.getElementById("run-search").addEventListener("input", (event) => { state.search = event.target.value; renderSide(); });
+window.addEventListener("hashchange", () => { state.selection = { phase: 3, job: 0, group: 0, detail: false }; render(true); refresh(); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+document.addEventListener("keydown", (event) => {
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((event.target.tagName || ""));
+  if (typing || event.metaKey || event.ctrlKey || event.altKey) return;
+  const current = route();
+  if (current.page !== "inbox" || !["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+  const items = (Array.isArray(state.cache.questions) ? state.cache.questions : []).slice().sort((a, b) => (a.status === "open" ? 0 : 1) - (b.status === "open" ? 0 : 1) || a.id - b.id);
+  if (!items.length) return;
+  const index = Math.max(0, items.findIndex((item) => item.id === current.question));
+  const next = items[(index + (event.key === "ArrowRight" ? 1 : -1) + items.length) % items.length];
+  event.preventDefault();
+  go(`#inbox/q${next.id}`);
+});
+applyTheme();
+refresh();
+</script>
+</body>
+</html>

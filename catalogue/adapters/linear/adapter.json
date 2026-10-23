@@ -1,0 +1,33 @@
+{
+  "name": "linear",
+  "slot": "tracker",
+  "version": 1,
+  "vendors": ["linear"],
+  "capabilities": {
+    "fetch_issue": {
+      "via": "mcp",
+      "requires": {
+        "mcp": [
+          "mcp__*[Ll]inear*__get_issue",
+          "mcp__*[Ll]inear*__list_comments"
+        ]
+      }
+    },
+    "import": {
+      "via": "core"
+    },
+    "comment": {
+      "via": "mcp",
+      "requires": {
+        "mcp": [
+          "mcp__*[Ll]inear*__create_comment"
+        ]
+      }
+    }
+  },
+  "settings": {},
+  "patterns": {
+    "key_pattern": "^[A-Z][A-Z0-9]{0,9}-[0-9]+$",
+    "url_pattern": "^https://linear\\.app/[A-Za-z0-9_-]+/issue/(?P<key>[A-Z][A-Z0-9]{0,9}-[0-9]+)(?:/[A-Za-z0-9_-]*)?/?(?:[?#]\\S*)?$"
+  }
+}

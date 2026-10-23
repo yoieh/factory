@@ -1,0 +1,7 @@
+{
+  "name": "blog",
+  "key": "BLOG",
+  "repos": [
+    {"name": "blog", "path": "~/src/blog"}
+  ]
+}

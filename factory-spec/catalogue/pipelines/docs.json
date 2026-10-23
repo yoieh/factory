@@ -1,0 +1,9 @@
+{
+  "name": "docs",
+  "description": "Write or update documentation, then check it against the code. In a code job, add review-code to the group when the project requires code review.",
+  "kinds": ["files", "code"],
+  "when": "The job is documentation only. Use a files job for a document outside the repos and a code job for docs in a repo.",
+  "pipeline": [
+    {"step": "write-doc", "gates": ["review-docs"], "optional_gates": ["review-code", "approve"]}
+  ]
+}

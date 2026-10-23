@@ -1,0 +1,9 @@
+{
+  "default_project": "shop",
+  "dashboard": {"port": 8765},
+  "factory_source": "~/src/factory",
+  "factory_project": "factory",
+  "catalogue_dirs": ["~/src/team-catalogue"],
+  "parallel": 3,
+  "max_rounds": 4
+}

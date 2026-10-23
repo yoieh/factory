@@ -1,0 +1,57 @@
+{
+  "name": "github-issues",
+  "slot": "tracker",
+  "version": 1,
+  "vendors": ["github", "gh"],
+  "capabilities": {
+    "fetch_issue": {
+      "via": "cli",
+      "requires": {
+        "bin": [
+          "gh"
+        ]
+      }
+    },
+    "import": {
+      "via": "core"
+    },
+    "sync": {
+      "via": "script",
+      "command": [
+        "python3",
+        "scripts/sync.py",
+        "--repository",
+        "{repository}",
+        "--keys",
+        "{external_keys}"
+      ],
+      "requires": {
+        "bin": [
+          "gh"
+        ]
+      }
+    },
+    "comment": {
+      "via": "cli",
+      "requires": {
+        "bin": [
+          "gh"
+        ]
+      }
+    }
+  },
+  "settings": {
+    "repository": {
+      "type": "string",
+      "default": null
+    },
+    "status_map": {
+      "type": "list",
+      "default": null
+    }
+  },
+  "patterns": {
+    "key_pattern": "^[0-9]{1,9}$",
+    "url_pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/issues/(?P<key>[0-9]{1,9})/?(?:[?#]\\S*)?$"
+  }
+}

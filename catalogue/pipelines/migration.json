@@ -1,0 +1,9 @@
+{
+  "name": "migration",
+  "description": "A schema, data, config or dependency migration with a dry run, rollback steps and a person's sign-off.",
+  "kinds": ["code"],
+  "when": "The job changes a database schema, moves or backfills data, renames or removes config keys, or upgrades a dependency across a major version.",
+  "pipeline": [
+    {"step": "migrate", "gates": ["review-code", "review-arch", "approve"], "optional_gates": ["review-security", "verify"]}
+  ]
+}

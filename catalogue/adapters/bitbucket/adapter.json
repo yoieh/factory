@@ -1,0 +1,70 @@
+{
+  "name": "bitbucket",
+  "slot": "code_host",
+  "version": 1,
+  "vendors": ["bitbucket", "atlassian"],
+  "capabilities": {
+    "push": {
+      "via": "git"
+    },
+    "open_pr": {
+      "via": "script",
+      "command": [
+        "python3",
+        "scripts/open_pr.py",
+        "--repo-path",
+        "{repo_path}",
+        "--source",
+        "{source_branch}",
+        "--target",
+        "{target_branch}",
+        "--pr-file",
+        "{pr_file}",
+        "--draft",
+        "{draft}"
+      ],
+      "requires": {
+        "env": [
+          "BITBUCKET_USER_EMAIL",
+          "BITBUCKET_API_TOKEN"
+        ],
+        "files": [
+          "~/.bitbucket.env",
+          "~/.env"
+        ]
+      }
+    },
+    "pr_state": {
+      "via": "script",
+      "command": [
+        "python3",
+        "scripts/pr_state.py",
+        "--url",
+        "{pr_url}"
+      ],
+      "requires": {
+        "env": [
+          "BITBUCKET_USER_EMAIL",
+          "BITBUCKET_API_TOKEN"
+        ],
+        "files": [
+          "~/.bitbucket.env",
+          "~/.env"
+        ]
+      }
+    },
+    "pr_template": {
+      "via": "file",
+      "path": "pr-template.md"
+    }
+  },
+  "settings": {
+    "draft": {
+      "type": "bool",
+      "default": true
+    }
+  },
+  "patterns": {
+    "pr_url": "^https://bitbucket\\.org/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull-requests/[0-9]+$"
+  }
+}

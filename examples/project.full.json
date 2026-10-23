@@ -1,0 +1,51 @@
+{
+  "name": "shop",
+  "key": "SHOP",
+  "description": "Web shop: the orders API, the customer web app and the shared docs",
+  "repos": [
+    {"name": "api", "path": "~/src/shop/api", "remote": "git@bitbucket.org:example/shop-api.git",
+     "default_branch": "main", "role": "service: orders and payments API", "test": "make test", "setup": "make deps"},
+    {"name": "web", "path": "~/src/shop/web", "remote": "git@bitbucket.org:example/shop-web.git",
+     "default_branch": "main", "role": "frontend: customer web app", "test": "npm test", "setup": "npm ci"},
+    {"name": "docs", "path": "~/src/shop/docs", "remote": "git@bitbucket.org:example/shop-docs.git",
+     "default_branch": "main", "role": "docs: architecture, service notes and runbooks"}
+  ],
+  "repo_root": "~/src/shop",
+  "integrations": {
+    "tracker": {"adapter": "jira", "site": "example.atlassian.net", "write": false,
+                "status_map": ["To Do=open", "In Progress=in_progress", "In Review=in_review", "Done=done"],
+                "patterns": {"key_pattern": "^(?:WEB|PAY)-[0-9]+$"}},
+    "code_host": {"adapter": "bitbucket", "draft": true},
+    "design": {"adapter": "figma", "max_frames": 8, "max_dimension": 1600}
+  },
+  "knowledge": {
+    "label": "shop docs",
+    "read_first": ["~/src/shop/docs/overview.md"],
+    "per_repo": ["~/src/shop/docs/services/{repo}.md"],
+    "architecture": ["~/src/shop/docs/architecture/principles.md", "~/src/shop/docs/architecture/data-ownership.md"]
+  },
+  "step_skills": {
+    "code": [
+      {"path": "~/src/shop/docs/standards/python.md", "when": "Python repos"},
+      {"path": "~/src/shop/docs/standards/typescript.md", "when": "TypeScript repos"}
+    ],
+    "security": [{"path": "~/src/shop/docs/standards/security.md", "when": "every security review"}],
+    "ui": [{"path": "~/src/shop/docs/brand/colors.json", "when": "brand colors and tokens"}],
+    "arch": [{"path": "~/src/shop/docs/architecture/review-checklist.md", "when": "new endpoints, events or data owners"}]
+  },
+  "catalogue_dirs": ["~/src/shop/docs/factory-steps"],
+  "improvement_targets": {
+    "factory": {"label": "factory"},
+    "repo": {"base": "default", "label": "repo"},
+    "knowledge": {"repo": "docs", "base": "default", "label": "shop docs"},
+    "process": {"label": "issues and process"},
+    "runbooks": {"repo": "docs", "base": "main", "label": "runbooks"}
+  },
+  "defaults": {
+    "parallel": 3,
+    "max_rounds": 4,
+    "confirm_plan": true,
+    "branch_prefix": "feature/",
+    "require_code_review": true
+  }
+}

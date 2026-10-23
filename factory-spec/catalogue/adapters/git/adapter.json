@@ -1,0 +1,11 @@
+{
+  "name": "git",
+  "slot": "code_host",
+  "version": 1,
+  "vendors": [],
+  "capabilities": {
+    "push": {"via": "git"}
+  },
+  "settings": {},
+  "patterns": {}
+}

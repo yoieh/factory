@@ -1,0 +1,50 @@
+{
+  "name": "github",
+  "slot": "code_host",
+  "version": 1,
+  "vendors": ["github", "gh"],
+  "capabilities": {
+    "push": {
+      "via": "git"
+    },
+    "open_pr": {
+      "via": "cli",
+      "requires": {
+        "bin": [
+          "gh"
+        ]
+      }
+    },
+    "pr_state": {
+      "via": "script",
+      "command": [
+        "python3",
+        "scripts/pr_state.py",
+        "--url",
+        "{pr_url}"
+      ],
+      "requires": {
+        "bin": [
+          "gh"
+        ]
+      }
+    },
+    "pr_template": {
+      "via": "file",
+      "path": "pr-template.md"
+    }
+  },
+  "settings": {
+    "draft": {
+      "type": "bool",
+      "default": true
+    },
+    "reviewers": {
+      "type": "list",
+      "default": null
+    }
+  },
+  "patterns": {
+    "pr_url": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/[0-9]+$"
+  }
+}

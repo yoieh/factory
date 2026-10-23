@@ -1,0 +1,50 @@
+{
+  "name": "gitlab",
+  "slot": "code_host",
+  "version": 1,
+  "vendors": ["gitlab", "glab"],
+  "capabilities": {
+    "push": {
+      "via": "git"
+    },
+    "open_pr": {
+      "via": "cli",
+      "requires": {
+        "bin": [
+          "glab"
+        ]
+      }
+    },
+    "pr_state": {
+      "via": "script",
+      "command": [
+        "python3",
+        "scripts/pr_state.py",
+        "--url",
+        "{pr_url}"
+      ],
+      "requires": {
+        "bin": [
+          "glab"
+        ]
+      }
+    },
+    "pr_template": {
+      "via": "file",
+      "path": "pr-template.md"
+    }
+  },
+  "settings": {
+    "draft": {
+      "type": "bool",
+      "default": true
+    },
+    "reviewers": {
+      "type": "list",
+      "default": null
+    }
+  },
+  "patterns": {
+    "pr_url": "^https://gitlab\\.com/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+/-/merge_requests/[0-9]+$"
+  }
+}

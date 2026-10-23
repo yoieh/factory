@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+import os
+import sys
+
+if sys.version_info < (3, 10):
+    sys.stderr.write("factory: Python 3.10 or newer is required\n")
+    sys.exit(1)
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+
+from factory.cli import main
+
+sys.exit(main())

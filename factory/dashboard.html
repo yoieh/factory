@@ -346,6 +346,7 @@ input.titlebox:focus { background: var(--panel); border-color: var(--line); }
   <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4"/></symbol>
   <symbol id="i-reply" viewBox="0 0 24 24"><path d="M9 17 4 12l5-5"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></symbol>
   <symbol id="i-send" viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></symbol>
+  <symbol id="i-agent" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9.5 17h5"/></symbol>
   <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
 </svg>
 <div id="app">
@@ -636,6 +637,7 @@ function route() {
   if (parts[0] === "issues") return { page: "issues", key: parts[1] || null };
   if (parts[0] === "projects") return { page: "projects", name: parts[1] || null };
   if (parts[0] === "improvements") return { page: "improvements" };
+  if (parts[0] === "agents") return { page: "agents", name: parts[1] || null };
   const run = parts[0];
   let job = null;
   let questionId = null;
@@ -678,6 +680,7 @@ async function refresh() {
       if (current.key) tasks.push(load(`issue:${current.key}`, `/api/issues/${current.key}`));
     }
     if (current.page === "projects" && current.name) tasks.push(load(`project:${current.name}`, `/api/projects/${current.name}`));
+    if (current.page === "agents") tasks.push(current.name ? load(`agent:${current.name}`, `/api/agents/${encodeURIComponent(current.name)}`) : load("agents", "/api/agents"));
     if (current.page === "improvements") tasks.push(load("improvements", `/api/improvements${query({ project: state.project, status: state.improvementFilters.status })}`));
     await Promise.all(tasks);
     renderSide();
@@ -712,6 +715,7 @@ function renderSide() {
     nav("#issues", "issue", "Issues", null, current.page === "issues"),
     nav("#projects", "folder", "Projects", null, current.page === "projects"),
     nav("#improvements", "spark", "Improvements", review, current.page === "improvements"),
+    nav("#agents", "agent", "Agents", null, current.page === "agents"),
   );
   const list = document.getElementById("runs");
   const runs = Array.isArray(state.cache.runs) ? state.cache.runs : [];
@@ -728,7 +732,7 @@ function renderSide() {
 function render(force) {
   const current = route();
   const main = document.getElementById("main");
-  const views = { inbox: inboxPage, run: runPage, issues: issuesPage, projects: projectsPage, improvements: improvementsPage };
+  const views = { inbox: inboxPage, run: runPage, issues: issuesPage, projects: projectsPage, improvements: improvementsPage, agents: agentsPage };
   const signature = JSON.stringify([current, state.cache[cacheKey(current)], current.page === "inbox" || current.page === "run" ? state.cache.questions : null, state.selection, state.runView, state.issueFilters, state.improvementFilters, state.project]);
   if (!force && signature === state.rendered) return;
   state.rendered = signature;
@@ -751,6 +755,7 @@ function cacheKey(current) {
   if (current.page === "issues") return current.key ? `issue:${current.key}` : "issues";
   if (current.page === "projects") return current.name ? `project:${current.name}` : "projects";
   if (current.page === "improvements") return "improvements";
+  if (current.page === "agents") return current.name ? `agent:${current.name}` : "agents";
   return "questions";
 }
 
@@ -1404,6 +1409,39 @@ function improvementsPage() {
           try { await post(`/api/improvements/${item.id}/decide`, { status, note: note.value || null }); delete state.drafts[`note-${item.id}`]; await refresh(); } catch (error) { toast(error.message); }
         } }, icon(actionIcon[status]), label))));
     }) : el("div", { class: "empty" }, "Nothing here."));
+}
+
+function agentsPage(current) {
+  if (current.name) return agentDetail(current.name);
+  const list = state.cache.agents;
+  return el("div", {}, el("h1", {}, "Agents"),
+    el("p", { class: "sub" }, "Outside tools that read the inbox and answer for you. Connect one with ", el("code", {}, "factory agent add <name>"),
+      "; an agent that answers with ", el("code", {}, "--by <name>"), " shows up here by itself. Read-only here."),
+    !list ? el("p", { class: "muted" }, "Loading…") : list.error ? failed(list) : list.length ? el("div", { class: "card tablecard" }, el("table", {},
+      el("thead", {}, el("tr", {}, ["Name", "Description", "Connected", "Last seen", "Answers", "Follow-ups"].map((name) => el("th", {}, name)))),
+      el("tbody", {}, list.map((agent) => el("tr", { class: "list-row", onclick: () => go(`#agents/${encodeURIComponent(agent.name)}`) },
+        el("td", {}, el("b", {}, agent.name)), el("td", {}, agent.description || el("span", { class: "muted" }, "–")), el("td", {}, shortTime(agent.added_at)),
+        el("td", {}, agent.seen_at ? shortTime(agent.seen_at) : el("span", { class: "muted" }, "never")), el("td", {}, agent.answers), el("td", {}, agent.follow_ups)))))) :
+      el("div", { class: "empty" }, "No agents connected yet."));
+}
+
+function agentDetail(name) {
+  const agent = state.cache[`agent:${name}`];
+  if (!agent) return el("p", { class: "muted" }, "Loading…");
+  if (agent.error) return failed(agent);
+  return el("div", {}, crumbs(el("a", { href: "#agents" }, "Agents"), agent.name),
+    el("h1", {}, agent.name), agent.description ? el("p", { class: "muted" }, agent.description) : null,
+    el("dl", { class: "kv" },
+      el("dt", {}, "Connected"), el("dd", {}, shortTime(agent.added_at)),
+      el("dt", {}, "Last seen"), el("dd", {}, agent.seen_at ? shortTime(agent.seen_at) : "never"),
+      el("dt", {}, "Answers"), el("dd", {}, agent.answers),
+      el("dt", {}, "Follow-ups"), el("dd", {}, agent.follow_ups)),
+    el("h2", {}, "Latest"), agent.recent.length ? el("div", { class: "card tablecard" }, el("table", {},
+      el("thead", {}, el("tr", {}, ["When", "Question", "Run", "Action", "Text"].map((label) => el("th", {}, label)))),
+      el("tbody", {}, agent.recent.map((item) => el("tr", { class: "list-row", onclick: () => go(`#${item.run_id}/q${item.question_id}`) },
+        el("td", {}, shortTime(item.at)), el("td", {}, el("b", {}, `q${item.question_id}`), " ", item.question), el("td", {}, el("code", {}, item.run_id)),
+        el("td", {}, item.kind === "clarify" ? "asked back" : "answered"), el("td", {}, item.text)))))) :
+      el("p", { class: "muted" }, "It has not answered anything yet."));
 }
 
 function applyTheme() {

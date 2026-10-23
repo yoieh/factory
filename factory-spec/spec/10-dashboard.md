@@ -4,7 +4,7 @@
 
 ## Pages
 
-All pages share a sidebar: Inbox (count of open questions and plans to confirm), Issues, Projects, Improvements (count to review), and the runs list with a search box (issue key, repo, feature) and a menu for active (not done, not archived), archived or all. A project picker at the top filters every page (default: all projects). The open view lives in the URL hash so links can be shared locally. Every cost shows the date of the price table it uses (11).
+All pages share a sidebar: Inbox (count of open questions and plans to confirm), Issues, Projects, Improvements (count to review), Agents, and the runs list with a search box (issue key, repo, feature) and a menu for active (not done, not archived), archived or all. A project picker at the top filters every page (default: all projects). The open view lives in the URL hash so links can be shared locally. Every cost shows the date of the price table it uses (11).
 
 | Page | Hash | Shows |
 |---|---|---|
@@ -13,6 +13,7 @@ All pages share a sidebar: Inbox (count of open questions and plans to confirm),
 | Issues | `#issues`, `#issues/<KEY-n>` | Filterable list; one issue with body, links, history; create and edit. Shows the `/factory <KEY-n>` command to copy. |
 | Projects | `#projects`, `#projects/<name>` | Repos, integrations with availability, knowledge paths that exist, catalogue (steps and templates with their source), skill installs and drift. Read-only. |
 | Improvements | `#improvements` | Every improvement, filtered by status, target and project; evidence, proposal, run, `seen_in`; accept, reject, mark done, back to review, with a note. |
+| Agents | `#agents`, `#agents/<name>` | The connected agents (04): name, description, when connected and last seen, how many answers and follow-ups; one agent with its latest answers, each linking to its question. Read-only. |
 
 ### Loop graph with pipelines
 
@@ -41,6 +42,9 @@ GET (JSON):
 | `/api/projects`, `/api/projects/<name>` | Projects, resolved and redacted (08). |
 | `/api/catalogue?project=` | Merged catalogue. |
 | `/api/improvements?project=&status=` | Improvements. |
+| `/api/inbox?project=&as=` | `inbox` (04). |
+| `/api/events?since=&run=&kind=&limit=&wait=&timeout=&as=` | `events` (04); `kind` is comma-separated, `wait=1` waits at most `timeout` seconds (default 30, at most 60). |
+| `/api/agents`, `/api/agents/<name>` | `agent list`, `agent show`. |
 | `/api/file?path=` | A `.md` or `.json` file under `runs/`, `improve/` or `issues/`, as text. |
 | `/api/image?path=` | A `.png` under `runs/`, checked by magic bytes. |
 
@@ -48,10 +52,10 @@ POST (`Content-Type: application/json` only):
 
 | Path | Body | Does |
 |---|---|---|
-| `/api/questions/<id>/answer` | `{text}` | `question answer` |
-| `/api/questions/<id>/clarify` | `{text}` | `question clarify` (not delivered) |
+| `/api/questions/<id>/answer` | `{text, by}` | `question answer` |
+| `/api/questions/<id>/clarify` | `{text, by}` | `question clarify` (not delivered) |
 
-Answers and follow-ups from the dashboard have author `dashboard` and count as the user's, like any `question answer` (09, Questions). A question's thread shows each message's author, so an answer written with `--by <name>` shows that name.
+Answers and follow-ups from the dashboard have author `dashboard`, or the connected agent named in `by`, and count as the user's, like any `question answer` (09, Questions). A question's thread shows each message's author, so an answer written with `--by <name>` shows that name.
 | `/api/improvements/<id>/decide` | `{status, note}` | `improvement decide` |
 | `/api/runs/<id>/archive` | `{archived: bool}` | archive or unarchive |
 | `/api/issues` | `{project, title, type, priority, labels, body}` | `issue add` |

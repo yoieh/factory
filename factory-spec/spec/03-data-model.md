@@ -6,7 +6,7 @@ One SQLite database, `$FACTORY_HOME/factory.db`, WAL mode, `foreign_keys = ON`, 
 
 - `meta(key, value)` holds `schema_version`.
 - On connect the core runs every migration above the stored version inside one transaction, then stores the new version. Foreign keys are off during a migration, so a table rebuild cannot cascade, and `foreign_key_check` must pass before the commit.
-- Version 2 rebuilds `jobs` to add the stage `dropped`. The schema below is version 2.
+- Version 2 rebuilds `jobs` to add the stage `dropped`. Version 3 adds `connected_agents` and fills it from the authors of earlier answers and follow-ups. The schema below is version 3.
 - Migrations only add tables, columns and indexes, or rebuild a table with a copy when a CHECK changes. They never drop user data.
 
 ## Schema
@@ -168,6 +168,13 @@ CREATE TABLE IF NOT EXISTS question_messages (
   delivered_at TEXT
 );
 
+CREATE TABLE IF NOT EXISTS connected_agents (
+  name        TEXT PRIMARY KEY,
+  description TEXT,
+  added_at    TEXT NOT NULL,
+  seen_at     TEXT
+);
+
 CREATE TABLE IF NOT EXISTS events (
   id      INTEGER PRIMARY KEY AUTOINCREMENT,
   run_id  TEXT REFERENCES runs(id) ON DELETE CASCADE,
@@ -235,6 +242,7 @@ CREATE TABLE IF NOT EXISTS improvements (
 CREATE INDEX IF NOT EXISTS issues_by_project ON issues (project, status);
 CREATE INDEX IF NOT EXISTS questions_by_run ON questions (run_id, status);
 CREATE INDEX IF NOT EXISTS question_messages_by_question ON question_messages (question_id, id);
+CREATE INDEX IF NOT EXISTS question_messages_by_author ON question_messages (author, id);
 CREATE INDEX IF NOT EXISTS events_by_run ON events (run_id, id);
 CREATE INDEX IF NOT EXISTS sessions_by_id ON sessions (session_id, added_at);
 CREATE INDEX IF NOT EXISTS runs_by_project ON runs (project, status);
@@ -246,6 +254,7 @@ Notes:
 - `jobs.repo` is null only for `files` jobs.
 - `runs.no_pr` is cleared by `run pr` (a Publish opened PRs), so a later rework updates them.
 - `job_groups` is the job's pipeline, one row per group. `round` and `max_round` are per group. `base_sha` is set when the group starts (code jobs): the commit its gates diff against.
+- `connected_agents` holds the outside tools that answer for the user (04, Connected agents), by name only; `question_messages.author` refers to it by name, without a foreign key, because `human` and `dashboard` are authors too and an agent's messages outlive its removal.
 - `events.run_id` is null for events outside a run (project, issue and improve events).
 - Skips are events of kind `skip` with payload `{"dependency", "effect", "pr": bool}`.
 - `improvements.target` is validated against the project's `improvement_targets` at `retro load`, not by a CHECK, because targets are project config.

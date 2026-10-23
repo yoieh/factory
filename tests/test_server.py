@@ -132,6 +132,33 @@ class WriteRoutesTest(ServerCase):
         self.post("/api/questions/999/answer", {"text": "x"}, status=404)
         self.post(f"/api/questions/{asked['id']}/answer", {"text": ""}, status=400)
 
+    def test_an_agent_answers_over_http(self):
+        asked = self.question("question")
+        answered = self.post(f"/api/questions/{asked['id']}/answer", {"text": "A", "by": "assistant"})
+        self.assertEqual(answered["thread"][-1]["author"], "assistant")
+        agents = self.get("/api/agents")
+        self.assertEqual([(agent["name"], agent["answers"]) for agent in agents], [("assistant", 1)])
+        shown = self.get("/api/agents/assistant")
+        self.assertEqual(shown["recent"][0]["question_id"], asked["id"])
+        self.get("/api/agents/nobody", status=404)
+        confirm = self.question("plan_confirm")
+        self.post(f"/api/questions/{confirm['id']}/answer", {"text": "yes", "by": "two words"}, status=400)
+        self.post(f"/api/questions/{confirm['id']}/answer", {"text": "yes", "by": 3}, status=400)
+
+    def test_inbox_and_events(self):
+        found = self.get("/api/inbox?as=assistant")
+        kinds = {item["kind"] for item in found["items"] if item["type"] == "question"}
+        self.assertIn("plan_confirm", kinds)
+        self.assertTrue(any(item["type"] == "improvement" for item in found["items"]))
+        self.assertIsNotNone(self.get("/api/agents/assistant")["seen_at"])
+        cursor = found["cursor"]
+        self.assertEqual(self.get(f"/api/events?since={cursor}")["events"], [])
+        confirm = next(item for item in found["items"] if item.get("kind") == "plan_confirm")
+        self.post(f"/api/questions/{confirm['id']}/answer", {"text": "yes"})
+        events = self.get(f"/api/events?since={cursor}&kind=question&wait=1&timeout=5")["events"]
+        self.assertEqual([event["kind"] for event in events], ["question.status"])
+        self.get("/api/events?since=x", status=404)
+
     def test_decide_and_archive(self):
         items = self.get("/api/improvements?status=open")
         decided = self.post(f"/api/improvements/{items[0]['id']}/decide", {"status": "accepted", "note": "good"})

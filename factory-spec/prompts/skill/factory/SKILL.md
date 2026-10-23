@@ -369,7 +369,15 @@ git -C "<feature_worktree>" merge --squash "<branch>"
 git -C "<feature_worktree>" commit -m "<job title>"
 ```
 
-The squash gives one clean commit per job with the job title as message, and no factory branch names land in the PR. On a conflict: `git -C "<feature_worktree>" reset --merge`, `"$F" event "<run-id>" merge.conflict --job "<job-id>"`, then `"$F" job stage <ref> running`, which sets the last group's phase back to `produce` in the same round and marks the job `conflict`. Resume the producer of the last group: "Merge conflict with <feature_branch>: merge it into your branch, resolve it, rerun the tests, commit and update output.md." When it finishes, `step sync`: `DONE` moves the job straight back to `merging`, without gates and without a new round, so squash again. Any other status is handled as in Producer finished. Then check that `git -C "<feature_worktree>" log --oneline -1` shows the job title, and:
+The squash gives one clean commit per job with the job title as message, and no factory branch names land in the PR. On a conflict: `git -C "<feature_worktree>" reset --merge`, `"$F" event "<run-id>" merge.conflict --job "<job-id>"`, then `"$F" job stage <ref> running`, which sets the last group's phase back to `produce` in the same round and marks the job `conflict`. Resume the producer of the last group: "Merge conflict with <feature_branch>: merge it into your branch, resolve it, rerun the tests, commit and update output.md." When it finishes, `step sync`: `DONE` moves the job straight back to `merging`, without gates and without a new round, so squash again. Any other status is handled as in Producer finished. Then check that `git -C "<feature_worktree>" log --oneline -1` shows the job title, and compare the feature branch's tree with the job branch's, the tree its gates tested:
+
+```sh
+git -C "<feature_worktree>" rev-parse "HEAD^{tree}"
+git -C "<repo_path>" rev-parse "<branch>^{tree}"
+"$F" event "<run-id>" merge.tree --job "<job-id>" --payload '{"same": true}'
+```
+
+Record `"same": true` when the two hashes match, else `"same": false`. Then:
 
 ```sh
 "$F" job stage "<run-id>/<job-id>" done
@@ -434,7 +442,7 @@ Who asked is in `asked_by` and `job_id` of `"$F" question list`: `orchestrator` 
 When every job is done or dropped: `"$F" run status "<run-id>" finishing`. Then for each repo in `repos`, in plan order (providers before consumers). Skip a repo whose feature branch has no commits over its base ref: report it, and open no PR for it.
 
 1. **Open points and deferred notes.** Collect, from every code job of the repo: the Must fix items and Notes of capped groups, the gate Notes that start with `[human]`, and every line under `## Open points` in each group's last `output.md`. Then read the Notes of every job's last gate round: each one that names another job or repo must have been handled by that job, so check it in that repo's feature worktree. One that was not handled is an open point too. Files jobs' open points go to the run's `report.md` instead.
-2. Run the repo's full test suite from plan.md in its feature worktree: `(cd "<feature_worktree>" && <test command>)`. If it fails, push nothing: ask a question with the failing tests and wait (the user may answer with a `/factory rework`).
+2. Run the repo's full test suite from plan.md in its feature worktree: `(cd "<feature_worktree>" && <test command>)`. If it fails, push nothing: ask a question with the failing tests and wait (the user may answer with a `/factory rework`). Skip the run when the repo's last merged job recorded `merge.tree` with `"same": true` and one of that job's last-round gates ran the repo's full test command and passed: the feature branch holds the tree that gate tested, so use that gate's result line in the PR. Otherwise run the suite.
 3. Write `<run_dir>/pr-<repo>.md`. When the code host has a `pr_template`, take the title format and the sections from it, read fresh on every run and never from memory, so a template change reaches the factory: `via: file` is a file in the adapter folder; `via: skill` is a skill you load with the Skill tool. Without one, use the repo's own PR template when the host uses one (for example a template file in the repo), else the plain template:
    ```markdown
    # <title, under 72 characters>

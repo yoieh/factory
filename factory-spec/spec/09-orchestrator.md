@@ -54,7 +54,7 @@ Event-driven: act when an agent finishes or a question is answered. Keep the pro
    - not complete: WAIT FOR ALL. Fix `INVALID` gate files by resuming that gate; pause on questions.
    - `PASS` or capped: `job next`. A next group: spawn its producer (fresh agent, `previous` set). No group left: merge (code) or deliver (files).
    - `CHANGES` below the cap: `job round`, resume the same producer with the round's gate files, then the gates again.
-4. Merge (code): in the repo's feature worktree, `git merge --squash <job branch>` and commit with the job title. On conflict: `git reset --merge`, `event merge.conflict`, `job stage <ref> running`, resume the producer of the last group to merge the feature branch into its branch, retest and commit; then squash again. After the squash commit: `job stage <ref> done`, remove the job worktree (`--force`) and delete the job branch.
+4. Merge (code): in the repo's feature worktree, `git merge --squash <job branch>` and commit with the job title. On conflict: `git reset --merge`, `event merge.conflict`, `job stage <ref> running`, resume the producer of the last group to merge the feature branch into its branch, retest and commit; then squash again. After the squash commit: compare the feature branch's tree with the job branch's and record `event merge.tree` with `{"same": true|false}`, then `job stage <ref> done`, remove the job worktree (`--force`) and delete the job branch.
 5. Deliver (files): `job stage <ref> done`; the job's `out/` is listed in the report and is `upstream` for dependants.
 6. Fill slots again.
 
@@ -73,7 +73,7 @@ Event-driven: act when an agent finishes or a question is answered. Keep the pro
 
 Per repo, in plan order:
 
-1. The full test suite in the feature worktree. On failure push nothing; ask a question with the failures.
+1. The full test suite in the feature worktree. On failure push nothing; ask a question with the failures. Skipped when the repo's last merged job recorded `merge.tree` with `same: true` and one of its last-round gates ran the full suite and passed: the PR uses that gate's result line.
 2. Write `pr-<repo>.md` with the code host's `pr_template` (read fresh every run) or the plain template; Open points from capped groups, notes that need a human, and `skip list --pr`.
 3. With `no_pr`: stop here, `run status done`, retrospective, report branches, worktrees, tests, cost, and why it stopped.
 4. Otherwise, per repo with `can_push`: push the feature branch (never force); when `open_pr` is available, open or update the draft PR as `adapter.md` says and `run pr`; without it, report the pushed branch for a person to open the PR. For multi-repo runs add `## Related PRs` and update each PR in place.

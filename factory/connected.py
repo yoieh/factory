@@ -7,6 +7,7 @@ NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$")
 RESERVED = ("human", "dashboard", "orchestrator", "planner", "retro")
 MAX_DESCRIPTION = 400
 RECENT = 20
+SELF = "orchestrator"
 
 
 def check_name(name):
@@ -21,17 +22,17 @@ def check_name(name):
     return name
 
 
-def check_author(author):
+def check_author(author, own=False):
     author = (author or "").strip()
     if not author:
         raise FactoryError("--by is empty", code=2)
-    if author in ("human", "dashboard"):
+    if author in ("human", "dashboard") or (own and author == SELF):
         return author
     return check_name(author)
 
 
 def seen(conn, author):
-    if author not in ("human", "dashboard"):
+    if author not in ("human", "dashboard", SELF):
         touch(conn, author)
 
 

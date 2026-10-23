@@ -174,7 +174,9 @@ class AutomaticMovesTest(FactoryCase):
         issue = self.cli("issue", "show", "SHOP-1")
         self.assertEqual((issue["external_key"], issue["external_url"], issue["status"]),
                          ("WEB-7", "https://tracker.example.com/browse/WEB-7", "in_progress"))
-        second = self.cli("run", "new", "Fix the cart again", "--external-key", "WEB-7", cwd=api)
+        refused = self.fails("run", "new", "Fix the cart again", "--external-key", "WEB-7", cwd=api, code=2)
+        self.assertIn(f"issue SHOP-1 already has run {run['id']} (planning)", refused)
+        second = self.cli("run", "new", "Fix the cart again", "--external-key", "WEB-7", "--again", cwd=api)
         self.assertEqual(second["issue_key"], "SHOP-1")
         self.assertEqual(self.cli("issue", "show", "SHOP-1")["title"], "Fix the cart again")
 

@@ -135,7 +135,7 @@ class ScriptProtocolTest(FactoryCase):
         self.assertEqual(self.cli("issue", "show", "SHOP-1")["status"], "in_review")
         state[other] = "MERGED"
         write(script, "import json, sys\nstates = " + json.dumps(state) + "\nprint(json.dumps({'state': states[sys.argv[-1]], 'url': sys.argv[-1]}))\n")
-        later = self.cli("run", "new", "Lead form again", "--issue", "SHOP-1", "--repo", "api")
+        later = self.cli("run", "new", "Lead form again", "--issue", "SHOP-1", "--repo", "api", "--again")
         self.assertEqual(self.cli("run", "prs", run["id"])["issues_done"], [])
         self.cli("run", "delete", later["id"], "--force")
         self.assertEqual(self.cli("run", "prs", run["id"], "--force")["issues_done"], ["SHOP-1"])

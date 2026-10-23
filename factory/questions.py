@@ -168,11 +168,14 @@ def set_status(conn, question, status, **extra):
              question=question["id"], **{"from": question["status"], "to": status})
 
 
+SELF = connected.SELF
+
+
 def answer(conn, question_id, text, delivered=False, author="human"):
     text = (text or "").strip()
     if not text:
         raise FactoryError("the answer is empty", code=2)
-    author = connected.check_author(author)
+    author = connected.check_author(author, own=True)
     with db.tx(conn):
         question = row(conn, question_id)
         if question["status"] not in ("open", "clarify"):

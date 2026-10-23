@@ -4,7 +4,7 @@ role: gate
 kinds: [code]
 agent: factory-reviewer
 summary: Runs the app or the tests end to end and checks each acceptance criterion by behaviour, not by reading.
-when: The acceptance criteria describe behaviour someone can check by running the app, an endpoint or a command. It is the second gate of a bug fix.
+when: The acceptance criteria describe behaviour someone can check by running the app, an endpoint or a command. It is the second gate of a bug fix. Not when every criterion is the repo's test command, its build result or a read-only check such as a grep: review-code reruns those.
 requires: [repo-tests]
 version: 1
 ---
@@ -14,6 +14,7 @@ version: 1
 - Prefer the most direct check: call the endpoint, run the command, drive the screen, run the end-to-end tests.
 - Bug fix: follow the steps of the bug report and confirm the bug is gone, then run the reproducing test.
 - Watch for side effects near the change: errors in the logs, a neighbouring flow that broke.
+- Run test suites with a log file and a set timeout, and name a hung test before you rerun, as your agent file's Check says.
 
 ## Must fix
 - A criterion whose behaviour does not match the spec.

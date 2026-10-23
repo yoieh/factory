@@ -251,9 +251,27 @@ def check_int(value, low, high, label):
     return value
 
 
+def active_run(conn, issue_key):
+    return db.one(conn.execute(
+        "SELECT r.id, r.status FROM issue_links l JOIN runs r ON r.id = l.ref "
+        "WHERE l.issue_key = ? AND l.kind = 'run' AND r.status NOT IN ('done', 'failed') AND r.archived_at IS NULL "
+        "ORDER BY r.created_at DESC, r.id DESC LIMIT 1",
+        (issue_key,),
+    ))
+
+
+def check_issue_free(conn, issue):
+    found = active_run(conn, issue["key"])
+    if found:
+        raise FactoryError(
+            f"issue {issue['key']} already has run {found['id']} ({found['status']}); resume it, or pass --again to start another",
+            code=2,
+        )
+
+
 def new(conn, feature, project_flag=None, repo_args=None, issue_key=None, external_key=None, external_url=None,
         branch=None, base=None, parallel=None, max_rounds=None, confirm_plan=False, no_pr=False, session=None, cwd=None,
-        author="human"):
+        again=False, author="human"):
     cwd = cwd or os.getcwd()
     feature = " ".join((feature or "").split())
     if not feature:
@@ -269,6 +287,8 @@ def new(conn, feature, project_flag=None, repo_args=None, issue_key=None, extern
     session = session_id(session)
     author = connected.check_author(author)
     local_issue = issues.get(conn, issue_key) if issue_key else None
+    if local_issue and not again:
+        check_issue_free(conn, local_issue)
     project_name, adhoc = resolve_project(conn, project_flag, cwd, local_issue, repo_args)
     config = home.load_config()
     project = projects.resolved(projects.load(project_name, config), config, adhoc=adhoc)
@@ -279,6 +299,8 @@ def new(conn, feature, project_flag=None, repo_args=None, issue_key=None, extern
     if external_key:
         mirror_issue, _ = issues.mirror(conn, project_name, external_key, feature, url=external_url)
     issue = local_issue or mirror_issue
+    if mirror_issue and not again:
+        check_issue_free(conn, mirror_issue)
     defaults = project["defaults"]
     branch_key = (mirror_issue or {}).get("external_key") or (local_issue or {}).get("key")
     title = local_issue["title"] if local_issue else feature

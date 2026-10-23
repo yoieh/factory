@@ -57,7 +57,7 @@ POST (`Content-Type: application/json` only):
 
 ## Security
 
-- Bind 127.0.0.1 only. Reject requests whose `Host` is not `127.0.0.1:<port>` or `localhost:<port>`, and POSTs whose `Origin` is present and not local.
+- Bind 127.0.0.1 only. Reject requests whose `Host` is not `127.0.0.1:<port>`, `localhost:<port>` or a name in `config.json` `dashboard.hosts` (on any port), and POSTs whose `Origin` is present and neither local nor `http(s)://` on such a name. `dashboard.hosts` is for a proxy such as `tailscale serve` in front of the local server; it never changes the bind address.
 - File reads: resolve the path, require it under the allowed folders, allow only the listed suffixes, refuse symlinks that leave the folder.
 - Text limits on POST bodies (answers and notes 4000 characters, issue bodies 100 000).
 - No secrets in any response; project responses are redacted.

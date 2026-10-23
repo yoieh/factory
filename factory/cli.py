@@ -371,11 +371,12 @@ def cmd_paths(conn, args):
 
 
 def cmd_serve(conn, args):
-    port = args.port if args.port is not None else home.load_config()["dashboard"]["port"]
+    dashboard = home.load_config()["dashboard"]
+    port = args.port if args.port is not None else dashboard["port"]
     if not 0 <= port <= 65535:
         raise FactoryError("--port must be a port number", code=2)
     conn.close()
-    return server.serve(port, args.quiet)
+    return server.serve(port, args.quiet, dashboard["hosts"])
 
 
 def cmd_demo(conn, args):

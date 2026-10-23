@@ -1,6 +1,6 @@
 {
   "default_project": "shop",
-  "dashboard": {"port": 8765},
+  "dashboard": {"port": 8765, "hosts": []},
   "factory_source": "~/src/factory",
   "factory_project": "factory",
   "catalogue_dirs": ["~/src/team-catalogue"],

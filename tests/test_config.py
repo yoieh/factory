@@ -24,6 +24,13 @@ class ConfigTest(FactoryCase):
         write(config, json.dumps(data))
         self.assertIn("unknown key 'extra'", self.fails("config", "show"))
 
+    def test_dashboard_hosts(self):
+        self.assertEqual(self.cli("config", "show")["dashboard"]["hosts"], [])
+        result = self.cli("config", "set", "dashboard.hosts", '["box.tailnet.ts.net"]')
+        self.assertEqual(result["dashboard"]["hosts"], ["box.tailnet.ts.net"])
+        for bad in ('"box.tailnet.ts.net"', '["https://box.tailnet.ts.net"]', '["box.tailnet.ts.net:443"]', '["Box"]', '[1]'):
+            self.assertIn("dashboard.hosts", self.fails("config", "set", "dashboard.hosts", bad), bad)
+
     def test_values_are_checked(self):
         self.assertIn("max_rounds", self.fails("config", "set", "max_rounds", "11"))
         self.assertIn("parallel", self.fails("config", "set", "parallel", "true"))

@@ -135,9 +135,19 @@ One local page, served by the standard library and built from one self-contained
 - **Projects**: repos, integrations with availability, knowledge, skill installs and drift, and the catalogue with where each step comes from. Read-only.
 - **Improvements**: evidence and proposal per item; accept, reject, mark done or send back to review, with a note.
 
+To reach the dashboard from other devices on a tailnet, keep the server on 127.0.0.1 and put `tailscale serve` in front of it, then list the machine's tailnet name:
+
+```sh
+tailscale serve --bg --https=8765 http://127.0.0.1:8765
+factory config set dashboard.hosts '["<machine>.<tailnet>.ts.net"]'
+factory serve                 # restart it to read the new names
+```
+
+The dashboard is then at `https://<machine>.<tailnet>.ts.net:8765/` for the tailnet only. A name in `dashboard.hosts` is accepted on any port, and POSTs from `http://` or `https://` on that name count as the dashboard's own. Anyone who can reach that name can answer questions and edit issues, so list only names that only your devices reach.
+
 The page polls every 3 seconds while visible and every 30 seconds when hidden. A background thread reads the PR states of open and unchecked PRs every 5 minutes through the code host's `pr_state`, with the project config read fresh each time. The theme follows the system, with a toggle the browser remembers.
 
-The server binds 127.0.0.1 only and answers only requests whose `Host` is `127.0.0.1:<port>` or `localhost:<port>`, which stops DNS rebinding. POSTs must be `application/json`, and a POST with an `Origin` other than the dashboard's own is refused. Files are served only as `.md` or `.json` under `runs/`, `improve/` and `issues/`, and `.png` under `runs/` when the file starts with the PNG signature; paths are resolved first, so `..` and symlinks that leave those folders are refused. Answers and notes are limited to 4000 characters and issue bodies to 100 000. Project responses leave out paths outside the project's repos and the factory home, and show adapter settings marked `secret` as `***`. Markdown is rendered into page elements with every text escaped; only the `<details>` and `<summary>` of questions are rebuilt.
+The server binds 127.0.0.1 only and answers only requests whose `Host` is `127.0.0.1:<port>` or `localhost:<port>`, or a name listed in `config.json` `dashboard.hosts`, which stops DNS rebinding. POSTs must be `application/json`, and a POST with an `Origin` other than the dashboard's own is refused. Files are served only as `.md` or `.json` under `runs/`, `improve/` and `issues/`, and `.png` under `runs/` when the file starts with the PNG signature; paths are resolved first, so `..` and symlinks that leave those folders are refused. Answers and notes are limited to 4000 characters and issue bodies to 100 000. Project responses leave out paths outside the project's repos and the factory home, and show adapter settings marked `secret` as `***`. Markdown is rendered into page elements with every text escaped; only the `<details>` and `<summary>` of questions are rebuilt.
 
 ## Adapters
 

@@ -343,6 +343,15 @@ class Handler(BaseHTTPRequestHandler):
         port = self.server.server_address[1]
         return (f"127.0.0.1:{port}", f"localhost:{port}")
 
+    def extra_host(self, value, origin=False):
+        # A name from dashboard.hosts, such as a tailnet name behind `tailscale serve`, on any port.
+        if origin:
+            scheme, _, value = value.partition("://")
+            if scheme not in ("http", "https"):
+                return False
+        name, _, port = value.partition(":")
+        return name in self.server.hosts and (port == "" or port.isdigit())
+
     def send(self, status, payload, content_type="application/json; charset=utf-8"):
         data = payload if isinstance(payload, bytes) else json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
@@ -378,10 +387,11 @@ class Handler(BaseHTTPRequestHandler):
 
     def handle_any(self, method):
         try:
-            if self.headers.get("Host") not in self.allowed_hosts():
-                raise Refused(403, "this server answers only on 127.0.0.1 and localhost")
+            host = self.headers.get("Host") or ""
+            if host not in self.allowed_hosts() and not self.extra_host(host):
+                raise Refused(403, "this server answers only on 127.0.0.1, localhost and the names in dashboard.hosts")
             origin = self.headers.get("Origin")
-            if method == "POST" and origin is not None and origin not in tuple(f"http://{host}" for host in self.allowed_hosts()):
+            if method == "POST" and origin is not None and origin not in tuple(f"http://{host}" for host in self.allowed_hosts()) and not self.extra_host(origin, origin=True):
                 raise Refused(403, "cross-origin POSTs are refused")
             parsed = urlsplit(self.path)
             route = parsed.path
@@ -438,9 +448,10 @@ class Server(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
-    def __init__(self, port, quiet=False):
+    def __init__(self, port, quiet=False, hosts=()):
         super().__init__(("127.0.0.1", port), Handler)
         self.quiet = quiet
+        self.hosts = frozenset(hosts)
 
 
 def poll_once():
@@ -459,9 +470,9 @@ def poller(stop, interval=POLL_SECONDS):
             sys.stderr.write(f"factory: PR poll failed: {type(error).__name__}: {error}\n")
 
 
-def serve(port, quiet=False):
+def serve(port, quiet=False, hosts=()):
     try:
-        server = Server(port, quiet)
+        server = Server(port, quiet, hosts)
     except OSError as error:
         raise FactoryError(f"cannot listen on 127.0.0.1:{port}: {error.strerror}")
     stop = threading.Event()

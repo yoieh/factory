@@ -170,6 +170,20 @@ class GuardsTest(ServerCase):
         code, _, _ = self.request("GET", "/api/runs", headers={"Host": f"localhost:{self.port}"})
         self.assertEqual(code, 200)
 
+    def test_extra_hosts(self):
+        self.server.hosts = frozenset({"box.tailnet.ts.net"})
+        for host in ("box.tailnet.ts.net", "box.tailnet.ts.net:8765", "box.tailnet.ts.net:443"):
+            code, _, _ = self.request("GET", "/api/runs", headers={"Host": host})
+            self.assertEqual(code, 200, host)
+        for host in ("evil.box.tailnet.ts.net", "box.tailnet.ts.net.evil.com", "box.tailnet.ts.net:x", "tailnet.ts.net"):
+            code, _, _ = self.request("GET", "/api/runs", headers={"Host": host})
+            self.assertEqual(code, 403, host)
+        asked = next(item for item in self.get("/api/questions") if item["kind"] == "question")
+        path = f"/api/questions/{asked['id']}/clarify"
+        for origin in ("https://evil.example.com", "ftp://box.tailnet.ts.net", "https://box.tailnet.ts.net.evil.com"):
+            self.post(path, {"text": "x"}, status=403, headers={"Origin": origin})
+        self.post(path, {"text": "ok"}, headers={"Host": "box.tailnet.ts.net:8765", "Origin": "https://box.tailnet.ts.net:8765"})
+
     def test_origin_and_json_only_posts(self):
         asked = next(item for item in self.get("/api/questions") if item["kind"] == "question")
         path = f"/api/questions/{asked['id']}/clarify"

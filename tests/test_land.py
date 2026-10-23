@@ -182,6 +182,14 @@ class LandTest(FactoryCase):
         self.assertEqual(read(started["review_file"]), "VERDICT: PASS\nFine.\n")
         self.assertEqual(self.cli("land", "apply", self.run["id"], "--repo", "api")["action"], "merged")
 
+    def test_start_gives_the_lander_the_repos_verify(self):
+        self.assertEqual(self.cli("land", "start", self.run["id"], "--repo", "api")["verify"], "none")
+        verify = {"how": "browser", "start": "npm run dev -- --port {port}", "url": "http://localhost:{port}",
+                  "steps": "Add a lead and see it in the list"}
+        self.cli("project", "set", "shop", "repos.api.verify", json.dumps(verify))
+        started = self.cli("land", "start", self.run["id"], "--repo", "api")
+        self.assertEqual(json.loads(started["verify"]), dict(verify, tool="browser-use"))
+
     def test_rounds_count_up_and_list_the_previous_ones(self):
         first = self.cli("land", "start", self.run["id"], "--repo", "api")
         second = self.cli("land", "start", self.run["id"], "--repo", "api")

@@ -83,6 +83,26 @@ class ProjectCommandsTest(FactoryCase):
         shown = self.cli("project", "show", "shop")
         self.assertIn("not a git checkout", shown["warnings"][0])
 
+    def test_verify_is_validated_and_resolved_with_its_tool(self):
+        self.project(repos=[self.repo("api")])
+        for value, problem in (
+                ({"how": "watch"}, "verify.how must be one of browser, http, cli, command"),
+                ({"how": "browser", "steps": "look"}, "how browser needs url"),
+                ({"how": "command"}, "how command needs run"),
+                ({"how": "cli", "run": "make e2e"}, "steps is required"),
+                ({"how": "cli", "steps": "x", "timeout": 5}, "verify.timeout must be an integer from 10 to 3600"),
+                ({"how": "cli", "steps": "x", "ports": 1}, "unknown key 'ports'"),
+                ("make e2e", "verify must be an object")):
+            self.assertIn(problem, self.fails("project", "set", "shop", "repos.api.verify", json.dumps(value)))
+        shown = self.cli("project", "set", "shop", "repos.api.verify", json.dumps({"how": "command", "run": "make e2e"}))
+        shown = self.cli("project", "show", "shop")
+        self.assertEqual(shown["repos"][0]["verify"], {"how": "command", "run": "make e2e"})
+        self.cli("project", "set", "shop", "repos.api.verify",
+                 json.dumps({"how": "cli", "steps": "run it", "tool": "no-such-tool-here --flag"}))
+        shown = self.cli("project", "show", "shop")
+        self.assertEqual(shown["repos"][0]["verify"]["tool"], "no-such-tool-here --flag")
+        self.assertIn("repo api: verify's tool no-such-tool-here is not on PATH", shown["warnings"])
+
     def test_pin_writes_the_pointer_file(self):
         api = self.repo("api")
         self.project(repos=[api])

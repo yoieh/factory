@@ -30,7 +30,7 @@ When there are designs, look at every frame (read the `.png` files) and assign e
 Read in this order and stop as soon as you can write the plan. Project knowledge first, code only to confirm.
 
 1. `issue.md`, `feature` and the designs.
-2. From `project`: the paths in `knowledge.read_first`, then `knowledge.per_repo` with `{repo}` replaced by each candidate repo (read a file only when it exists), the `role`, `test` and `setup` hints in `repos`, and `knowledge.architecture` when the change adds an endpoint, an integration or an event, or moves data.
+2. From `project`: the paths in `knowledge.read_first`, then `knowledge.per_repo` with `{repo}` replaced by each candidate repo (read a file only when it exists), the `role`, `test`, `setup` and `verify` hints in `repos`, and `knowledge.architecture` when the change adds an endpoint, an integration or an event, or moves data.
 3. Per candidate repo, this short list and nothing more until a fact is missing:
    - the repo's rules files: `CLAUDE.md`, `AGENTS.md`, `README*`, `CONTRIBUTING*`
    - the files that define its dependencies, test command and lint, and its CI config
@@ -55,7 +55,7 @@ Use only repos linked to the project (`repos` in `project`). When the `repos` in
 ## Pipelines
 
 1. For each job, start from the template in `catalogue` whose `kinds` include the job's kind and whose `when` fits best. Set `template` to its name. Read a step file at its `path` only when its `summary` and `when` are not enough to decide.
-2. Add the gates from each template group's `optional_gates` whose `when` fits the job. Add no gate to be safe: every gate runs again in every round. verify is for behaviour beyond the repo's test command (start the app, call an endpoint, run a CLI or a migration); criteria that only need the test command and the build are review-code's. approve is not for a check a person does on the PR before it is merged (a live run, a manual test, a dry-run against production): that check goes to "Outside the code" and the PR's Open points. Copy only `step` and `gates` into the plan; a plan never holds `optional_gates`.
+2. Add the gates from each template group's `optional_gates` whose `when` fits the job. Add no gate to be safe: every gate runs again in every round. verify is for behaviour beyond the repo's test command (start the app, call an endpoint, run a CLI or a migration); criteria that only need the test command and the build are review-code's. When the job changes behaviour a person sees in a repo that has `verify` in `project` (how the project says to see it work, for example a browser walk-through), add verify: that is how the project wants it tested. approve is not for a check a person does on the PR before it is merged (a live run, a manual test, a dry-run against production): that check goes to "Outside the code" and the PR's Open points. Copy only `step` and `gates` into the plan; a plan never holds `optional_gates`.
 3. When no template fits, compose the pipeline from steps: groups in order, each a `produce` step with the gates that judge it. Leave `template` out.
 4. Check each step's `requires`: `designs` needs files in the run's `design/` folder, `upstream` needs `depends_on`, `previous` needs a group that is not the job's first, `repo-tests` needs a test command in the repo's facts, `issue` needs `issue.md`.
 5. Explain the pipeline in the jobs table, under "Why this pipeline": the template, and the reason for each added gate or step, in one short sentence.
@@ -75,6 +75,7 @@ Use only repos linked to the project (`repos` in `project`). When the `repos` in
 - Language and framework:
 - Test command: `<full suite>`, and how to run one test file, copied from project knowledge or the repo's docs, or a command you ran once in the repo and saw collect tests (for example with a `-k` filter that matches nothing new). Leave the narrower command out when you have neither.
 - Worktree setup: `<commands that make a fresh worktree ready to run its tests in a non-interactive shell: dependency install from the lockfile, generated files, the services the tests need, the toolchain version; never symlink or reuse the main checkout's env>`, or exactly `none` when a fresh worktree needs nothing; notes about the toolchain go after it, without backticks
+- How to see it work: the repo's `verify` from `project` in one line (`how`, `start`, `url` or `run`), or how its README says to run it locally, or `none`
 - Conventions: commit style, lint, formatting, repo rules
 
 ## Jobs

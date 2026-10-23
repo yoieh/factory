@@ -49,7 +49,7 @@ Keys:
 | `name` | yes | `^[a-z][a-z0-9-]{1,39}$`, equals the folder name. |
 | `key` | yes | Issue key prefix, `^[A-Z][A-Z0-9]{1,9}$`, unique across projects. |
 | `description` | no | One line. |
-| `repos` | yes (may be empty) | `name` (`^[A-Za-z0-9][A-Za-z0-9._-]*$`, unique), `path` (a git checkout), optional `remote`, `default_branch` (read from `origin/HEAD` when missing), `role` (free text for the planner), `test` and `setup` (hints for the planner; the plan's repo facts win), `after_merge` (below). |
+| `repos` | yes (may be empty) | `name` (`^[A-Za-z0-9][A-Za-z0-9._-]*$`, unique), `path` (a git checkout), optional `remote`, `default_branch` (read from `origin/HEAD` when missing), `role` (free text for the planner), `test` and `setup` (hints for the planner; the plan's repo facts win), `verify` and `after_merge` (below). |
 | `repo_root` | no | A folder the planner may scan for repos not yet linked; it may propose linking one in a question, never use it unlinked. |
 | `integrations` | no | See 07. |
 | `knowledge` | no | Paths the agents read when they exist: `label`, `read_first`, `per_repo` (with `{repo}`), `architecture`. |
@@ -57,6 +57,25 @@ Keys:
 | `catalogue_dirs` | no | Extra catalogue folders (06). |
 | `improvement_targets` | no | Where accepted improvements go. Default: `factory`, `repo`, `process`; `knowledge` only when set. Per target: `repo` (a project repo, or none for `factory` and `process`), `base` (`current`, `default` or a branch name), `label`. |
 | `defaults` | no | Run defaults. `land` (`off`, `ready` or `merge`, default `off`) says what `land apply` does with a PR the lander passed: nothing, mark it ready for review, or merge it. Only the user turns it on, per project. `agent_runs` (null, the default, or 0 to 64) caps the active runs (`planning` to `finishing`, not archived) a project may have when a connected agent starts one (`run new --by`); 0 stops agents starting runs, null leaves it to the agent's judgment. `land_fixes` (0 to 5, default 2) is how many times the factory fixes a PR the lander sent back before a person decides. |
+
+A repo's `verify` says how an agent sees the repo work, beyond its tests. The lander runs it on every PR before it passes; the `verify` gate and the planner use it too. Only the user sets it, per repo: `factory project set <name> repos.<repo>.verify '<json>'`.
+
+```json
+{"how": "browser", "start": "npm run dev -- --port {port}", "url": "http://localhost:{port}",
+ "steps": "Sign in as demo@example.com, add a lead, and see it in the list without console errors"}
+```
+
+| Key | Meaning |
+|---|---|
+| `how` | Required. `browser` (drive a web page), `http` (call an API), `cli` (run commands) or `command` (one command whose exit code is the verdict). |
+| `start` | A shell command, run in the PR's worktree after the repo's `setup`, that starts the app locally. `{port}` becomes a free local port. |
+| `url` | Where to go once it runs, with `{port}`. Required for `browser` and `http`. |
+| `run` | The command for `command` (required) or `cli`. |
+| `steps` | Plain words: what to do and what should be seen. Required except for `command`. |
+| `tool` | The command the agent drives it with. Default `browser-use` for `browser`, `curl` for `http`. `project show` warns when it is not on `PATH`. |
+| `timeout` | Seconds for the whole of it, 10 to 3600 (default 600). |
+
+Only local services the agent starts itself: never shared, staging or production systems. When `verify` cannot run, the lander's review holds a `[human]` item, so the PR waits for a person.
 
 A repo's `after_merge` says what the factory does once its PR is merged, in **After merge** of Land. Only the user sets it.
 

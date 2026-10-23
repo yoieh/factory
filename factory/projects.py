@@ -2,6 +2,7 @@ import copy
 import json
 import os
 import re
+import shutil
 
 from . import FactoryError, adapters, catalogue, db, home
 from .util import (
@@ -17,7 +18,10 @@ TOP_KEYS = (
     "name", "key", "description", "repos", "repo_root", "integrations", "knowledge",
     "step_skills", "catalogue_dirs", "improvement_targets", "defaults",
 )
-REPO_KEYS = ("name", "path", "remote", "default_branch", "role", "test", "setup", "after_merge")
+REPO_KEYS = ("name", "path", "remote", "default_branch", "role", "test", "setup", "verify", "after_merge")
+VERIFY_KEYS = ("how", "start", "url", "run", "steps", "tool", "timeout")
+VERIFY_HOWS = ("browser", "http", "cli", "command")
+VERIFY_TOOLS = {"browser": "browser-use", "http": "curl"}
 AFTER_MERGE_KEYS = ("deploy", "watch", "build", "artifact", "release", "package")
 RELEASE_MODES = ("off", "draft", "publish")
 PACKAGE_MODES = ("off", "publish")
@@ -115,6 +119,8 @@ def validate(project, folder_name=None, config=None):
                 problems.append(f"{label}: {key} must be a string")
         if "default_branch" in repo and not valid_branch_name(repo["default_branch"]):
             problems.append(f"{label}: default_branch is not a valid branch name")
+        if "verify" in repo:
+            problems.extend(verify_problems(f"{label}.verify", repo["verify"]))
         if "after_merge" in repo:
             problems.extend(after_merge_problems(f"{label}.after_merge", repo["after_merge"]))
     if "repo_root" in project:
@@ -226,6 +232,26 @@ def validate(project, folder_name=None, config=None):
             problems.append(f"integrations.{slot}: adapter {entry['adapter']} is a {data['slot']} adapter")
             continue
         problems.extend(adapters.integration_problems(slot, entry, data))
+    return problems
+
+
+def verify_problems(label, check):
+    if not isinstance(check, dict):
+        return [f"{label} must be an object"]
+    problems = [f"{label}: unknown key {key!r}" for key in check if key not in VERIFY_KEYS]
+    if check.get("how") not in VERIFY_HOWS:
+        problems.append(f"{label}.how must be one of {', '.join(VERIFY_HOWS)}")
+    for key in ("start", "url", "run", "steps", "tool"):
+        if key in check and not (isinstance(check[key], str) and check[key].strip()):
+            problems.append(f"{label}.{key} must be a non-empty string")
+    if "timeout" in check and not (is_int(check["timeout"]) and 10 <= check["timeout"] <= 3600):
+        problems.append(f"{label}.timeout must be an integer from 10 to 3600 seconds")
+    if check.get("how") in ("browser", "http") and "url" not in check:
+        problems.append(f"{label}: how {check['how']} needs url")
+    if check.get("how") == "command" and "run" not in check:
+        problems.append(f"{label}: how command needs run")
+    if check.get("how") != "command" and "steps" not in check:
+        problems.append(f"{label}: steps is required: what to do and what you should see")
     return problems
 
 
@@ -615,6 +641,12 @@ def resolved(project, config=None, adhoc=False):
             "is_git": bool(top),
             "has_origin": has_origin,
         }
+        if repo.get("verify"):
+            verify = dict(repo["verify"], tool=repo["verify"].get("tool") or VERIFY_TOOLS.get(repo["verify"]["how"]))
+            entry["verify"] = {key: value for key, value in verify.items() if value}
+            tool = entry["verify"].get("tool", "").split()[:1]
+            if tool and not shutil.which(tool[0]):
+                warnings.append(f"repo {repo['name']}: verify's tool {tool[0]} is not on PATH")
         if repo.get("after_merge"):
             entry["after_merge"] = repo["after_merge"]
         if not top:

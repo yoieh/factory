@@ -63,6 +63,56 @@
         ]
       }
     },
+    "publish_release": {
+      "via": "script",
+      "command": [
+        "python3",
+        "scripts/publish_release.py",
+        "--url",
+        "{pr_url}",
+        "--tag",
+        "{tag}",
+        "--target",
+        "{merge_sha}",
+        "--file",
+        "{artifact}",
+        "--title",
+        "{title}",
+        "--notes-file",
+        "{notes_file}",
+        "--mode",
+        "{release_mode}",
+        "--prerelease",
+        "{prerelease}"
+      ],
+      "requires": {
+        "bin": [
+          "gh"
+        ]
+      }
+    },
+    "publish_package": {
+      "via": "script",
+      "command": [
+        "python3",
+        "scripts/publish_package.py",
+        "--url",
+        "{pr_url}",
+        "--tag",
+        "{tag}",
+        "--revision",
+        "{merge_sha}",
+        "--file",
+        "{artifact}",
+        "--registry",
+        "{registry}"
+      ],
+      "requires": {
+        "bin": [
+          "gh"
+        ]
+      }
+    },
     "pr_template": {
       "via": "file",
       "path": "pr-template.md"
@@ -80,6 +130,14 @@
     "merge_method": {
       "type": "string",
       "default": "squash"
+    },
+    "prerelease": {
+      "type": "bool",
+      "default": true
+    },
+    "registry": {
+      "type": "string",
+      "default": "https://ghcr.io"
     }
   },
   "patterns": {

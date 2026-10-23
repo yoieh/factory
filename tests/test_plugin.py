@@ -32,7 +32,7 @@ class ManifestTest(unittest.TestCase):
     def test_layout(self):
         for path in ("skills/factory/SKILL.md", "bin/factory", "agents/factory-planner.md", "agents/factory-worker.md",
                      "agents/factory-reviewer.md", "agents/factory-retro.md", "agents/factory-improver.md",
-                     "agents/factory-lander.md"):
+                     "agents/factory-lander.md", "agents/factory-watcher.md"):
             self.assertTrue(os.path.isfile(os.path.join(ROOT, path)), path)
         self.assertTrue(os.access(os.path.join(ROOT, "bin", "factory"), os.X_OK))
         skill = read(os.path.join(ROOT, "skills", "factory", "SKILL.md"))

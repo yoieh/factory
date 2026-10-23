@@ -21,7 +21,7 @@ Claude Code 2.1.275 and later also take it in one step: `/plugin install factory
 
 Claude Code does not update plugins from this marketplace by itself unless you turn auto-update on in the **Marketplaces** tab of `/plugin`. To update by hand, choose **Update now** on the plugin in the **Installed** tab, or run `claude plugin update factory@factory` in a shell. An installed copy only changes when `version` in `.claude-plugin/plugin.json` changes, so every release bumps it.
 
-The plugin brings the `/factory` skill (its full name is `/factory:factory`; plain `/factory` works while no other command uses that name), the six agents (`factory:factory-planner`, `factory:factory-worker`, `factory:factory-reviewer`, `factory:factory-retro`, `factory:factory-improver`, `factory:factory-lander`) and the `factory` command, which Claude Code puts on the Bash tool's PATH. Nothing else to set up: the first command creates the factory home. State never lives in the plugin folder, because that folder changes with every version and Claude Code deletes plugin data on uninstall; it lives in `~/.factory`.
+The plugin brings the `/factory` skill (its full name is `/factory:factory`; plain `/factory` works while no other command uses that name), the seven agents (`factory:factory-planner`, `factory:factory-worker`, `factory:factory-reviewer`, `factory:factory-retro`, `factory:factory-improver`, `factory:factory-lander`, `factory:factory-watcher`) and the `factory` command, which Claude Code puts on the Bash tool's PATH. Nothing else to set up: the first command creates the factory home. State never lives in the plugin folder, because that folder changes with every version and Claude Code deletes plugin data on uninstall; it lives in `~/.factory`.
 
 The first time the plugin's CLI runs, it copies itself to `~/.factory/core/<version>/` and points `core/current` at it. The terminal command and the dashboard then run the same core as the plugin. To get the terminal command, run `sh install.sh` once from the plugin folder; `factory doctor` prints that command when the shim is missing or runs another version.
 
@@ -85,7 +85,7 @@ Every command prints one JSON value. Errors print `factory: <message>` on stderr
 | Steps and gates | `step sync|save`, `gate sync`, `gate human` |
 | Questions | `question ask|answer|clarify|reply|resolve|list|wait` |
 | Designs | `design links <path>`, `design target <run-id> --name <frame>`, `design check <run-id>` |
-| Landing | `land check|start|save|apply <run-id>` |
+| Landing | `land check|start|save|apply <run-id>`, after merge `land after|build|publish|watched <run-id>` |
 | Retrospective | `retro load <run-id>`, `improvement list|decide|start|pr|prs` |
 | Usage | `usage sync [<run-id>]`, `usage show <run-id>` |
 | Skips and events | `skip add|list`, `event` |
@@ -167,6 +167,22 @@ The server binds 127.0.0.1 only and answers only requests whose `Host` is `127.0
 
 The core acts only when every check passes (a repo without CI counts on the lander's own test run), the PR merges cleanly, no reviewer asked for changes and the PR's head is still the commit the lander judged. It merges pinned to that commit, without admin rights, auto-merge or branch deletion, so branch protection still applies. `--dry-run` says what it would do. With `ready` or `merge`, Finish lands the run's PRs by itself once their checks are done. Only the user turns landing on, per project, with `factory project set <name> defaults.land '"merge"'`; the code host adapter needs the `pr_checks` and `land_pr` capabilities.
 
+### After merge
+
+Once a PR is merged, by `land apply` or by a person, `/factory land <run-id>` runs the steps the repo's `after_merge` asks for:
+
+```json
+{"name": "game", "path": "~/src/game", "after_merge": {"build": "make export", "artifact": "build/game-windows.zip",
+                                                       "release": "draft", "package": "off"}}
+{"name": "app", "path": "~/src/app", "after_merge": {"watch": true}}
+```
+
+- `watch`: the `factory-watcher` agent follows the merge commit's deploy with the `deploy-watch` skill. When the deploy broke production, it rolls the broken services back and opens a remediation PR, which it never merges. Its verdict (`DEPLOY: VERIFIED`, `FAILED`, `RESTORED`, ...) is reported first when something went wrong.
+- `build` and `artifact`: the core builds the merge commit in its own worktree, with the repo's `setup` first, and keeps the artifact (a folder is zipped) in the run's `land/<repo>/after/`.
+- `release` (`off`, `draft`, `publish`) and `package` (`off`, `publish`): `factory land publish` uploads the build as a release tagged `build-<yyyymmdd>-<short sha>`, and as a package of the repo, through the code host adapter's `publish_release` and `publish_package`. Its `adapter.md` says what a package is there and which rights the upload needs.
+
+Only the user sets `after_merge`, per repo: `factory project set <name> repos.<repo>.after_merge '<json>'`. Releases and packages stay `off` until then.
+
 ## Adapters
 
 Trackers, code hosts and design tools plug in through adapters, at most one per slot (`factory-spec/spec/07-integrations.md`). An adapter is a folder with `adapter.json` (what it can do, its settings and patterns) and `adapter.md` (what the orchestrator does for each capability). The built-in ones are in `catalogue/adapters/`; `local` (the central issue list) and `none` (no code host) are the defaults.
@@ -244,6 +260,7 @@ Prices are dollars per million tokens. Cache writes cost the input price times 1
 | `factory/questions.py` | The question format and the question threads. |
 | `factory/designs.py` | Design links, frame file names, the PNG and scrub check. |
 | `factory/land.py` | Land: PR checks, land rounds, and acting on the lander's verdict. |
+| `factory/after.py` | After merge: the merge commit, the build, the release and package upload, the deploy verdict. |
 | `factory/retro.py`, `factory/improvements.py` | `retro load`, improvement decisions, Improve groups and their PRs. |
 | `factory/usage.py` | Transcript reading, the price table, costs. |
 | `factory/skills.py` | Skill and agent copies, plugin folders, `factory agents`. |

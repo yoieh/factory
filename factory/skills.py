@@ -12,6 +12,7 @@ ROLES = {
     "retro": "factory-retro",
     "improver": "factory-improver",
     "lander": "factory-lander",
+    "watcher": "factory-watcher",
 }
 
 

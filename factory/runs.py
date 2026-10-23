@@ -514,9 +514,10 @@ def remove_worktrees(conn, run_id, include_feature_branches=False):
     for repo in repos:
         if not os.path.isdir(repo["path"]):
             continue
-        if os.path.exists(repo["feature_worktree"]):
-            if git(["worktree", "remove", "--force", repo["feature_worktree"]], repo["path"], check=False) is None:
-                warnings.append(f"could not remove worktree {repo['feature_worktree']}")
+        for worktree in (repo["feature_worktree"], home.path("worktrees", run_id, "_after", repo["repo"])):
+            if os.path.exists(worktree):
+                if git(["worktree", "remove", "--force", worktree], repo["path"], check=False) is None:
+                    warnings.append(f"could not remove worktree {worktree}")
         git(["worktree", "prune"], repo["path"], check=False)
         if include_feature_branches and git_branch_exists(repo["path"], run["feature_branch"]):
             if git(["branch", "-D", run["feature_branch"]], repo["path"], check=False) is None:

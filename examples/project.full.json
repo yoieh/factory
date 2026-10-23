@@ -6,7 +6,8 @@
     {"name": "api", "path": "~/src/shop/api", "remote": "git@bitbucket.org:example/shop-api.git",
      "default_branch": "main", "role": "service: orders and payments API", "test": "make test", "setup": "make deps"},
     {"name": "web", "path": "~/src/shop/web", "remote": "git@bitbucket.org:example/shop-web.git",
-     "default_branch": "main", "role": "frontend: customer web app", "test": "npm test", "setup": "npm ci"},
+     "default_branch": "main", "role": "frontend: customer web app", "test": "npm test", "setup": "npm ci",
+     "after_merge": {"watch": true}},
     {"name": "docs", "path": "~/src/shop/docs", "remote": "git@bitbucket.org:example/shop-docs.git",
      "default_branch": "main", "role": "docs: architecture, service notes and runbooks"}
   ],

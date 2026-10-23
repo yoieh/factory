@@ -6,7 +6,7 @@ import sys
 import traceback
 
 from . import (
-    NAME, VERSION, FactoryError, adapters, catalogue, db, demo, designs, doctor, home, improvements, issues, jobs, land,
+    NAME, VERSION, FactoryError, adapters, after, catalogue, db, demo, designs, doctor, home, improvements, issues, jobs, land,
     legacy, projects, questions, retro, runs, server, skills, usage,
 )
 from .util import parse_json_value
@@ -319,14 +319,32 @@ def build():
     entry = add(land_group, "start", cmd_land_start, "Open a new land round for a repo's PR: the lander's paths.")
     entry.add_argument("run_id")
     entry.add_argument("--repo", required=True)
-    entry = add(land_group, "save", cmd_land_save, "Store the lander's review file from stdin when the harness refused its write.")
+    entry = add(land_group, "save", cmd_land_save,
+                "Store the lander's review file, or with --watch the watcher's watch file, from stdin when the harness refused its write.")
     entry.add_argument("run_id")
     entry.add_argument("--repo", required=True)
+    entry.add_argument("--watch", action="store_true", help="store the watch file of the steps after merge")
     entry = add(land_group, "apply", cmd_land_apply,
                 "Act on the lander's verdict: mark the PR ready or merge it when every check passes and the mode allows it.")
     entry.add_argument("run_id")
     entry.add_argument("--repo", required=True)
     entry.add_argument("--dry-run", action="store_true", help="say what would happen and change nothing")
+    entry = add(land_group, "after", cmd_land_after,
+                "Start the steps after a merged PR, as the repo's after_merge says: the merge commit, the tag and the paths.")
+    entry.add_argument("run_id")
+    entry.add_argument("--repo", required=True)
+    entry = add(land_group, "build", cmd_land_build, "Build the merge commit in its own worktree and keep the artifact.")
+    entry.add_argument("run_id")
+    entry.add_argument("--repo", required=True)
+    entry.add_argument("--timeout", type=int, help="seconds the build may take (default 3600)")
+    entry = add(land_group, "publish", cmd_land_publish,
+                "Upload the build as a release and a package, as the repo's after_merge says.")
+    entry.add_argument("run_id")
+    entry.add_argument("--repo", required=True)
+    entry.add_argument("--dry-run", action="store_true", help="say what would happen and change nothing")
+    entry = add(land_group, "watched", cmd_land_watched, "Read the watcher's deploy verdict.")
+    entry.add_argument("run_id")
+    entry.add_argument("--repo", required=True)
 
     retro_group = group(top, "retro", "The retrospective.")
     entry = add(retro_group, "load", cmd_retro_load, "Read retro.md into improvements.")
@@ -562,11 +580,29 @@ def cmd_land_start(conn, args):
 
 
 def cmd_land_save(conn, args):
+    if args.watch:
+        return after.save_watch(conn, args.run_id, args.repo, sys.stdin.read())
     return land.save(conn, args.run_id, args.repo, sys.stdin.read())
 
 
 def cmd_land_apply(conn, args):
     return land.apply(conn, args.run_id, args.repo, args.dry_run)
+
+
+def cmd_land_after(conn, args):
+    return after.start(conn, args.run_id, args.repo)
+
+
+def cmd_land_build(conn, args):
+    return after.build(conn, args.run_id, args.repo, args.timeout)
+
+
+def cmd_land_publish(conn, args):
+    return after.publish(conn, args.run_id, args.repo, args.dry_run)
+
+
+def cmd_land_watched(conn, args):
+    return after.watched(conn, args.run_id, args.repo)
 
 
 def cmd_design_links(conn, args):

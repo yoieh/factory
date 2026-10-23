@@ -46,6 +46,7 @@ Prompt keys per agent, in this order:
 | `factory-retro` | `node`, `run_id`, `run_dir`, `retro_file`, `retro_notes`, `issue`, `plan`, `repos`, `catalogue`, `project`, `factory_bin` |
 | `factory-improver` | `node`, `items`, `report`, `repo`, `worktree`, `branch`, `base_branch`, `setup`, `run_dir`, `project`, `factory_bin` |
 | `factory-lander` | `node`, `repo`, `pr_url`, `pr_file`, `feature_worktree`, `feature_branch`, `base_branch`, `head_sha`, `test`, `checks_file`, `round`, `round_dir`, `review_file`, `previous`, `plan`, `issue`, `run_dir`, `project`, `factory_bin` |
+| `factory-watcher` | `node`, `repo`, `pr_url`, `merge_sha`, `base_branch`, `checkout`, `watch_file`, `run_dir`, `project`, `factory_bin` |
 
 Values:
 

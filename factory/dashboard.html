@@ -950,7 +950,8 @@ function runPage(current) {
     try { await post(`/api/runs/${run.id}/archive`, { archived: !run.archived_at }); await refresh(); } catch (error) { toast(error.message); }
   } }, icon("archive"), run.archived_at ? "Unarchive" : "Archive") : null;
   const header = el("div", {},
-    crumbs(run.project, run.id, run.issue_key ? el("a", { href: `#issues/${run.issue_key}` }, run.issue_key) : null, run.feature_branch),
+    crumbs(run.project, run.id, run.issue_key ? el("a", { href: `#issues/${run.issue_key}` }, run.issue_key) : null, run.feature_branch,
+      run.started_by && !["human", "dashboard"].includes(run.started_by) ? el("span", {}, "started by ", el("a", { href: `#agents/${encodeURIComponent(run.started_by)}` }, run.started_by)) : null),
     el("div", { class: "head" }, el("h1", { class: "grow" }, sentence), pill(run.status), run.no_pr ? pill("", "no PR") : null, archive),
     rest ? el("details", { class: "sub" }, el("summary", {}, "More"), el("p", {}, rest)) : null,
     el("div", { class: "stats" },
@@ -1416,13 +1417,13 @@ function agentsPage(current) {
   if (current.name) return agentDetail(current.name);
   const list = state.cache.agents;
   return el("div", {}, el("h1", {}, "Agents"),
-    el("p", { class: "sub" }, "Outside tools that read the inbox, answer and decide improvements for you. Connect one with ", el("code", {}, "factory agent add <name>"),
-      "; an agent that answers or decides with ", el("code", {}, "--by <name>"), " shows up here by itself. Read-only here."),
+    el("p", { class: "sub" }, "Outside tools that read the inbox, answer, decide improvements and start runs from ready issues for you. Connect one with ", el("code", {}, "factory agent add <name>"),
+      "; an agent that answers, decides or starts a run with ", el("code", {}, "--by <name>"), " shows up here by itself. Read-only here."),
     !list ? el("p", { class: "muted" }, "Loading…") : list.error ? failed(list) : list.length ? el("div", { class: "card tablecard" }, el("table", {},
-      el("thead", {}, el("tr", {}, ["Name", "Description", "Connected", "Last seen", "Answers", "Follow-ups", "Decisions"].map((name) => el("th", {}, name)))),
+      el("thead", {}, el("tr", {}, ["Name", "Description", "Connected", "Last seen", "Answers", "Follow-ups", "Decisions", "Runs"].map((name) => el("th", {}, name)))),
       el("tbody", {}, list.map((agent) => el("tr", { class: "list-row", onclick: () => go(`#agents/${encodeURIComponent(agent.name)}`) },
         el("td", {}, el("b", {}, agent.name)), el("td", {}, agent.description || el("span", { class: "muted" }, "–")), el("td", {}, shortTime(agent.added_at)),
-        el("td", {}, agent.seen_at ? shortTime(agent.seen_at) : el("span", { class: "muted" }, "never")), el("td", {}, agent.answers), el("td", {}, agent.follow_ups), el("td", {}, agent.decisions)))))) :
+        el("td", {}, agent.seen_at ? shortTime(agent.seen_at) : el("span", { class: "muted" }, "never")), el("td", {}, agent.answers), el("td", {}, agent.follow_ups), el("td", {}, agent.decisions), el("td", {}, agent.runs)))))) :
       el("div", { class: "empty" }, "No agents connected yet."));
 }
 
@@ -1437,7 +1438,8 @@ function agentDetail(name) {
       el("dt", {}, "Last seen"), el("dd", {}, agent.seen_at ? shortTime(agent.seen_at) : "never"),
       el("dt", {}, "Answers"), el("dd", {}, agent.answers),
       el("dt", {}, "Follow-ups"), el("dd", {}, agent.follow_ups),
-      el("dt", {}, "Decisions"), el("dd", {}, agent.decisions)),
+      el("dt", {}, "Decisions"), el("dd", {}, agent.decisions),
+      el("dt", {}, "Runs started"), el("dd", {}, agent.runs)),
     el("h2", {}, "Latest"), agent.recent.length ? el("div", { class: "card tablecard" }, el("table", {},
       el("thead", {}, el("tr", {}, ["When", "Question", "Run", "Action", "Text"].map((label) => el("th", {}, label)))),
       el("tbody", {}, agent.recent.map((item) => el("tr", { class: "list-row", onclick: () => go(`#${item.run_id}/q${item.question_id}`) },
@@ -1449,7 +1451,13 @@ function agentDetail(name) {
       el("tbody", {}, agent.decisions_recent.map((item) => el("tr", { class: "list-row", onclick: () => go("#improvements") },
         el("td", {}, shortTime(item.at)), el("td", {}, el("b", {}, `#${item.improvement_id}`), " ", item.title || el("span", { class: "muted" }, "gone")),
         el("td", {}, `${statusLabel(item.from)} → ${statusLabel(item.to)}`), el("td", {}, item.note || el("span", { class: "muted" }, "–"))))))) :
-      el("p", { class: "muted" }, "It has not decided any improvement yet."));
+      el("p", { class: "muted" }, "It has not decided any improvement yet."),
+    el("h2", {}, "Runs started"), (agent.runs_recent || []).length ? el("div", { class: "card tablecard" }, el("table", {},
+      el("thead", {}, el("tr", {}, ["When", "Issue", "Run", "Status"].map((label) => el("th", {}, label)))),
+      el("tbody", {}, agent.runs_recent.map((item) => el("tr", { class: "list-row", onclick: () => go(`#${item.id}`) },
+        el("td", {}, shortTime(item.created_at)), el("td", {}, item.issue_key ? el("b", {}, item.issue_key) : null, " ", item.feature),
+        el("td", {}, el("code", {}, item.id)), el("td", {}, pill(item.status, null, "sm"))))))) :
+      el("p", { class: "muted" }, "It has not started any run yet."));
 }
 
 function applyTheme() {

@@ -117,6 +117,58 @@ class RunNewTest(FactoryCase):
         self.assertIn("is not a git checkout", self.fails("run", "new", "x", "--project", "shop", "--repo", "gone"))
 
 
+class AgentStartTest(FactoryCase):
+    def setUp(self):
+        super().setUp()
+        self.project(repos=[self.repo("api")])
+        for title in ("One", "Two", "Three"):
+            key = self.cli("issue", "add", "shop", title)["key"]
+            self.cli("issue", "set", key, "--status", "ready")
+
+    def test_an_agent_starts_a_ready_issue_and_is_recorded(self):
+        run = self.cli("run", "new", "One", "--issue", "SHOP-1", "--by", "bertil")
+        self.assertEqual(run["started_by"], "bertil")
+        self.assertEqual(self.cli("run", "show", run["id"])["started_by"], "bertil")
+        self.assertEqual(self.cli("run", "list")[0]["started_by"], "bertil")
+        self.assertEqual(self.cli("issue", "show", "SHOP-1")["status"], "in_progress")
+        started = [event for event in self.cli("events")["events"] if event["kind"] == "run.new"]
+        self.assertEqual(started[-1]["payload"]["by"], "bertil")
+        agent = self.cli("agent", "show", "bertil")
+        self.assertEqual(agent["runs"], 1)
+        self.assertEqual([(item["id"], item["issue_key"]) for item in agent["runs_recent"]], [(run["id"], "SHOP-1")])
+        self.assertEqual(self.cli("run", "new", "Two", "--issue", "SHOP-2")["started_by"], "human")
+
+    def test_an_agent_starts_only_ready_issues(self):
+        self.cli("run", "new", "One", "--issue", "SHOP-1", "--by", "bertil")
+        self.assertIn("SHOP-1 is in_progress, not ready", self.fails("run", "new", "One", "--issue", "SHOP-1", "--by", "bertil"))
+        self.cli("issue", "set", "SHOP-2", "--status", "open")
+        self.assertIn("SHOP-2 is open, not ready", self.fails("run", "new", "Two", "--issue", "SHOP-2", "--by", "bertil"))
+        self.assertIn("only from a ready local issue", self.fails("run", "new", "Free text", "--project", "shop",
+                                                                  "--by", "bertil", code=2))
+        self.assertIn("reserved", self.fails("run", "new", "Two", "--issue", "SHOP-2", "--by", "orchestrator", code=2))
+        self.assertEqual(len(self.cli("run", "list")), 1)
+
+    def test_agent_runs_caps_the_active_runs_of_a_project(self):
+        for title in ("Four", "Five"):
+            key = self.cli("issue", "add", "shop", title)["key"]
+            self.cli("issue", "set", key, "--status", "ready")
+        self.cli("run", "new", "Four", "--issue", "SHOP-4", "--by", "bertil")
+        self.cli("run", "new", "Five", "--issue", "SHOP-5", "--by", "bertil")
+        for run in self.cli("run", "list"):
+            self.cli("run", "status", run["id"], "failed")
+        self.cli("project", "set", "shop", "defaults.agent_runs", "1")
+        first = self.cli("run", "new", "One", "--issue", "SHOP-1", "--by", "bertil")
+        refused = self.fails("run", "new", "Two", "--issue", "SHOP-2", "--by", "bertil")
+        self.assertIn("project shop has 1 active runs and lets agents start runs up to 1", refused)
+        self.assertEqual(self.cli("issue", "show", "SHOP-2")["status"], "ready")
+        self.cli("run", "status", first["id"], "failed")
+        self.cli("run", "new", "Two", "--issue", "SHOP-2", "--by", "bertil")
+        self.cli("project", "set", "shop", "defaults.agent_runs", "0")
+        self.assertIn("up to 0", self.fails("run", "new", "Three", "--issue", "SHOP-3", "--by", "bertil"))
+        self.assertIn("defaults.agent_runs must be", self.fails("project", "set", "shop", "defaults.agent_runs", "-1"))
+        self.cli("project", "set", "shop", "defaults.agent_runs", "null")
+
+
 class RunLifecycleTest(FactoryCase):
     def setUp(self):
         super().setUp()

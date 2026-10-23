@@ -4,13 +4,14 @@ import os
 import re
 import shutil
 
-from . import FactoryError, catalogue, db, home, issues, projects
+from . import FactoryError, catalogue, connected, db, home, issues, projects
 from .util import (
     append_line, expand, git, git_branch_exists, git_default_branch, git_origin, git_toplevel,
     now, read_json, same_path, slugify, valid_branch_name, write_json, write_text,
 )
 
 STATUSES = ("planning", "confirm", "running", "finishing", "done", "failed")
+ACTIVE = ("planning", "confirm", "running", "finishing")
 MOVES = {
     "planning": ("confirm", "running", "failed"),
     "confirm": ("running", "planning", "failed"),
@@ -251,7 +252,8 @@ def check_int(value, low, high, label):
 
 
 def new(conn, feature, project_flag=None, repo_args=None, issue_key=None, external_key=None, external_url=None,
-        branch=None, base=None, parallel=None, max_rounds=None, confirm_plan=False, no_pr=False, session=None, cwd=None):
+        branch=None, base=None, parallel=None, max_rounds=None, confirm_plan=False, no_pr=False, session=None, cwd=None,
+        author="human"):
     cwd = cwd or os.getcwd()
     feature = " ".join((feature or "").split())
     if not feature:
@@ -265,10 +267,13 @@ def new(conn, feature, project_flag=None, repo_args=None, issue_key=None, extern
     if base and not valid_branch_name(base):
         raise FactoryError(f"{base!r} is not a valid branch name")
     session = session_id(session)
+    author = connected.check_author(author)
     local_issue = issues.get(conn, issue_key) if issue_key else None
     project_name, adhoc = resolve_project(conn, project_flag, cwd, local_issue, repo_args)
     config = home.load_config()
     project = projects.resolved(projects.load(project_name, config), config, adhoc=adhoc)
+    if author not in ("human", "dashboard") and not local_issue:
+        raise FactoryError(f"{author} starts runs for the user only from a ready local issue; give --issue", code=2)
     picked = pick_repos(project, repo_args, cwd)
     mirror_issue = None
     if external_key:
@@ -284,15 +289,19 @@ def new(conn, feature, project_flag=None, repo_args=None, issue_key=None, extern
     paths = run_paths(run_id)
     catalogue_snapshot = catalogue.show(config, project)
     with db.tx(conn):
+        if author not in ("human", "dashboard"):
+            check_agent_start(conn, author, issues.get(conn, local_issue["key"]), project)
         conn.execute(
             "INSERT INTO runs (id, project, feature, issue_key, issue_url, slug, feature_branch, parallel, max_rounds, "
-            "confirm_plan, no_pr, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'planning', ?)",
+            "confirm_plan, no_pr, status, created_at, started_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'planning', ?, ?)",
             (run_id, project_name, feature, issue["key"] if issue else None,
              (issue or {}).get("external_url"), slugify(title, 40) or "change", branch_name,
-             parallel or defaults["parallel"], max_rounds or defaults["max_rounds"], int(confirm), int(bool(no_pr)), now()),
+             parallel or defaults["parallel"], max_rounds or defaults["max_rounds"], int(confirm), int(bool(no_pr)), now(),
+             author),
         )
         db.event(conn, "run.new", run_id, project=project_name, issue=issue["key"] if issue else None,
-                 branch=branch_name, base=base)
+                 branch=branch_name, base=base, by=author)
+        connected.seen(conn, author)
         os.makedirs(os.path.join(folder, "jobs"), exist_ok=True)
         os.makedirs(paths["design_dir"], exist_ok=True)
         write_json(paths["project_file"], project)
@@ -317,6 +326,28 @@ def new(conn, feature, project_flag=None, repo_args=None, issue_key=None, extern
             record_skip(conn, run_id, dependency, effect)
         update_no_pr(conn, run_id, project)
     return run_result(conn, run_id)
+
+
+def active_runs(conn, project_name):
+    placeholders = ", ".join("?" for _ in ACTIVE)
+    return conn.execute(
+        f"SELECT COUNT(*) FROM runs WHERE project = ? AND archived_at IS NULL AND status IN ({placeholders})",
+        (project_name, *ACTIVE),
+    ).fetchone()[0]
+
+
+def check_agent_start(conn, author, issue, project):
+    if issue["status"] != "ready":
+        raise FactoryError(f"{issue['key']} is {issue['status']}, not ready; {author} starts only ready issues")
+    limit = project["defaults"]["agent_runs"]
+    if limit is None:
+        return
+    running = active_runs(conn, project["name"])
+    if running >= limit:
+        raise FactoryError(
+            f"project {project['name']} has {running} active runs and lets agents start runs up to {limit} "
+            f"(defaults.agent_runs); {issue['key']} waits"
+        )
 
 
 def update_no_pr(conn, run_id, project):
@@ -349,6 +380,7 @@ def run_result(conn, run_id):
         "skipped": skips(conn, run_id),
         "no_pr": bool(run["no_pr"]),
         "confirm_plan": bool(run["confirm_plan"]),
+        "started_by": run["started_by"],
     }
 
 
@@ -482,6 +514,7 @@ def listing(conn, project=None, archived=False):
             "feature": run["feature"],
             "issue_key": run["issue_key"],
             "feature_branch": run["feature_branch"],
+            "started_by": run["started_by"],
             "jobs": total,
             "jobs_done": done,
             "open_questions": open_questions,

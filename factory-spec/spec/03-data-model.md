@@ -80,7 +80,8 @@ CREATE TABLE IF NOT EXISTS runs (
   status         TEXT NOT NULL DEFAULT 'planning'
                  CHECK (status IN ('planning', 'confirm', 'running', 'finishing', 'done', 'failed')),
   archived_at    TEXT,
-  created_at     TEXT NOT NULL
+  created_at     TEXT NOT NULL,
+  started_by     TEXT            -- human, dashboard or a connected agent; added by migration 0005
 );
 
 CREATE TABLE IF NOT EXISTS run_repos (

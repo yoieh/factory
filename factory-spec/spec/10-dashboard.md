@@ -50,6 +50,8 @@ POST (`Content-Type: application/json` only):
 |---|---|---|
 | `/api/questions/<id>/answer` | `{text}` | `question answer` |
 | `/api/questions/<id>/clarify` | `{text}` | `question clarify` (not delivered) |
+
+Answers and follow-ups from the dashboard have author `dashboard` and count as the user's, like any `question answer` (09, Questions). A question's thread shows each message's author, so an answer written with `--by <name>` shows that name.
 | `/api/improvements/<id>/decide` | `{status, note}` | `improvement decide` |
 | `/api/runs/<id>/archive` | `{archived: bool}` | archive or unarchive |
 | `/api/issues` | `{project, title, type, priority, labels, body}` | `issue add` |

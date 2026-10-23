@@ -68,12 +68,12 @@ See 08 for `issue ...`.
 | Command | Does |
 |---|---|
 | `question ask <run-id> "<text>" [--job j] [--by who] [--path p] [--plain]` | Store a question (format checked unless `--plain`). Storing is idempotent: the same `path` and text hash (for asks without a path: run, job, asker and text hash) returns the existing id. `plan load`, `step sync` and `gate sync` store file questions the same way, so a sync that runs again never makes a second question. |
-| `question answer <id> "<text>" [--delivered]` | Store an answer (`answered`). `--delivered` when the orchestrator acts on it now. |
-| `question clarify <id> "<text>" [--delivered]` | Ask back (`clarify`). Returns `reply_file`. `--delivered` when the orchestrator relays it now. |
+| `question answer <id> "<text>" [--delivered] [--by <name>]` | Store an answer (`answered`). `--delivered` when the orchestrator acts on it now. `--by` names who wrote it for the user (default `human`; for example an assistant the user lets answer), stored as the message author. |
+| `question clarify <id> "<text>" [--delivered] [--by <name>]` | Ask back (`clarify`). Returns `reply_file`. `--delivered` when the orchestrator relays it now. `--by` as for `question answer`. |
 | `question reply <id> [--text "<t>"]` | Store the agent's `REPLY:` file (or a text) and set the question `open` again. |
 | `question resolve <id>` | `answered → resolved` after the agent got the answer. |
 | `question list [--run r] [--status s]...` | Questions with threads. |
-| `question wait <run-id> [--timeout 1800]` | Block until the run has an undelivered `answer` or `clarify` message; return those items and mark them delivered. Each item: `id`, `job_id`, `asked_by`, `status`, `kind` (`answer` or `clarify`), `text` (the human's text) and, for `clarify`, `reply_file`. Returns `[]` on timeout. `question clarify --delivered` and `question answer` from the session's own chat (`--delivered`) mark their message delivered at once. |
+| `question wait <run-id> [--timeout 1800]` | Block until the run has an undelivered `answer` or `clarify` message; return those items and mark them delivered. Each item: `id`, `job_id`, `asked_by`, `status`, `kind` (`answer` or `clarify`), `text` (the human's text), `by` (the message author: `human`, `dashboard` or the `--by` name) and, for `clarify`, `reply_file`. Returns `[]` on timeout. `question clarify --delivered` and `question answer` from the session's own chat (`--delivered`) mark their message delivered at once. |
 
 ## Skips and events
 

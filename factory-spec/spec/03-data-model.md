@@ -236,6 +236,7 @@ CREATE TABLE IF NOT EXISTS improvements (
   branch     TEXT,
   created_at TEXT NOT NULL,
   decided_at TEXT,
+  decided_by TEXT,            -- human, dashboard, orchestrator or a connected agent; added by migration 0004
   UNIQUE (run_id, key)
 );
 

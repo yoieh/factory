@@ -13,7 +13,7 @@ All pages share a sidebar: Inbox (count of open questions and plans to confirm),
 | Issues | `#issues`, `#issues/<KEY-n>` | Filterable list; one issue with body, links, history; create and edit. Shows the `/factory <KEY-n>` command to copy. |
 | Projects | `#projects`, `#projects/<name>` | Repos, integrations with availability, knowledge paths that exist, catalogue (steps and templates with their source), skill installs and drift. Read-only. |
 | Improvements | `#improvements` | Every improvement, filtered by status, target and project; evidence, proposal, run, `seen_in`; accept, reject, mark done, back to review, with a note. |
-| Agents | `#agents`, `#agents/<name>` | The connected agents (04): name, description, when connected and last seen, how many answers and follow-ups; one agent with its latest answers, each linking to its question. Read-only. |
+| Agents | `#agents`, `#agents/<name>` | The connected agents (04): name, description, when connected and last seen, how many answers, follow-ups and improvement decisions; one agent with its latest answers, each linking to its question, and its latest improvement decisions with their notes. An improvement card says who decided it. Read-only. |
 
 ### Loop graph with pipelines
 
@@ -56,7 +56,7 @@ POST (`Content-Type: application/json` only):
 | `/api/questions/<id>/clarify` | `{text, by}` | `question clarify` (not delivered) |
 
 Answers and follow-ups from the dashboard have author `dashboard`, or the connected agent named in `by`, and count as the user's, like any `question answer` (09, Questions). A question's thread shows each message's author, so an answer written with `--by <name>` shows that name.
-| `/api/improvements/<id>/decide` | `{status, note}` | `improvement decide` |
+| `/api/improvements/<id>/decide` | `{status, note, by}` | `improvement decide`; author `dashboard`, or the connected agent named in `by` |
 | `/api/runs/<id>/archive` | `{archived: bool}` | archive or unarchive |
 | `/api/issues` | `{project, title, type, priority, labels, body}` | `issue add` |
 | `/api/issues/<KEY-n>` | any of `{status, priority, title, labels, body}` | `issue set` / `issue edit` |

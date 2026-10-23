@@ -34,7 +34,7 @@ The factory counts tokens per node from the transcripts Claude Code writes anywa
 
 `/factory improve [<id>...] [--factory-base b]`, in its own session:
 
-1. Merged PRs first: `improvement prs --check` reads each PR's state through `pr_state`. `MERGED`: `improvement decide <id> done` for each item of that PR. `DECLINED` or `SUPERSEDED`: report; a human decides. `OPEN`: report as waiting. No `pr_state` or missing credentials: report as unchecked and carry on.
+1. Merged PRs first: `improvement prs --check` reads each PR's state through `pr_state`. `MERGED`: `improvement decide <id> done --by orchestrator` for each item of that PR. `DECLINED` or `SUPERSEDED`: report; a human decides. `OPEN`: report as waiting. No `pr_state` or missing credentials: report as unchecked and carry on.
 2. `improvement start`: groups per repo and base branch, `items.md` per group.
 3. Per group: `git -C <repo> fetch origin`, `worktree add` a `chore/improvements-<batch>` branch from `origin/<base>` (without an `origin`: no fetch, branch from the local base), then the repo's `setup` from project config in the worktree; pass the result as the improver's `setup`.
 4. One `factory-improver` per group, all in one message, background.

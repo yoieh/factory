@@ -2,7 +2,7 @@ import datetime
 import json
 import os
 
-from . import FactoryError, adapters, db, home, issues, projects
+from . import FactoryError, adapters, connected, db, home, issues, projects
 from .util import git, git_origin, git_toplevel, now, write_json, write_text
 
 STATUSES = ("open", "accepted", "rejected", "done")
@@ -73,23 +73,34 @@ def issue_body(item):
     ])
 
 
-def decide(conn, improvement_id, status, note=None):
+def decide(conn, improvement_id, status, note=None, author="human"):
     if status not in STATUSES:
         raise FactoryError(f"the decision must be one of {', '.join(STATUSES)}", code=2)
+    if author == "orchestrator":
+        if status != "done":
+            raise FactoryError("the orchestrator only marks improvements done when their PR merged; the user decides the rest", code=2)
+    else:
+        author = connected.check_author(author)
+    if author not in ("human", "dashboard", "orchestrator") and status != "open" and not (note or "").strip():
+        raise FactoryError(f"{author} decides for the user; give the reason with --note", code=2)
     with db.tx(conn):
         item = get(conn, improvement_id)
         if item["status"] == status:
             return dict(get(conn, improvement_id), changed=False)
         if status not in MOVES[item["status"]]:
             raise FactoryError(f"improvement {improvement_id} is {item['status']}; it cannot move to {status}")
-        fields = {"status": status, "decided_at": None if status == "open" else now()}
+        fields = {"status": status, "decided_at": None if status == "open" else now(),
+                  "decided_by": None if status == "open" else author}
         if note is not None:
             fields["note"] = note.strip() or None
         if status == "open":
             fields.update(pr_url=None, branch=None)
         assignments = ", ".join(f"{key} = ?" for key in fields)
         conn.execute(f"UPDATE improvements SET {assignments} WHERE id = ?", (*fields.values(), improvement_id))
-        event(conn, "improvement.decide", item, **{"from": item["status"], "to": status})
+        extra = {"note": fields["note"]} if fields.get("note") else {}
+        event(conn, "improvement.decide", item, by=author, **{"from": item["status"], "to": status}, **extra)
+        if author != "orchestrator":
+            connected.seen(conn, author)
         issue_key = item["issue_key"]
         if status == "accepted" and not issue_key:
             created = issues.add(conn, issue_project(conn, item), item["title"], type_="improvement", body=issue_body(item))

@@ -6,7 +6,8 @@ import sqlite3
 from . import FactoryError
 from .util import now
 
-MIGRATIONS = ["schema.sql", "migrations/0002-dropped-stage.sql", "migrations/0003-connected-agents.sql"]
+MIGRATIONS = ["schema.sql", "migrations/0002-dropped-stage.sql", "migrations/0003-connected-agents.sql",
+              "migrations/0004-improvement-decided-by.sql"]
 
 
 def migration_sql(version):

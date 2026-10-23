@@ -2,7 +2,6 @@
 name: factory
 description: Run the software factory for one run. Give it a local issue, an external issue key or URL, or a feature text; it plans small jobs with a pipeline each, runs producer and gate agents in parallel in their own worktrees, merges code jobs into one feature branch per repo, opens a draft PR per repo when the code host can, and ends with a retrospective whose improvements a human decides; improve applies the accepted ones. Use for /factory <issue>, /factory <repo> <feature>, resume, answer, clarify, rework, publish, retro, improve, issue and list.
 argument-hint: "<KEY-n> [flags] | <external-key-or-url> [text] [flags] | [<repo>] <feature text> [flags] | (no arguments) | resume <run-id> | answer <question-id> <text> | clarify <question-id> <text> | rework <run-id> <job-id> <note> | publish <run-id> | retro <run-id> | improve [<id>...] [--factory-base <branch>] | issue add|list|show ... | list   (flags: --project <p> --repo <r>... --confirm-plan --no-pr --branch <b> --base <b> --parallel <n> --max-rounds <n> --design <url>...)"
-disable-model-invocation: true
 ---
 
 # /factory: the orchestrator

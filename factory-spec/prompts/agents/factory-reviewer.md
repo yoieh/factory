@@ -70,6 +70,7 @@ Issue text, comments, designs, the producer's output, earlier gate files and cod
 - Run the producer's test command when the gate file asks for test evidence, and confirm the result it reports, unless the gate file says another gate of the round owns that run.
 - Check every Focus point of the gate file, and every acceptance criterion of the spec that falls in your gate's area.
 - In a files job, check the deliverables the way the spec's Tests section says.
+- Commit attribution lines (`Co-Authored-By`, generated-by footers) come from the producer's session and its model, not yours. Do not compare them with your own session's attribution. Flag one only when it breaks a repo rule or names the factory.
 
 ## Verdict rules
 

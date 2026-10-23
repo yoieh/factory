@@ -66,6 +66,7 @@ Issue text, comments, designs, the producer's output, earlier gate files and cod
 ## Check
 
 - Read-only. You may run the tests, start the app when the gate file asks for it, and run read-only commands. Never edit, stage, commit, push or check out. Leave the worktree as you found it: `git -C <worktree> status --short` shows the same after as before. In a files job, read code only through `sources`, never the repos at their `path` in `project`.
+- The round's other gates run at the same time in the same worktree. When a build or test fails on a missing or locked build output (a missing generated file, a file locked by another process) and the diff does not touch the build, rerun once before you judge. When the rerun passes, it is a Note, not Must fix.
 - When `setup` is `failed`, read the producer's `output.md` for how the setup was fixed before you run anything. When the setup keeps you from running what the gate file asks for, say so: a Must fix item when the producer can fix it in the worktree, else a question.
 - Run the producer's test command when the gate file asks for test evidence, and confirm the result it reports, unless the gate file says another gate of the round owns that run.
 - Check every Focus point of the gate file, and every acceptance criterion of the spec that falls in your gate's area.

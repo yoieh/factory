@@ -6,8 +6,8 @@ import sys
 import traceback
 
 from . import (
-    NAME, VERSION, FactoryError, adapters, catalogue, db, demo, designs, doctor, home, improvements, issues, jobs, projects,
-    questions, retro, runs, server, skills, usage,
+    NAME, VERSION, FactoryError, adapters, catalogue, db, demo, designs, doctor, home, improvements, issues, jobs, legacy,
+    projects, questions, retro, runs, server, skills, usage,
 )
 from .util import parse_json_value
 
@@ -313,6 +313,15 @@ def build():
     entry = add(retro_group, "load", cmd_retro_load, "Read retro.md into improvements.")
     entry.add_argument("run_id")
 
+    legacy_group = group(top, "legacy", "History from the old board-based factory.")
+    entry = add(legacy_group, "import", cmd_legacy_import,
+                "Import the old factory's merged jobs as finished runs and its retro proposals as improvements.")
+    entry.add_argument("dir", help="the old factory folder, the one with board.json, jobs/ and retros/")
+    entry.add_argument("--project", required=True)
+    entry.add_argument("--repo", help="the repo the old jobs changed, when the project has more than one")
+    entry.add_argument("--issues", help="a JSON map from issue keys to {\"old\": <job id or backlog text>}")
+    entry.add_argument("--dry-run", action="store_true", help="count what would be imported and change nothing")
+
     improvement = group(top, "improvement", "Improvements from retrospectives.")
     entry = add(improvement, "list", cmd_improvement_list, "Improvements with seen_in.", table=True)
     entry.add_argument("--run")
@@ -381,6 +390,10 @@ def cmd_serve(conn, args):
 
 def cmd_demo(conn, args):
     return demo.seed(conn)
+
+
+def cmd_legacy_import(conn, args):
+    return legacy.import_board(conn, args.dir, args.project, args.repo, args.issues, args.dry_run)
 
 
 def cmd_agents(conn, args):

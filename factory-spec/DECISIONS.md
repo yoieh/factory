@@ -11,7 +11,7 @@ Taken in phase 0 on 2026-10-22, from `spec/14-open-questions.md` and the user's 
 5. **Files jobs.** They stay in `out/`. A docs change in a repo is a `code` job with `write-doc` as its producer. The spec already allows this (06).
 6. **Code review.** `defaults.require_code_review` is true by default; a project can turn it off. The spec already says this (06, 08).
 7. **Human gates.** Option A of a human gate's `## Ask` approves. An answer of `A`, alone or with a note (`A: <note>`), is PASS, and the note goes under the gate file's Notes. Any other answer is CHANGES, with the answer as the Must fix item. Applied to 06 and the skill.
-8. **Reference data.** Not imported. The factory starts clean.
+8. **Reference data.** Not imported. The factory starts clean. Changed on 2026-10-23 at the user's request: `factory legacy import` brings the reference's merged jobs, retro proposals and answers in as finished runs, improvements and answered questions (README, "History from the old factory").
 9. **Shared use.** One factory home per user and machine. The local tracker is a personal and factory backlog, not a team tool. Sharing the plugin with other people is a separate matter: each of them gets their own home.
 10. **Price table.** The built-in table carries the date its prices were checked. `usage show` and the dashboard show that date next to costs, and `prices.json` overrides the table with its own date. Applied to 10 and 11.
 

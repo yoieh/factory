@@ -88,6 +88,7 @@ Every command prints one JSON value. Errors print `factory: <message>` on stderr
 | Retrospective | `retro load <run-id>`, `improvement list|decide|start|pr|prs` |
 | Usage | `usage sync [<run-id>]`, `usage show <run-id>` |
 | Skips and events | `skip add|list`, `event` |
+| History | `legacy import <dir> --project p [--repo r] [--issues <map.json>] [--dry-run]` |
 
 The full reference is `factory-spec/spec/04-cli.md`, with projects and issues in `08`, the catalogue and pipelines in `06` and the file formats in `05`.
 
@@ -118,6 +119,10 @@ factory job stage <run-id>/<job-id> done
 The orchestrator skill does all of this; the commands are listed so the state moves are easy to follow. Each move logs an event (`factory run show <run-id>` lists them).
 
 A job you give up is dropped with `factory job drop <run-id>/<job-id> "<reason>"`; a run finishes only when every job is done or dropped. In auto mode Claude Code may refuse a subagent's write of a report-like file such as `out/findings.md`. The agent then returns the file as text, and the orchestrator stores it with `factory step save`, which accepts only that agent's own files.
+
+### History from the old factory
+
+`factory legacy import <dir> --project <p>` brings the history of the old board-based factory (the reference this core was built from) into the dashboard. `<dir>` is its `factory/` folder, the one with `board.json`, `jobs/`, `retros/` and `backlog.md`. Every merged job becomes a finished run with one job and one `build` group: its rounds and verdicts come from the `round-<n>/review-<gate>.md` and `decision.md` files (the approver's decision is the `approve` gate, a human rework the `human` gate), and its files are copied into the run folder. Answers in `answers.md` become answered questions. Every retro proposal becomes an improvement on the run of the last job the retro looked at, with the status its `(retro <id>#<n>)` tag has in `backlog.md` or `backlog-archive.md`: `[x]` done, `[ ]` accepted, `[?]` open, `[-]` rejected with its reason. `--issues` takes a JSON map from issue keys to `{"old": <job id or backlog text>}`, so an accepted proposal links the issue it already became. `--dry-run` counts and changes nothing, and a second import adds only what is new.
 
 ## Dashboard
 

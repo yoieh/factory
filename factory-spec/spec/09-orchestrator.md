@@ -73,7 +73,7 @@ Event-driven: act when an agent finishes or a question is answered. Keep the pro
 
 Per repo, in plan order:
 
-1. The full test suite in the feature worktree. On failure push nothing; ask a question with the failures. Skipped when the repo's last merged job recorded `merge.tree` with `same: true` and one of its last-round gates ran the full suite and passed: the PR uses that gate's result line.
+1. The full test suite in the feature worktree. On failure push nothing; ask a question with the failures. A run whose only failures are exactly the known pre-existing ones the project knowledge lists for this command counts as passed, and the PR's test line names them. Skipped when the repo's last merged job recorded `merge.tree` with `same: true` and one of its last-round gates ran the full suite and passed: the PR uses that gate's result line.
 2. Write `pr-<repo>.md` with the code host's `pr_template` (read fresh every run) or the plain template; Open points from capped groups, notes that need a human, the plan's "Outside the code" bullets a person must do before or right after the merge, and `skip list --pr`.
 3. With `no_pr`: stop here, `run status done`, retrospective, report branches, worktrees, tests, cost, and why it stopped.
 4. Otherwise, per repo with `can_push`: push the feature branch (never force); when `open_pr` is available, open or update the draft PR as `adapter.md` says and `run pr`; without it, report the pushed branch for a person to open the PR. For multi-repo runs add `## Related PRs` and update each PR in place.

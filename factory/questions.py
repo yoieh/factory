@@ -168,10 +168,18 @@ def set_status(conn, question, status, **extra):
              question=question["id"], **{"from": question["status"], "to": status})
 
 
+def check_author(author):
+    author = (author or "").strip()
+    if not author:
+        raise FactoryError("--by is empty", code=2)
+    return author
+
+
 def answer(conn, question_id, text, delivered=False, author="human"):
     text = (text or "").strip()
     if not text:
         raise FactoryError("the answer is empty", code=2)
+    author = check_author(author)
     with db.tx(conn):
         question = row(conn, question_id)
         if question["status"] not in ("open", "clarify"):
@@ -199,6 +207,7 @@ def clarify(conn, question_id, text, delivered=False, author="human"):
     text = (text or "").strip()
     if not text:
         raise FactoryError("the follow-up is empty", code=2)
+    author = check_author(author)
     with db.tx(conn):
         question = row(conn, question_id)
         if question["status"] != "open":
@@ -256,7 +265,7 @@ def listing(conn, run_id=None, statuses=None):
 
 def pending(conn, run_id):
     return db.rows(conn.execute(
-        "SELECT m.id AS message_id, m.kind, m.text, m.path, q.id, q.job_id, q.asked_by, q.status "
+        "SELECT m.id AS message_id, m.kind, m.author, m.text, m.path, q.id, q.job_id, q.asked_by, q.status "
         "FROM question_messages m JOIN questions q ON q.id = m.question_id "
         "WHERE q.run_id = ? AND m.kind IN ('answer', 'clarify') AND m.delivered_at IS NULL ORDER BY m.id",
         (run_id,),
@@ -278,6 +287,7 @@ def wait(conn, run_id, timeout=1800, interval=1.0):
             result = []
             for item in found:
                 entry = {key: item[key] for key in ("id", "job_id", "asked_by", "status", "kind", "text")}
+                entry["by"] = item["author"]
                 if item["kind"] == "clarify":
                     entry["reply_file"] = item["path"]
                 result.append(entry)

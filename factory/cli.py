@@ -272,10 +272,12 @@ def build():
     entry.add_argument("id", type=int)
     entry.add_argument("text")
     entry.add_argument("--delivered", action="store_true")
+    entry.add_argument("--by", default="human")
     entry = add(question, "clarify", cmd_question_clarify, "Ask back on a question.")
     entry.add_argument("id", type=int)
     entry.add_argument("text")
     entry.add_argument("--delivered", action="store_true")
+    entry.add_argument("--by", default="human")
     entry = add(question, "reply", cmd_question_reply, "Store the reply to a follow-up.")
     entry.add_argument("id", type=int)
     entry.add_argument("--text")
@@ -712,11 +714,11 @@ def cmd_question_ask(conn, args):
 
 
 def cmd_question_answer(conn, args):
-    return questions.answer(conn, args.id, args.text, args.delivered)
+    return questions.answer(conn, args.id, args.text, args.delivered, args.by)
 
 
 def cmd_question_clarify(conn, args):
-    return questions.clarify(conn, args.id, args.text, args.delivered)
+    return questions.clarify(conn, args.id, args.text, args.delivered, args.by)
 
 
 def cmd_question_reply(conn, args):

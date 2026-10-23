@@ -4,6 +4,7 @@ import unittest
 from unittest import mock
 
 from helpers import ROOT, FactoryCase, read, write
+from factory import VERSION
 
 GENERIC = ("factory-planner", "factory-worker", "factory-reviewer", "factory-retro", "factory-improver")
 DEDICATED_STEP = """---
@@ -59,7 +60,7 @@ class SkillInstallTest(FactoryCase):
         self.cli("skill", "install", "--user")
         with mock.patch("factory.VERSION", "9.9.9"):
             entry = self.cli("skill", "status")["installs"][0]
-        self.assertEqual((entry["current"], entry["version"], entry["core_version"]), (False, "0.1.0", "9.9.9"))
+        self.assertEqual((entry["current"], entry["version"], entry["core_version"]), (False, VERSION, "9.9.9"))
         write(os.path.join(self.claude, "agents", "factory-worker.md"), "changed by hand\n")
         os.unlink(os.path.join(self.claude, "agents", "factory-retro.md"))
         entry = self.cli("skill", "status")["installs"][0]
@@ -97,7 +98,7 @@ class SkillInstallTest(FactoryCase):
         folder = os.path.join(self.tmp, "my-plugin")
         result = self.cli("skill", "plugin", folder)
         manifest = json.loads(read(os.path.join(folder, ".claude-plugin", "plugin.json")))
-        self.assertEqual((manifest["name"], manifest["version"]), ("factory", "0.1.0"))
+        self.assertEqual((manifest["name"], manifest["version"]), ("factory", VERSION))
         self.assertTrue(os.path.isfile(os.path.join(folder, "skills", "factory", "SKILL.md")))
         self.assertTrue(os.path.isfile(os.path.join(folder, "agents", "factory-planner.md")))
         self.assertEqual(result["scope"], "plugin")

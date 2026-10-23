@@ -1,7 +1,7 @@
 {
   "name": "factory",
   "displayName": "Software factory",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Turns an issue or a feature text into reviewed changes: a planner splits the work into small jobs, each job runs a pipeline of producer and gate agents in its own git worktree, and the results land in one feature branch per repo, with a draft PR when the code host can open one.",
   "author": {"name": "factory"},
   "license": "MIT",

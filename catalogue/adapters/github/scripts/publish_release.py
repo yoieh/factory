@@ -47,7 +47,7 @@ def repository(url):
     return f"{parts[3]}/{parts[4]}"
 
 
-def publish(url, tag, target, path, title, notes, mode, prerelease):
+def publish(url, tag, target, paths, title, notes, mode, prerelease):
     name = repository(url)
     if not TAG_RE.match(tag):
         raise Refused("publish_release: --tag must be letters, digits, dots, dashes and underscores")
@@ -55,8 +55,8 @@ def publish(url, tag, target, path, title, notes, mode, prerelease):
         raise Refused("publish_release: --target must be the full sha of the merge commit")
     if mode not in MODES:
         raise Refused("publish_release: --mode must be draft or publish")
-    if not os.path.isfile(path):
-        raise Refused("publish_release: the build file does not exist")
+    if not paths or not all(os.path.isfile(path) for path in paths):
+        raise Refused("publish_release: a build file does not exist")
     if not os.path.isfile(notes):
         raise Refused("publish_release: the notes file does not exist")
     found = gh(["release", "view", tag, "--repo", name, "--json", "url,isDraft"], "gh release view", check=False)
@@ -66,7 +66,7 @@ def publish(url, tag, target, path, title, notes, mode, prerelease):
         except json.JSONDecodeError:
             raise Refused("publish_release: gh printed no JSON")
         return {"action": "exists", "url": data.get("url") or "", "draft": bool(data.get("isDraft")), "tag": tag}
-    command = ["release", "create", tag, path, "--repo", name, "--target", target, "--title", title,
+    command = ["release", "create", tag] + paths + ["--repo", name, "--target", target, "--title", title,
                "--notes-file", notes]
     if mode == "draft":
         command.append("--draft")
@@ -82,14 +82,15 @@ def main(argv=None):
     parser.add_argument("--url", required=True)
     parser.add_argument("--tag", required=True)
     parser.add_argument("--target", required=True)
-    parser.add_argument("--file", required=True)
+    parser.add_argument("--files", required=True, help="the build files as a comma list")
     parser.add_argument("--title", required=True)
     parser.add_argument("--notes-file", required=True)
     parser.add_argument("--mode", required=True)
     parser.add_argument("--prerelease", default="true")
     args = parser.parse_args(argv)
     try:
-        result = publish(args.url, args.tag, args.target, args.file, args.title, args.notes_file, args.mode,
+        files = [path for path in args.files.split(",") if path]
+        result = publish(args.url, args.tag, args.target, files, args.title, args.notes_file, args.mode,
                          args.prerelease == "true")
     except Refused as error:
         print(str(error), file=sys.stderr)

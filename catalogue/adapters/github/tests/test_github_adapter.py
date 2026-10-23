@@ -202,14 +202,16 @@ class PublishReleaseScriptTest(ScriptCase):
 
     def setUp(self):
         super().setUp()
-        self.build = os.path.join(self.tmp, "game.zip")
+        self.build = os.path.join(self.tmp, "game-windows.zip")
+        self.linux = os.path.join(self.tmp, "game-linux.zip")
         self.notes = os.path.join(self.tmp, "notes.md")
-        for path in (self.build, self.notes):
+        for path in (self.build, self.linux, self.notes):
             with open(path, "w", encoding="utf-8") as handle:
                 handle.write("x\n")
 
     def publish(self, rules, mode="draft", tag="build-20261023-aaaaaaa", target=HEAD, prerelease="true"):
-        return self.run_script(rules, "--url", URL, "--tag", tag, "--target", target, "--file", self.build, "--title",
+        return self.run_script(rules, "--url", URL, "--tag", tag, "--target", target, "--files",
+                               f"{self.build},{self.linux}", "--title",
                                "shop-api aaaaaaa: Lead form", "--notes-file", self.notes, "--mode", mode,
                                "--prerelease", prerelease)
 
@@ -220,8 +222,8 @@ class PublishReleaseScriptTest(ScriptCase):
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertEqual(json.loads(done.stdout)["action"], "created")
         create = self.gh.calls()[1]["args"]
-        self.assertEqual(create[:5], ["release", "create", "build-20261023-aaaaaaa", self.build, "--repo"])
-        self.assertEqual(create[5], "example/shop-api")
+        self.assertEqual(create[:6], ["release", "create", "build-20261023-aaaaaaa", self.build, self.linux, "--repo"])
+        self.assertEqual(create[6], "example/shop-api")
         self.assertIn("--draft", create)
         self.assertIn("--prerelease", create)
         self.assertEqual(create[create.index("--target") + 1], HEAD)
@@ -299,14 +301,16 @@ class PublishPackageScriptTest(ScriptCase):
         self.addCleanup(self.server.shutdown)
         self.registry = f"http://127.0.0.1:{self.server.server_port}"
         self.build = os.path.join(self.tmp, "Game-windows.zip")
-        with open(self.build, "wb") as handle:
-            handle.write(b"PK game bytes")
+        self.linux = os.path.join(self.tmp, "Game-linux.zip")
+        for path, body in ((self.build, b"PK game bytes"), (self.linux, b"PK linux bytes")):
+            with open(path, "wb") as handle:
+                handle.write(body)
 
     def push(self, rules=None):
         rules = rules if rules is not None else [{"prefix": ["auth", "token"], "stdout": "gho_secret\n"},
                                                  {"prefix": ["api", "user"], "stdout": "example\n"}]
         return self.run_script(rules, "--url", URL, "--tag", "build-20261023-aaaaaaa", "--revision", HEAD,
-                               "--file", self.build, "--registry", self.registry)
+                               "--files", f"{self.build},{self.linux}", "--registry", self.registry)
 
     def test_pushes_an_oci_artifact_with_two_tags(self):
         done = self.push()
@@ -315,8 +319,10 @@ class PublishPackageScriptTest(ScriptCase):
         self.assertEqual(result["ref"], f"127.0.0.1:{self.server.server_port}/example/shop-api:build-20261023-aaaaaaa")
         self.assertEqual(sorted(FakeRegistry.manifests), ["build-20261023-aaaaaaa", "latest"])
         manifest = FakeRegistry.manifests["latest"]
-        layer = manifest["layers"][0]
+        layer, linux = manifest["layers"]
         self.assertEqual(FakeRegistry.blobs[layer["digest"]], b"PK game bytes")
+        self.assertEqual(FakeRegistry.blobs[linux["digest"]], b"PK linux bytes")
+        self.assertEqual(linux["annotations"]["org.opencontainers.image.title"], "Game-linux.zip")
         self.assertEqual((layer["mediaType"], layer["annotations"]["org.opencontainers.image.title"]),
                          ("application/zip", "Game-windows.zip"))
         self.assertEqual(manifest["annotations"]["org.opencontainers.image.source"], "https://github.com/example/shop-api")
@@ -336,7 +342,7 @@ class PublishPackageScriptTest(ScriptCase):
         self.assertEqual(refused.returncode, 3)
         self.assertIn("write:packages", refused.stderr)
         self.assertEqual(self.push([{"prefix": ["auth", "token"], "exit": 1}]).returncode, 3)
-        bad = self.run_script([], "--url", URL, "--tag", "x", "--revision", "abc", "--file", self.build)
+        bad = self.run_script([], "--url", URL, "--tag", "x", "--revision", "abc", "--files", self.build)
         self.assertEqual(bad.returncode, 1)
 
 

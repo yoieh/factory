@@ -129,14 +129,22 @@ def file_digest(path):
     return "sha256:" + digest.hexdigest()
 
 
-def publish(url, tag, revision, path, registry):
+def layer(target, path):
+    digest, size = file_digest(path), os.path.getsize(path)
+    with open(path, "rb") as handle:
+        target.blob(digest, size, handle)
+    return {"mediaType": "application/zip" if path.endswith(".zip") else "application/octet-stream",
+            "digest": digest, "size": size, "annotations": {"org.opencontainers.image.title": os.path.basename(path)}}
+
+
+def publish(url, tag, revision, paths, registry):
     owner, repo = repository(url)
     if not TAG_RE.match(tag):
         raise Refused("publish_package: --tag must be letters, digits, dots, dashes and underscores")
     if not SHA_RE.match(revision):
         raise Refused("publish_package: --revision must be the full sha of the merge commit")
-    if not os.path.isfile(path):
-        raise Refused("publish_package: the build file does not exist")
+    if not paths or not all(os.path.isfile(path) for path in paths):
+        raise Refused("publish_package: a build file does not exist")
     token = gh(["auth", "token", "--hostname", "github.com"], "gh auth token")
     user = gh(["api", "user", "--jq", ".login"], "gh api user")
     name = f"{owner.lower()}/{repo.lower()}"
@@ -145,17 +153,13 @@ def publish(url, tag, revision, path, registry):
     empty = b"{}"
     empty_digest = "sha256:" + hashlib.sha256(empty).hexdigest()
     target.blob(empty_digest, len(empty), empty)
-    digest, size = file_digest(path), os.path.getsize(path)
-    with open(path, "rb") as handle:
-        target.blob(digest, size, handle)
+    layers = [layer(target, path) for path in paths]
     manifest = {
         "schemaVersion": 2,
         "mediaType": MANIFEST,
         "artifactType": ARTIFACT,
         "config": {"mediaType": EMPTY, "digest": empty_digest, "size": len(empty)},
-        "layers": [{"mediaType": "application/zip" if path.endswith(".zip") else "application/octet-stream",
-                    "digest": digest, "size": size,
-                    "annotations": {"org.opencontainers.image.title": os.path.basename(path)}}],
+        "layers": layers,
         "annotations": {
             "org.opencontainers.image.source": f"https://github.com/{owner}/{repo}",
             "org.opencontainers.image.revision": revision,
@@ -173,11 +177,12 @@ def main(argv=None):
     parser.add_argument("--url", required=True)
     parser.add_argument("--tag", required=True)
     parser.add_argument("--revision", required=True)
-    parser.add_argument("--file", required=True)
+    parser.add_argument("--files", required=True, help="the build files as a comma list")
     parser.add_argument("--registry", default="https://ghcr.io")
     args = parser.parse_args(argv)
     try:
-        result = publish(args.url, args.tag, args.revision, args.file, args.registry)
+        files = [path for path in args.files.split(",") if path]
+        result = publish(args.url, args.tag, args.revision, files, args.registry)
     except Refused as error:
         print(str(error), file=sys.stderr)
         return error.code

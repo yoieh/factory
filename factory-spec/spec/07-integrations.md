@@ -96,7 +96,7 @@ adapters/<name>/
   | `{source_branch}`, `{target_branch}`, `{pr_file}`, `{title}` | `open_pr` inputs |
   | `{pr_url}` | `pr_state`, `pr_checks` and `land_pr` input |
   | `{action}`, `{head_sha}` | `land_pr` inputs: `ready` or `merge`, and the commit the lander judged |
-  | `{merge_sha}`, `{tag}`, `{artifact}`, `{title}`, `{notes_file}`, `{release_mode}` | `publish_release` and `publish_package` inputs: the merge commit, the tag, the build file, the release title and notes, and `draft` or `publish` |
+  | `{merge_sha}`, `{tag}`, `{artifacts}`, `{title}`, `{notes_file}`, `{release_mode}` | `publish_release` and `publish_package` inputs: the merge commit, the tag, the build files as a comma list, the release title and notes, and `draft` or `publish` |
   | `{issue_key}`, `{external_key}`, `{external_keys}` | issue inputs; `external_keys` is a comma list of the project's mirrored keys for `sync` |
 
   Setting names must not equal a built-in placeholder. A placeholder without a value is an error before the script runs.

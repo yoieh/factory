@@ -30,7 +30,7 @@ PATTERN_KEYS = {
 PLACEHOLDERS = (
     "project", "repo", "repo_path", "remote_url", "source_branch", "target_branch",
     "pr_file", "title", "pr_url", "issue_key", "external_key", "external_keys", "head_sha", "action",
-    "merge_sha", "tag", "artifact", "notes_file", "release_mode",
+    "merge_sha", "tag", "artifacts", "notes_file", "release_mode",
 )
 RESERVED_SETTINGS = PLACEHOLDERS + ("adapter", "write", "patterns")
 DEFAULT_SLOTS = {"tracker": "local", "code_host": "none"}

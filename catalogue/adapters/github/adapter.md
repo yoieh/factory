@@ -59,8 +59,8 @@ Scripts the core runs itself in Land: `land check` and `land start` run `pr_chec
 
 Scripts the core runs itself in After merge: `land publish` runs them only for a repo whose `after_merge` asks for it, after its build is done. Never run them yourself, and never run `gh release` or push to the container registry yourself either.
 
-- `publish_release` creates the release `<tag>` at the merge commit with the build as its one asset, as a draft when `after_merge.release` is `draft`. It is a prerelease while the `prerelease` setting is true (the default), so a release a person made stays the latest. A release with the same tag is left as it is.
-- `publish_package` pushes the build as an OCI artifact to `<registry>/<owner>/<repo>` (lowercase), tagged `<tag>` and `latest`. Its `org.opencontainers.image.source` annotation links the package to the repo, so it shows under the repo's Packages and keeps the repo's visibility. Fetch it with `oras pull ghcr.io/<owner>/<repo>:latest`.
+- `publish_release` creates the release `<tag>` at the merge commit with every build file as an asset, as a draft when `after_merge.release` is `draft`. It is a prerelease while the `prerelease` setting is true (the default), so a release a person made stays the latest. A release with the same tag is left as it is.
+- `publish_package` pushes the build files as one OCI artifact to `<registry>/<owner>/<repo>` (lowercase), tagged `<tag>` and `latest`. Its `org.opencontainers.image.source` annotation links the package to the repo, so it shows under the repo's Packages and keeps the repo's visibility. Fetch it with `oras pull ghcr.io/<owner>/<repo>:latest`.
 
 ## pr_template
 
@@ -109,15 +109,15 @@ Read the template fresh on every run, never from memory.
 - A draft: `gh pr ready <url>`. With `merge`, then `gh pr merge <url> --<method> --match-head-commit <sha>`; never `--admin`, `--auto` or `--delete-branch`.
 - stdout: `{"action": "ready"|"merged", "url": "<the url>"}`.
 
-`scripts/publish_release.py --url <pr_url> --tag <tag> --target <merge_sha> --file <artifact> --title <title> --notes-file <notes_file> --mode draft|publish --prerelease true|false`, the same rules and exit codes:
+`scripts/publish_release.py --url <pr_url> --tag <tag> --target <merge_sha> --files <artifacts> --title <title> --notes-file <notes_file> --mode draft|publish --prerelease true|false`, the same rules and exit codes:
 
-- The repository is `<owner>/<name>` from the PR url. Refuse a tag other than letters, digits, dots, dashes and underscores, a target that is not a full commit sha, another mode, and a file or notes file that does not exist.
+- The repository is `<owner>/<name>` from the PR url. Refuse a tag other than letters, digits, dots, dashes and underscores, a target that is not a full commit sha, another mode, and a build file or notes file that does not exist.
 - `gh release view <tag> --repo <owner>/<name> --json url,isDraft`: when it exists, change nothing.
-- Otherwise `gh release create <tag> <file> --repo <owner>/<name> --target <sha> --title <title> --notes-file <notes>`, with `--draft` for `draft` and `--prerelease` when true, with a 1500 second timeout.
+- Otherwise `gh release create <tag> <files> --repo <owner>/<name> --target <sha> --title <title> --notes-file <notes>`, with `--draft` for `draft` and `--prerelease` when true, with a 1500 second timeout.
 - stdout: `{"action": "created"|"exists", "url", "draft", "tag"}`.
 
-`scripts/publish_package.py --url <pr_url> --tag <tag> --revision <merge_sha> --file <artifact> --registry <registry>`, the same rules and exit codes:
+`scripts/publish_package.py --url <pr_url> --tag <tag> --revision <merge_sha> --files <artifacts> --registry <registry>`, the same rules and exit codes:
 
 - The token from `gh auth token` and the login from `gh api user`, never printed. A bearer token from `<registry>/token` for `repository:<owner>/<name>:pull,push`; a 401 or 403 anywhere is exit 3.
-- Upload the empty config `{}` and the file as blobs (skipped when the registry has them), then put one OCI image manifest with `artifactType` `application/vnd.factory.build.v1`, the file as its one layer (titled with its name) and the `source`, `revision` and `created` annotations, as `<tag>` and as `latest`.
+- Upload the empty config `{}` and each file as blobs (skipped when the registry has them), then put one OCI image manifest with `artifactType` `application/vnd.factory.build.v1`, one layer per file (titled with its name) and the `source`, `revision` and `created` annotations, as `<tag>` and as `latest`.
 - stdout: `{"action": "pushed", "ref": "<registry host>/<owner>/<name>:<tag>", "digest"}`.

@@ -7,7 +7,7 @@ import traceback
 
 from . import (
     NAME, VERSION, FactoryError, adapters, catalogue, connected, db, demo, designs, doctor, home, improvements, inbox, issues,
-    jobs, legacy, projects, questions, retro, runs, server, skills, usage,
+    jobs, land, legacy, projects, questions, retro, runs, server, skills, usage,
 )
 from .util import parse_json_value
 
@@ -333,6 +333,23 @@ def build():
     entry = add(design, "check", cmd_design_check, "Drop downloads that are not PNG and strip scrub patterns.")
     entry.add_argument("run_id")
 
+    land_group = group(top, "land", "Review a done run's PRs and mark them ready or merge them, as the project's defaults.land says.")
+    entry = add(land_group, "check", cmd_land_check, "Read the checks, mergeability and head of the run's PRs.")
+    entry.add_argument("run_id")
+    entry.add_argument("--repo")
+    entry.add_argument("--wait", type=int, default=0, help="seconds to wait while checks still run")
+    entry = add(land_group, "start", cmd_land_start, "Open a new land round for a repo's PR: the lander's paths.")
+    entry.add_argument("run_id")
+    entry.add_argument("--repo", required=True)
+    entry = add(land_group, "save", cmd_land_save, "Store the lander's review file from stdin when the harness refused its write.")
+    entry.add_argument("run_id")
+    entry.add_argument("--repo", required=True)
+    entry = add(land_group, "apply", cmd_land_apply,
+                "Act on the lander's verdict: mark the PR ready or merge it when every check passes and the mode allows it.")
+    entry.add_argument("run_id")
+    entry.add_argument("--repo", required=True)
+    entry.add_argument("--dry-run", action="store_true", help="say what would happen and change nothing")
+
     retro_group = group(top, "retro", "The retrospective.")
     entry = add(retro_group, "load", cmd_retro_load, "Read retro.md into improvements.")
     entry.add_argument("run_id")
@@ -556,6 +573,22 @@ def cmd_run_pr(conn, args):
 
 def cmd_run_prs(conn, args):
     return runs.check_prs(conn, args.run_id, args.force)
+
+
+def cmd_land_check(conn, args):
+    return land.check(conn, args.run_id, args.repo, args.wait)
+
+
+def cmd_land_start(conn, args):
+    return land.start(conn, args.run_id, args.repo)
+
+
+def cmd_land_save(conn, args):
+    return land.save(conn, args.run_id, args.repo, sys.stdin.read())
+
+
+def cmd_land_apply(conn, args):
+    return land.apply(conn, args.run_id, args.repo, args.dry_run)
 
 
 def cmd_design_links(conn, args):

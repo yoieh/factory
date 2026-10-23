@@ -12,7 +12,7 @@
 | `doctor [--project p]` | Check python, git, sqlite, PATH, home permissions, skill installs, adapter availability; print fixes and the `claude --add-dir` start command. |
 | `config show` / `config set <dotted.key> <json>` | Read or change `config.json` (validated). |
 | `paths <run-id>` | All paths of a run: `run_dir`, `plan`, `issue_file`, `design_dir`, `project_file`, `catalogue_file`, `retro_file`, `retro_notes`, feature worktrees per repo. |
-| `agents` | `{"scope": "user"\|"repo"\|"plugin", "roles": {"planner", "worker", "reviewer", "retro", "improver": <subagent_type>}, "dedicated": {<agent name>: <subagent_type>}, "missing": [<agent names named by steps but not installed>]}` for the install the current cwd sees (repo scope wins over user scope, user scope over the plugin). |
+| `agents` | `{"scope": "user"\|"repo"\|"plugin", "roles": {"planner", "worker", "reviewer", "retro", "improver", "lander": <subagent_type>}, "dedicated": {<agent name>: <subagent_type>}, "missing": [<agent names named by steps but not installed>]}` for the install the current cwd sees (repo scope wins over user scope, user scope over the plugin). |
 | `serve [--port n]` | Start the dashboard on 127.0.0.1. |
 | `demo` | Seed a demo project with fake runs and issues. |
 
@@ -34,6 +34,10 @@ See 08 for `issue ...`.
 | `run rounds <run-id> <n>` | Change the round cap of groups not yet passed. |
 | `run pr <run-id> <url> --repo r` | Store a PR url (validated against the code host's `pr_url` pattern when it has one). Links it to the run's issue and clears the run's `no_pr`. |
 | `run prs [<run-id>] [--force]` | Read PR states through `pr_state`; skips final states unless `--force`. Moves issues to `done` when all PRs merged. |
+| `land check <run-id> [--repo r] [--wait s]` | Read each PR's checks, mergeability, draft flag and head through `pr_checks`; returns `mode` (the project's `defaults.land`), `repos` and `waiting`. With `--wait`, polls every 30 seconds while a PR's checks still run, up to `s` seconds. |
+| `land start <run-id> --repo r` | For a `done` run: refuses when the PR is not open or its head is not the feature worktree's HEAD; opens `land/<repo>/round-<n>/` with `checks.json` and returns the lander's values. Logs `land.start` with the head it judged. |
+| `land save <run-id> --repo r` | Store the lander's `review.md` from stdin when the harness refused its write. |
+| `land apply <run-id> --repo r [--dry-run]` | Read the verdict, read the checks again and act: on PASS, with every check passing, a clean merge, no requested changes and the same head, run `land_pr` (`ready` or `merge` as `defaults.land` says; nothing when it is `off`). Returns `verdict`, `action`, `reasons` and `issues_done`; a merge rereads the run's PR states, so the issue moves to `done` when every PR is merged. |
 | `run show <run-id>` | Run, repos, jobs with groups and verdicts, questions with threads, events, skips, history. |
 | `run list [--project p] [--archived] [--table]` | Runs with status, open questions, cost. |
 | `run archive <run-id> [--force]` / `run unarchive <run-id>` | Hide a done or failed run; remove its worktrees and local job branches; keep files and numbers. |

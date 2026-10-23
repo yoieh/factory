@@ -14,6 +14,8 @@ Integrations plug in through adapters. A project names at most one adapter per s
 | code_host | `open_pr` | Open or update a draft PR from the feature branch to the base branch, with the reviewers the host adds by itself (default reviewers, code owners) or a `reviewers` setting. |
 | code_host | `pr_state` | Read a PR's state: `OPEN`, `MERGED`, `DECLINED`, `SUPERSEDED`. Used by `run prs`, `improvement prs --check` and the dashboard poller. |
 | code_host | `pr_template` | A file or a skill that defines the PR title format and sections. |
+| code_host | `pr_checks` | Read an open PR's checks, mergeability, draft flag and head commit. Run by the core in `land check` and `land start`. |
+| code_host | `land_pr` | Mark a PR ready for review, or merge it pinned to a given head commit. Run only by the core's `land apply`, never by the orchestrator. |
 | design | `fetch_design` | Save one PNG and one markdown file per frame into `design/` (05, Design files). |
 
 Recognising keys and links, and scrubbing temporary URLs, are not capabilities: they are `patterns` in `adapter.json`, used by the core.
@@ -90,7 +92,8 @@ adapters/<name>/
   | `{project}` | the project name |
   | `{repo}`, `{repo_path}`, `{remote_url}` | the repo of the call; empty for project-level calls (`sync`) |
   | `{source_branch}`, `{target_branch}`, `{pr_file}`, `{title}` | `open_pr` inputs |
-  | `{pr_url}` | `pr_state` input |
+  | `{pr_url}` | `pr_state`, `pr_checks` and `land_pr` input |
+  | `{action}`, `{head_sha}` | `land_pr` inputs: `ready` or `merge`, and the commit the lander judged |
   | `{issue_key}`, `{external_key}`, `{external_keys}` | issue inputs; `external_keys` is a comma list of the project's mirrored keys for `sync` |
 
   Setting names must not equal a built-in placeholder. A placeholder without a value is an error before the script runs.
@@ -100,6 +103,8 @@ adapters/<name>/
   |---|---|
   | `pr_state` | `{"state": "OPEN"\|"MERGED"\|"DECLINED"\|"SUPERSEDED", "url": "..."}` |
   | `open_pr` | `{"action": "created"\|"updated", "url": "..."}` |
+  | `pr_checks` | `{"state": "OPEN"\|"MERGED"\|"DECLINED", "url", "draft", "head_sha", "mergeable": "MERGEABLE"\|"CONFLICTING"\|"UNKNOWN", "review", "checks": "passing"\|"pending"\|"failing"\|"none", "failing": [...], "pending": [...]}` |
+  | `land_pr` | `{"action": "ready"\|"merged", "url": "..."}` |
   | `sync` | `{"issues": [{"external_key", "title", "url", "external_status", "updated_at"}]}` |
   | `fetch_issue` | `{"title", "url", "status", "assignee", "type", "labels", "parent", "description", "comments", "links", "attachments", "design_links"}` |
 
@@ -143,7 +148,7 @@ v1 ships:
 | `none` | code_host | No push, no PR. The default. |
 | `git` | code_host | `push` only; the PR is opened by hand. For hosts without a CLI or API. |
 | `local` | tracker | The central issue tracker itself (`via: core`). Default tracker of every project. |
-| `github` | code_host | `gh` CLI for `open_pr`, a script for `pr_state`. |
+| `github` | code_host | `gh` CLI for `open_pr`, scripts for `pr_state`, `pr_checks` and `land_pr` (setting `merge_method`, default `squash`). |
 | `github-issues` | tracker | `gh issue view` for `fetch_issue`, a script for `sync`. Keys are issue numbers. |
 | `figma` | design | Figma MCP: metadata, screenshot, design context per frame; `scrub` for asset URLs. |
 

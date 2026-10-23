@@ -29,6 +29,40 @@
         ]
       }
     },
+    "pr_checks": {
+      "via": "script",
+      "command": [
+        "python3",
+        "scripts/pr_checks.py",
+        "--url",
+        "{pr_url}"
+      ],
+      "requires": {
+        "bin": [
+          "gh"
+        ]
+      }
+    },
+    "land_pr": {
+      "via": "script",
+      "command": [
+        "python3",
+        "scripts/land_pr.py",
+        "--url",
+        "{pr_url}",
+        "--action",
+        "{action}",
+        "--head",
+        "{head_sha}",
+        "--method",
+        "{merge_method}"
+      ],
+      "requires": {
+        "bin": [
+          "gh"
+        ]
+      }
+    },
     "pr_template": {
       "via": "file",
       "path": "pr-template.md"
@@ -42,6 +76,10 @@
     "reviewers": {
       "type": "list",
       "default": null
+    },
+    "merge_method": {
+      "type": "string",
+      "default": "squash"
     }
   },
   "patterns": {

@@ -1,7 +1,7 @@
 ---
 name: factory
-description: Run the software factory for one run. Give it a local issue, an external issue key or URL, or a feature text; it plans small jobs with a pipeline each, runs producer and gate agents in parallel in their own worktrees, merges code jobs into one feature branch per repo, opens a draft PR per repo when the code host can, and ends with a retrospective whose improvements a human decides; improve applies the accepted ones. Use for /factory <issue>, /factory <repo> <feature>, resume, answer, clarify, rework, publish, retro, improve, issue and list.
-argument-hint: "<KEY-n> [flags] | <external-key-or-url> [text] [flags] | [<repo>] <feature text> [flags] | (no arguments) | resume <run-id> | answer <question-id> <text> | clarify <question-id> <text> | rework <run-id> <job-id> <note> | publish <run-id> | retro <run-id> | improve [<id>...] [--factory-base <branch>] | issue add|list|show ... | list   (flags: --project <p> --repo <r>... --confirm-plan --no-pr --branch <b> --base <b> --parallel <n> --max-rounds <n> --design <url>...)"
+description: Run the software factory for one run. Give it a local issue, an external issue key or URL, or a feature text; it plans small jobs with a pipeline each, runs producer and gate agents in parallel in their own worktrees, merges code jobs into one feature branch per repo, opens a draft PR per repo when the code host can, and ends with a retrospective whose improvements a human decides; improve applies the accepted ones, and land reviews a done run's PRs and marks them ready or merges them when the project allows it. Use for /factory <issue>, /factory <repo> <feature>, resume, answer, clarify, rework, publish, land, retro, improve, issue and list.
+argument-hint: "<KEY-n> [flags] | <external-key-or-url> [text] [flags] | [<repo>] <feature text> [flags] | (no arguments) | resume <run-id> | answer <question-id> <text> | clarify <question-id> <text> | rework <run-id> <job-id> <note> | publish <run-id> | land <run-id> [--repo <r>] [--dry-run] | retro <run-id> | improve [<id>...] [--factory-base <branch>] | issue add|list|show ... | list   (flags: --project <p> --repo <r>... --confirm-plan --no-pr --branch <b> --base <b> --parallel <n> --max-rounds <n> --design <url>...)"
 ---
 
 # /factory: the orchestrator
@@ -74,7 +74,7 @@ F="${FACTORY_BIN:-$(command -v "${CLAUDE_PLUGIN_ROOT}/bin/factory" || command -v
 
 Start every Bash call with this line: shell state does not persist between calls. The snippets below leave it out. `$F` is one word, so it works in bash and zsh; write it quoted, `"$F"`. Snippets must run in bash and zsh: quote every variable and placeholder, no arrays, no `set --`, every argument written out in full, and `git -C <path>` instead of `cd`. When a command must run inside a folder, use a subshell: `(cd "<folder>" && <command>)`.
 
-1. `"$F" agents`. When it does not run, stop and tell the user to install the factory plugin (`/plugin marketplace add <the core's repo>`, then `/plugin install factory@<marketplace>`), or the core without it (`sh install.sh`, then `factory init` and `factory skill install --user`). It returns `scope`, `roles` (the `subagent_type` of `planner`, `worker`, `reviewer`, `retro` and `improver`), `dedicated` (agent name to `subagent_type`) and `missing` (agents that steps name but that are not installed). Keep `roles` and `dedicated`. A plugin install namespaces them (`<plugin>:factory-worker`), so never type an agent name from memory. When `missing` is not empty, tell the user that `factory skill install` installs them (Agents says what to do meanwhile). Keep the value of `$F` too (`printf '%s\n' "$F"`): it is `factory_bin` in every prompt and must be an absolute path.
+1. `"$F" agents`. When it does not run, stop and tell the user to install the factory plugin (`/plugin marketplace add <the core's repo>`, then `/plugin install factory@<marketplace>`), or the core without it (`sh install.sh`, then `factory init` and `factory skill install --user`). It returns `scope`, `roles` (the `subagent_type` of `planner`, `worker`, `reviewer`, `retro`, `improver` and `lander`), `dedicated` (agent name to `subagent_type`) and `missing` (agents that steps name but that are not installed). Keep `roles` and `dedicated`. A plugin install namespaces them (`<plugin>:factory-worker`), so never type an agent name from memory. When `missing` is not empty, tell the user that `factory skill install` installs them (Agents says what to do meanwhile). Keep the value of `$F` too (`printf '%s\n' "$F"`): it is `factory_bin` in every prompt and must be an absolute path.
 2. The project. With `--project <p>` it is `p`. Otherwise `"$F" project here` says which project the current repo resolves to, and why. Then `"$F" project show <name> --json` (leave out the name for an ad-hoc project). Keep `name`, `key`, the repos, the defaults, the skips, and per integration slot the adapter, the paths of its `adapter.json` and `adapter.md`, and per capability its `via`, `requires` (including `mcp` patterns and `skill` names) and availability. When `project here` matches several projects, show the error and ask which one. An invalid project config makes `"$F"` exit with an error: show it and stop. An ad-hoc project (no config: one repo, no integrations) is fine; `run new` records it as a skip.
 3. Check the adapters in this session (next section), before `run new`.
 4. `run new` (in each Start section) writes the run's snapshots: `project_file` (the resolved `project.json`) and `catalogue_file` (`catalogue.json`: the steps and pipeline templates this run may use). From then on read adapters, steps and agents from these two files, not from the live config. `"$F" paths <run-id>` gives every run path again: `run_dir`, `plan`, `issue_file`, `design_dir`, `project_file`, `catalogue_file`, `retro_file`, `retro_notes` and the feature worktrees.
@@ -126,6 +126,7 @@ Every missing dependency is a skip, never a block. Use what is there; carry on w
 | code host `push`, for one repo | Finish | That repo has `can_push: false`: Finish skips its push and PR, with a skip. The other repos go on. |
 | code host `open_pr` (push works) | Finish, Improve | Push the branch and stop there for that repo: the report names the branch for a person to open the PR. Skip without `--pr`. |
 | code host `pr_state` | Improve, step 1 | Report the PRs as unchecked and carry on. |
+| code host `pr_checks` or `land_pr` | Land | The lander still judges the PRs; `land apply` reports why it changes nothing. |
 | code host `pr_template` | Finish, Improve | The repo's own PR template when the host uses one (for example a template file in the repo), else the plain template (Finish, step 3). |
 | design `fetch_design` | Designs | List the links as "not fetched". Skip with `--pr`: "UI built without the design". |
 | tracker `comment`, or `"write": false` | Finish, step 8 | Write nothing to the tracker. Not a skip: it is the default. |
@@ -146,6 +147,7 @@ Parse `$ARGUMENTS`:
 | `clarify <question-id> <text>` | Ask back on an open question. If this session owns the run, `"$F" question clarify <id> "<text>" --delivered` and relay it at once (Questions, step 5). Otherwise run it without `--delivered`, so the run's `question wait` returns it, and say the run's orchestrator picks it up. |
 | `rework <run-id> <job-id> <note>` | Rework (below). |
 | `publish <run-id>` | Publish (below). |
+| `land <run-id> [--repo <r>] [--dry-run]` | Land (below), for a run that is `done`. |
 | `retro <run-id>` | Retrospective (below), for a run that is `done` or `failed`. Run it again after a rework. |
 | `improve [<id>...] [--factory-base <branch>]` | Improve (below). |
 | `issue add\|list\|show ...` | Pass the rest on to `"$F" issue add "<project>" "<title>" ...`, `"$F" issue list ...` or `"$F" issue show "<KEY-n>"`, with the resolved project for `add` when none is given, and show the result. |
@@ -169,6 +171,7 @@ The first argument, when it is not a command word above:
 | gate | the step's agent | per round, every agent gate of the group, all in one message, background |
 | retro | `retro` | once per run, when it is done or failed, foreground |
 | improver | `improver` | in Improve, one per group, all in one message, background |
+| lander | `lander` | in Land, one per open PR, all in one message, background |
 
 The step's agent comes from `catalogue.json`, and the sync results repeat it (`group.agent` for producers, `agent` per gate). It is the generic `factory-worker` (produce) or `factory-reviewer` (gate) unless the step names a dedicated agent, or `human` for a human gate. Map it to its `subagent_type` through `"$F" agents`: `roles.worker` or `roles.reviewer` for the generic ones, `dedicated.<name>` for a dedicated one. When a dedicated agent is in `missing`, spawn the generic agent of its role with the same prompt lines (it accepts the same keys) and record `"$F" skip add "<run-id>" step-agent "<step> ran with the generic agent, <name> is not installed"`. When the step has a `model` (`group.model`, or `model` per gate), pass it as the Agent tool's `model`; otherwise leave `model` out.
 
@@ -179,10 +182,11 @@ Agents get context from files. Each prompt is only `key: value` lines, one per l
 - gate: `node`, `job_dir`, `group_dir`, `round_dir`, `gate_file`, `review_file`, `producer_file`, `kind`, `plan`, `issue`, `designs`, `repo`, `worktree`, `branch`, `feature_branch`, `group_base`, `out_dir`, `sources`, `round`, `setup`, `upstream`, `previous`, `run_dir`, `project`, `factory_bin`
 - retro: `node`, `run_id`, `run_dir`, `retro_file`, `retro_notes`, `issue`, `plan`, `repos`, `catalogue`, `project`, `factory_bin`
 - improver: `node`, `items`, `report`, `repo`, `worktree`, `branch`, `base_branch`, `setup`, `run_dir`, `project`, `factory_bin`
+- lander: `node`, `repo`, `pr_url`, `pr_file`, `feature_worktree`, `feature_branch`, `base_branch`, `head_sha`, `test`, `checks_file`, `round`, `round_dir`, `review_file`, `previous`, `plan`, `issue`, `run_dir`, `project`, `factory_bin`
 
 Values:
 
-- `node`: `planner`, `produce:<step>`, `gate:<step>`, `retro` or `improver`.
+- `node`: `planner`, `produce:<step>`, `gate:<step>`, `retro`, `improver` or `land`.
 - `feature`: the feature text, or the issue title, on one line.
 - `issue`: `issue_file` when the run has an `issue.md`, else `none`. `designs`: `design_dir` when it holds files, else `none`. `plan`: the run's `plan`. `retro_notes`: its path, or `none` when the file does not exist.
 - `repos` (planner): the run's repos as a comma list, or `choose` when the run has none. `repos` (retro): `<repo>=<feature_worktree>@<base_branch>` per repo, as a comma list.
@@ -193,6 +197,7 @@ Values:
 - `group_base` (gates): the current group's `base_sha` from `job start`, `job next` or `job show`: the commit the group started from, which its gates diff against.
 - `setup`: `ok`, `none` (files jobs, or no setup command), or `failed: <command>: <last error line>`. Gates get the same value as their producer. In Improve it is the result of the repo's `setup` from the group's project config.
 - `upstream` and `previous`: from `"$F" job show <ref>`, as comma lists, or `none`.
+- lander: `repo` to `previous` (except `node`) are the values of `land start`; `plan`, `issue`, `run_dir`, `project` and `factory_bin` as for the planner.
 
 Give a producer its name when the Agent tool takes a `name`. Store what SendMessage needs to reach it (the name, or the agent id the tool returns) with `"$F" job agent <ref> <name-or-id>`; `job show` returns it as `producer` in each group (`group.agent` is the step's agent, not this name). Resume the **same** producer with SendMessage for every round of its group and for a merge conflict. A new group gets a fresh producer. Keep each gate's agent id for its round, to resume one that wrote a bad file. After `/factory resume` in a new session, spawn fresh agents with the same prompt lines instead.
 
@@ -446,7 +451,7 @@ Otherwise, per repo:
 7. For a multi-repo run, when every repo that got a PR has it: list the other repos' PR urls (and pushed branches without a PR) under `## Related PRs` in each pr file, with one line on the deploy order, and run `open_pr` again per repo to update its PR in place. It must report an update (`"action": "updated"` for a script); when it opened a new PR instead, log it in retro-notes.md and tell the user.
 8. Write-back, only for a run from an external issue, only when the project's tracker has `"write": true` and `comment` is available: post one comment on the external issue with the PR links, as its `## comment` section says. Never change the external issue's status or fields.
 
-Then `"$F" run status "<run-id>" done`, write `report.md` (below), then the Retrospective. Report every PR url, every pushed branch that waits for a person to open its PR, every repo that could not push, the files jobs' `out/` folders and open points, and the run's estimated cost and tokens (`"$F" usage sync "<run-id>"`, then `total` from `"$F" usage show "<run-id>"`). Keep the feature worktrees for rework.
+Then `"$F" run status "<run-id>" done`, write `report.md` (below), then the Retrospective, then **Land** when the project's `defaults.land` is `ready` or `merge`. Report every PR url, every pushed branch that waits for a person to open its PR, every repo that could not push, the files jobs' `out/` folders and open points, and the run's estimated cost and tokens (`"$F" usage sync "<run-id>"`, then `total` from `"$F" usage show "<run-id>"`). Keep the feature worktrees for rework.
 
 **report.md.** Write `<run_dir>/report.md` for every run that ends, `done` or `failed`, in plain words: per repo the feature branch, the test result and the PR url (or why there is none); per files job its deliverables under `out/` and its open points; every dropped job with its reason; the capped groups with their Must fix items; the `[human]` notes; the skips (`"$F" skip list "<run-id>"`). Costs and agent names may go in: the file stays in the factory home. After a rework, write it again.
 
@@ -485,6 +490,24 @@ An item moves to done only when step 1 sees its PR merged, or when a human marks
 
 `/factory publish <run-id>`, for a `no_pr` run that is `done`. Read the code host from `"$F" project show "<project>" --json` (the current config: the run's snapshot may predate the code host) and check `push` and `open_pr` in this session (Adapters). When no repo of the run can push, refuse with that reason and push nothing. Otherwise `"$F" run session "<run-id>" "${CLAUDE_SESSION_ID}"`, then per repo without a `pr_url` in `"$F" run show "<run-id>"`: rerun its full test suite in its feature worktree (stop and report when it fails), write its pr file again (Finish, step 3) when the branch or the template changed, then Finish steps 5 to 8. Report the PR urls and the pushed branches without a PR. `run pr` clears the run's `no_pr`, so a later rework goes through the normal push and PR update of Finish.
 
+## Land
+
+`/factory land <run-id> [--repo <r>] [--dry-run]`, for a run that is `done` with open PRs, and at the end of Finish when the project's `defaults.land` is `ready` or `merge`. A lander agent judges each open PR as a whole; `land apply` then acts on its verdict as the project's `defaults.land` says (`"$F" project show "<project>" --json`):
+
+| `defaults.land` | On PASS, when every check passes and the PR merges cleanly |
+|---|---|
+| `off` (default) | Nothing: the verdict is reported and the PR stays as it is. |
+| `ready` | The PR is marked ready for review; a person merges it. |
+| `merge` | The PR is merged at the reviewed commit, with the code host's `merge_method`. |
+
+The core decides and acts, never you: it reads the checks again, refuses when the PR has commits the lander did not see, and merges only the reviewed commit. Never change a project's `defaults.land`: turning landing on, per project, is the user's decision. In a new session, do Setup step 1 first, then `"$F" run session "<run-id>" "${CLAUDE_SESSION_ID}"`.
+
+1. `"$F" land check "<run-id>"`, with `--repo "<r>"` when given. It returns `mode`, `waiting` and per repo `repo`, `url`, `state`, `draft`, `head_sha`, `mergeable`, `review`, `checks`, `failing` and `pending`, or `checks` `unchecked` or `unknown` with a `reason`. Leave out the repos whose `state` is not `OPEN`. When `waiting` is not empty, run `"$F" land check "<run-id>" --wait 1800` with Bash `run_in_background` and go on when it returns; report the repos still waiting then, and that `/factory land <run-id>` checks again later. Report a repo whose `checks` are `failing` with the failing checks, and leave it: `/factory rework` fixes it.
+2. Per repo left: `git -C "<feature_worktree>" fetch origin` (only fetch), then `"$F" land start "<run-id>" --repo "<repo>"`. It returns `mode`, `repo`, `pr_url`, `pr_file`, `feature_worktree`, `feature_branch`, `base_branch`, `head_sha`, `test`, `checks`, `round`, `round_dir`, `review_file`, `checks_file` and `previous`. When it refuses because the PR's head is not the feature worktree's HEAD, report that and leave the repo.
+3. Spawn one lander per repo, all in one message, in the background, with its prompt lines.
+4. When one returns and its `review_file` is missing: store a `=== FILE: <review_file> ===` block of its final response unchanged, as in Refused writes, with `"$F" land save "<run-id>" --repo "<repo>"`; without one, resume it once with "Write your verdict to <review_file> with the Write tool, as your instructions say." Then `"$F" land apply "<run-id>" --repo "<repo>"`, with `--dry-run` when given. It returns `verdict`, `action` (`none`, `ready` or `merged`; `would_ready` or `would_merge` on a dry run), `reasons` and `issues_done`.
+5. Report per repo in one short block: the PR url, the verdict with the review's one-line conclusion, the action, and the `reasons` when nothing changed. On CHANGES, list the review's Must fix items: the user fixes them with `/factory rework <run-id> <job-id> <note>` and lands again. A merged PR moves the run's issue to done once every PR of the run is merged (`issues_done`). Never retry a refused merge another way.
+
 ## Resume (new session)
 
 1. Setup, then `"$F" run session "<run-id>" "${CLAUDE_SESSION_ID}"`, `"$F" run show "<run-id>"` and `"$F" paths "<run-id>"`. Record any new skip from your session check. Recreate each missing feature worktree with `git -C "<path>" worktree add "<feature_worktree>" "<feature_branch>"` and run its Worktree setup.
@@ -508,7 +531,8 @@ An item moves to done only when step 1 sees its PR merged, or when a human marks
 
 ## Never
 
-- merge into the default branch, force-push, or push anything but the run's feature branches and, in Improve, the `chore/improvements-*` branches
+- merge into the default branch yourself, mark a PR ready or merge it other than through `land apply`, or change a project's `defaults.land`
+- force-push, or push anything but the run's feature branches and, in Improve, the `chore/improvements-*` branches
 - touch the user's checkout (no checkout, reset or stash in a repo path; only `fetch` and `worktree add`), or branches other than the feature branch, the run's job branches and, in Improve, the branches `improvement start` names
 - write run state outside `"$F"`, or edit agent files
 - call a host's API other than as the adapter's `adapter.md` says, or print or store a signed URL, a token or a credential

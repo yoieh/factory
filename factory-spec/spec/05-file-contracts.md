@@ -45,6 +45,7 @@ Prompt keys per agent, in this order:
 | `factory-reviewer` (gate) | `node`, `job_dir`, `group_dir`, `round_dir`, `gate_file`, `review_file`, `producer_file`, `kind`, `plan`, `issue`, `designs`, `repo`, `worktree`, `branch`, `feature_branch`, `group_base`, `out_dir`, `sources`, `round`, `setup`, `upstream`, `previous`, `run_dir`, `project`, `factory_bin` |
 | `factory-retro` | `node`, `run_id`, `run_dir`, `retro_file`, `retro_notes`, `issue`, `plan`, `repos`, `catalogue`, `project`, `factory_bin` |
 | `factory-improver` | `node`, `items`, `report`, `repo`, `worktree`, `branch`, `base_branch`, `setup`, `run_dir`, `project`, `factory_bin` |
+| `factory-lander` | `node`, `repo`, `pr_url`, `pr_file`, `feature_worktree`, `feature_branch`, `base_branch`, `head_sha`, `test`, `checks_file`, `round`, `round_dir`, `review_file`, `previous`, `plan`, `issue`, `run_dir`, `project`, `factory_bin` |
 
 Values:
 

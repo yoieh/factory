@@ -11,6 +11,7 @@ ROLES = {
     "reviewer": "factory-reviewer",
     "retro": "factory-retro",
     "improver": "factory-improver",
+    "lander": "factory-lander",
 }
 
 

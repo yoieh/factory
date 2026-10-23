@@ -20,8 +20,9 @@ TOP_KEYS = (
 REPO_KEYS = ("name", "path", "remote", "default_branch", "role", "test", "setup")
 KNOWLEDGE_KEYS = ("label", "read_first", "per_repo", "architecture")
 TARGET_KEYS = ("repo", "base", "label")
-DEFAULTS = {"confirm_plan": False, "branch_prefix": "feature/", "require_code_review": True}
-DEFAULT_KEYS = ("parallel", "max_rounds", "confirm_plan", "branch_prefix", "require_code_review")
+DEFAULTS = {"confirm_plan": False, "branch_prefix": "feature/", "require_code_review": True, "land": "off"}
+DEFAULT_KEYS = ("parallel", "max_rounds", "confirm_plan", "branch_prefix", "require_code_review", "land")
+LAND_MODES = ("off", "ready", "merge")
 STEP_NAMES = {
     1: "--project",
     2: "FACTORY_PROJECT",
@@ -183,6 +184,8 @@ def validate(project, folder_name=None, config=None):
                 problems.append(f"defaults.{key} must be true or false")
         if "branch_prefix" in defaults and not isinstance(defaults["branch_prefix"], str):
             problems.append("defaults.branch_prefix must be a string")
+        if "land" in defaults and defaults["land"] not in LAND_MODES:
+            problems.append(f"defaults.land must be one of {', '.join(LAND_MODES)}")
     if problems:
         return problems
     normal = normalise(project)

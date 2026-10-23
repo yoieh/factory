@@ -117,6 +117,7 @@ Only when another job depends on this one, or this job uses another job's result
 ## Acceptance criteria
 - [ ] one testable statement per line
 A docs-only job gets no "full suite passes" criterion unless a test reads the changed files; name the grep instead.
+When the job parses data from outside the repo (an API payload, a file, user input), give one criterion each for a field that is null, a field that is missing and a field with the wrong type, for every field the change reads. A missing field is not a null unless the spec says so.
 ## Tests
 Which tests to add or change, and the command that proves them. For files jobs: the deliverable files under `out/` and how a reviewer checks them.
 ## Notes for steps

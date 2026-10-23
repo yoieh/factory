@@ -6,8 +6,8 @@ import sys
 import traceback
 
 from . import (
-    NAME, VERSION, FactoryError, adapters, after, catalogue, db, demo, designs, doctor, home, improvements, issues, jobs, land,
-    legacy, projects, questions, retro, runs, server, skills, usage,
+    NAME, VERSION, FactoryError, adapters, after, catalogue, connected, db, demo, designs, doctor, home, improvements, inbox,
+    issues, jobs, land, legacy, projects, questions, retro, runs, server, skills, usage,
 )
 from .util import parse_json_value
 
@@ -289,6 +289,28 @@ def build():
     entry = add(question, "wait", cmd_question_wait, "Wait for answers and follow-ups not delivered yet.")
     entry.add_argument("run_id")
     entry.add_argument("--timeout", type=float, default=1800)
+
+    agent = group(top, "agent", "Connected agents: outside tools that read the inbox and answer for the user.")
+    entry = add(agent, "add", cmd_agent_add, "Connect an agent by name, or change its description.")
+    entry.add_argument("name")
+    entry.add_argument("--description")
+    add(agent, "list", cmd_agent_list, "Connected agents with when they were last seen and what they answered.", table=True)
+    entry = add(agent, "show", cmd_agent_show, "One connected agent and its latest answers and follow-ups.")
+    entry.add_argument("name")
+    entry = add(agent, "remove", cmd_agent_remove, "Forget a connected agent. Its answers keep its name.")
+    entry.add_argument("name")
+
+    entry = add(top, "inbox", cmd_inbox, "Everything that waits for the user: open questions, plan confirms, human gates, improvements.")
+    entry.add_argument("--project")
+    entry.add_argument("--as", dest="agent", help="the connected agent that reads; marks it seen")
+    entry = add(top, "events", cmd_events, "Events after a cursor, to follow the factory without polling every run.")
+    entry.add_argument("--since", type=int, help="the cursor of the last call; without it, the latest events")
+    entry.add_argument("--run")
+    entry.add_argument("--kind", action="append", default=[], help="an event kind or prefix, such as question or run.status")
+    entry.add_argument("--limit", type=int, default=200)
+    entry.add_argument("--wait", action="store_true", help="block until there is a new event")
+    entry.add_argument("--timeout", type=float, default=1800)
+    entry.add_argument("--as", dest="agent", help="the connected agent that reads; marks it seen")
 
     skip = group(top, "skip", "Missing optional dependencies.")
     entry = add(skip, "add", cmd_skip_add, "Record a skip.")
@@ -806,6 +828,30 @@ def cmd_question_wait(conn, args):
     return questions.wait(conn, args.run_id, args.timeout)
 
 
+def cmd_agent_add(conn, args):
+    return connected.add(conn, args.name, args.description)
+
+
+def cmd_agent_list(conn, args):
+    return connected.listing(conn)
+
+
+def cmd_agent_show(conn, args):
+    return connected.show(conn, args.name)
+
+
+def cmd_agent_remove(conn, args):
+    return connected.remove(conn, args.name)
+
+
+def cmd_inbox(conn, args):
+    return inbox.inbox(conn, args.project, args.agent)
+
+
+def cmd_events(conn, args):
+    return inbox.events(conn, args.since, args.run, args.kind, args.limit, args.wait, args.timeout, agent=args.agent)
+
+
 def cmd_skip_add(conn, args):
     return runs.skip_add(conn, args.run_id, args.dependency, args.effect, args.pr, args.job)
 
@@ -826,6 +872,7 @@ TABLE_COLUMNS = {
     "project": ["name", "key", "repos", "archived", "description"],
     "question": ["id", "run_id", "job_id", "asked_by", "status"],
     "improvement": ["id", "run_id", "target", "impact", "status", "title"],
+    "agent": ["name", "seen_at", "answers", "follow_ups", "description"],
 }
 
 

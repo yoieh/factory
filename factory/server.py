@@ -7,7 +7,10 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
-from . import FactoryError, VERSION, catalogue, heads, home, improvements, issues, jobs, projects, questions, runs, skills, usage
+from . import (
+    FactoryError, VERSION, catalogue, connected, heads, home, improvements, inbox, issues, jobs, projects, questions, runs, skills,
+    usage,
+)
 from .util import read_json, read_text
 
 PNG = b"\x89PNG\r\n\x1a\n"
@@ -16,6 +19,7 @@ MAX_TEXT = 4000
 MAX_ISSUE_BODY = 100_000
 MAX_TITLE = 200
 POLL_SECONDS = 300
+MAX_EVENT_WAIT = 60
 TEXT_SUFFIXES = (".md", ".json")
 TEXT_FOLDERS = ("runs", "improve", "issues")
 HEADERS = {
@@ -159,7 +163,7 @@ def run_detail(conn, run_id):
         shown["usage"] = {"error": error.message}
     plan = runs.run_paths(run_id)["plan"]
     for question in shown["questions"]:
-        question["kind"] = question_kind(question, plan)
+        question["kind"] = inbox.question_kind(question, plan)
     shown["files"] = run_files(run_id)
     try:
         shown["steps"] = run_steps(run_id, shown)
@@ -180,10 +184,6 @@ def active_jobs(conn, project=None):
     return found
 
 
-def question_kind(question, plan):
-    return "plan_confirm" if question["path"] == plan and question["asked_by"] == "orchestrator" else "question"
-
-
 def question_entries(conn, statuses, project=None):
     found = []
     cached = {}
@@ -194,7 +194,7 @@ def question_entries(conn, statuses, project=None):
         if project and run["project"] != project:
             continue
         plan = runs.run_paths(run["id"])["plan"]
-        question["kind"] = question_kind(question, plan)
+        question["kind"] = inbox.question_kind(question, plan)
         question["run"] = {"id": run["id"], "feature": run["feature"], "project": run["project"], "status": run["status"],
                            "issue_key": run["issue_key"]}
         if question["job_id"]:
@@ -295,6 +295,20 @@ def get_routes(conn, route, query):
     if route == "/api/improvements":
         statuses = [status for status in (single(query, "status", "") or "").split(",") if status]
         return improvements.listing(conn, None, project, statuses or None)
+    if route == "/api/inbox":
+        return inbox.inbox(conn, project, single(query, "as"))
+    if route == "/api/events":
+        since = single(query, "since")
+        limit = single(query, "limit", "200")
+        timeout = single(query, "timeout", "30")
+        return inbox.events(conn, number(since, "cursor") if since is not None else None, single(query, "run"),
+                            [kind for kind in (single(query, "kind", "") or "").split(",") if kind], number(limit, "limit"),
+                            flag(single(query, "wait", "")), min(number(timeout, "timeout"), MAX_EVENT_WAIT), agent=single(query, "as"))
+    if route == "/api/agents":
+        return connected.listing(conn)
+    match = re.match(r"^/api/agents/([^/]+)$", route)
+    if match:
+        return connected.show(conn, match.group(1))
     if route == "/api/meta":
         table = usage.price_table()
         return {"version": VERSION, "home": home.root(), "prices": {"date": table["date"], "source": table["source"]}}
@@ -306,9 +320,12 @@ def post_routes(conn, route, body):
     if match:
         question_id = number(match.group(1), "question")
         text = text_limit(body.get("text"), MAX_TEXT, "text")
+        author = body.get("by") or "dashboard"
+        if not isinstance(author, str):
+            raise Refused(400, "by must be an agent name")
         if match.group(2) == "answer":
-            return questions.answer(conn, question_id, text or "", delivered=False, author="dashboard")
-        return questions.clarify(conn, question_id, text or "", delivered=False, author="dashboard")
+            return questions.answer(conn, question_id, text or "", delivered=False, author=author)
+        return questions.clarify(conn, question_id, text or "", delivered=False, author=author)
     match = re.match(r"^/api/improvements/([^/]+)/decide$", route)
     if match:
         note = text_limit(body.get("note"), MAX_TEXT, "note")

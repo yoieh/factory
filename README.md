@@ -84,6 +84,7 @@ Every command prints one JSON value. Errors print `factory: <message>` on stderr
 | Plans and jobs | `plan load`, `job ready|start|show|agent|round|next|stage|rework|drop` |
 | Steps and gates | `step sync|save`, `gate sync`, `gate human` |
 | Questions | `question ask|answer|clarify|reply|resolve|list|wait` |
+| Connected agents | `agent add|list|show|remove`, `inbox [--project p] [--as name]`, `events [--since n] [--wait] [--as name]` |
 | Designs | `design links <path>`, `design target <run-id> --name <frame>`, `design check <run-id>` |
 | Landing | `land check|start|save|apply <run-id>`, after merge `land after|build|publish|watched <run-id>` |
 | Retrospective | `retro load <run-id>`, `improvement list|decide|start|pr|prs` |
@@ -125,6 +126,22 @@ A job you give up is dropped with `factory job drop <run-id>/<job-id> "<reason>"
 
 `factory legacy import <dir> --project <p>` brings the history of the old board-based factory (the reference this core was built from) into the dashboard. `<dir>` is its `factory/` folder, the one with `board.json`, `jobs/`, `retros/` and `backlog.md`. Every merged job becomes a finished run with one job and one `build` group: its rounds and verdicts come from the `round-<n>/review-<gate>.md` and `decision.md` files (the approver's decision is the `approve` gate, a human rework the `human` gate), and its files are copied into the run folder. Answers in `answers.md` become answered questions. Every retro proposal becomes an improvement on the run of the last job the retro looked at, with the status its `(retro <id>#<n>)` tag has in `backlog.md` or `backlog-archive.md`: `[x]` done, `[ ]` accepted, `[?]` open, `[-]` rejected with its reason. `--issues` takes a JSON map from issue keys to `{"old": <job id or backlog text>}`, so an accepted proposal links the issue it already became. `--dry-run` counts and changes nothing, and a second import adds only what is new.
 
+## Connecting agents
+
+Any outside agent can drive the factory for you: a voice assistant, another coding agent, a script. The factory does not know which agents exist or what they are. It knows a connected agent only by the name the agent passes, and what that agent may approve for you is set up in the agent, not here.
+
+```sh
+factory agent add helper --description "Answers while I am away"   # optional: the first --by or --as registers the name too
+factory events --wait --as helper          # blocks until something happens; returns the events and a cursor
+factory events --since <cursor> --wait --as helper
+factory inbox --as helper                  # everything that waits for you, across runs
+factory question answer <id> "yes" --by helper
+```
+
+`factory inbox` lists the open questions of every run, each with its `kind` (`question`, `plan_confirm` or `human_gate`), the run and job, the question line, the options with the recommended one, and the exact command to answer or ask back, plus the improvements waiting for a decision. `factory events` follows the event log from a cursor, so an agent waits on one call instead of watching every run. An answer stored with `--by <name>` counts as yours: the orchestrator acts on it like an answer in its own chat. Over the network, the dashboard serves the same as `/api/inbox`, `/api/events` and `/api/agents`, and its answer and follow-up POSTs take `"by": "<name>"`.
+
+The **Agents** page of the dashboard lists every connected agent with when it was last seen and what it answered. `factory agent remove <name>` forgets one; its answers keep its name.
+
 ## Dashboard
 
 ```sh
@@ -140,6 +157,7 @@ One local page, served by the standard library and built from one self-contained
 - **Issues**: filter, create, change status, priority, title and labels, edit the body, and copy the `/factory <KEY>` command that starts a run in Claude Code.
 - **Projects**: repos, integrations with availability, knowledge, skill installs and drift, and the catalogue with where each step comes from. Read-only.
 - **Improvements**: evidence and proposal per item; accept, reject, mark done or send back to review, with a note.
+- **Agents**: the connected agents, with when they were connected and last seen, and their latest answers. Read-only.
 
 To reach the dashboard from other devices on a tailnet, keep the server on 127.0.0.1 and put `tailscale serve` in front of it, then list the machine's tailnet name:
 

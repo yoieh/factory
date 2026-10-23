@@ -56,12 +56,13 @@ Keys:
 | `step_skills` | no | Per `skills_key` of a step, a list of `{path, when}` files the step's agent reads. |
 | `catalogue_dirs` | no | Extra catalogue folders (06). |
 | `improvement_targets` | no | Where accepted improvements go. Default: `factory`, `repo`, `process`; `knowledge` only when set. Per target: `repo` (a project repo, or none for `factory` and `process`), `base` (`current`, `default` or a branch name), `label`. |
-| `defaults` | no | Run defaults. `land` (`off`, `ready` or `merge`, default `off`) says what `land apply` does with a PR the lander passed: nothing, mark it ready for review, or merge it. Only the user turns it on, per project. `agent_runs` (null, the default, or 0 to 64) caps the active runs (`planning` to `finishing`, not archived) a project may have when a connected agent starts one (`run new --by`); 0 stops agents starting runs, null leaves it to the agent's judgment. |
+| `defaults` | no | Run defaults. `land` (`off`, `ready` or `merge`, default `off`) says what `land apply` does with a PR the lander passed: nothing, mark it ready for review, or merge it. Only the user turns it on, per project. `agent_runs` (null, the default, or 0 to 64) caps the active runs (`planning` to `finishing`, not archived) a project may have when a connected agent starts one (`run new --by`); 0 stops agents starting runs, null leaves it to the agent's judgment. `land_fixes` (0 to 5, default 2) is how many times the factory fixes a PR the lander sent back before a person decides. |
 
 A repo's `after_merge` says what the factory does once its PR is merged, in **After merge** of Land. Only the user sets it.
 
 | Key | Meaning |
 |---|---|
+| `deploy` | A shell command that deploys the merge commit, run with the repo's `setup` in a detached worktree at it, with the session's environment (credentials come from the user's own CLI logins, never from config). For a repo that does not deploy by itself when its base branch moves. Runs before `watch`. |
 | `watch` | `true`: a `factory-watcher` follows the merge commit's deploy with the `deploy-watch` skill, rolls back a production outage the deploy caused, and opens (never merges) a remediation PR. |
 | `build` | A shell command, run with the repo's `setup` in a detached worktree at the merge commit. |
 | `artifact` | The build's output: a path inside the repo, or a list of them (for example one zip per platform), each with its own file name. A folder is zipped. Needs `build`. |

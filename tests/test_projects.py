@@ -71,7 +71,7 @@ class ProjectCommandsTest(FactoryCase):
         self.assertEqual(sorted(shown["improvement_targets"]), ["factory", "knowledge", "process", "repo"])
         self.assertEqual(shown["defaults"], {"parallel": 3, "max_rounds": 4, "confirm_plan": False,
                                              "branch_prefix": "feature/", "require_code_review": True, "land": "off",
-                                             "agent_runs": None})
+                                             "land_fixes": 2, "agent_runs": None})
 
     def test_show_warns_for_a_path_that_is_not_a_checkout(self):
         api = self.repo("api")

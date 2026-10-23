@@ -4,14 +4,15 @@ import re
 import shutil
 import subprocess
 
-from . import FactoryError, adapters, db, home, land, runs
+from . import FactoryError, adapters, connected, db, home, land, runs
 from .util import git, now, read_json, read_text, write_json, write_text
 
 BUILD_TIMEOUT = 3600
+DEPLOY_TIMEOUT = 3600
 PUBLISH_TIMEOUT = 1800
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 WATCH_RE = re.compile(r"^DEPLOY: (VERIFIED|UNVERIFIED|NONE|FAILED|RESTORED|ESCALATED|UNKNOWN)\s*$")
-STEPS = ("watch", "build", "release", "package")
+STEPS = ("deploy", "watch", "build", "release", "package")
 
 
 def settings_of(project, repo_name):
@@ -21,6 +22,7 @@ def settings_of(project, repo_name):
 
 def steps_of(settings):
     wanted = {
+        "deploy": bool(settings.get("deploy")),
         "watch": bool(settings.get("watch")),
         "build": bool(settings.get("build")),
         "release": settings.get("release", "off") != "off",
@@ -37,8 +39,8 @@ def state_file(run_id, repo_name):
     return os.path.join(after_dir(run_id, repo_name), "after.json")
 
 
-def build_worktree(run_id, repo_name):
-    return home.path("worktrees", run_id, "_after", repo_name)
+def build_worktree(run_id, repo_name, kind="_after"):
+    return home.path("worktrees", run_id, kind, repo_name)
 
 
 def todo(project, run_id, repo_name):
@@ -68,8 +70,8 @@ def pr_title(run_id, repo_name, fallback):
     return first[2:].strip() if first.startswith("# ") else first or fallback
 
 
-def ensure_worktree(repo, run_id, merge_sha):
-    worktree = build_worktree(run_id, repo["repo"])
+def ensure_worktree(repo, run_id, merge_sha, kind="_after"):
+    worktree = build_worktree(run_id, repo["repo"], kind)
     if os.path.isdir(worktree):
         return worktree
     git(["fetch", "origin", repo["base_branch"]], repo["path"])
@@ -95,6 +97,8 @@ def describe(run_id, repo, state):
         "after_dir": folder,
         "checkout": checkout,
         "watch_file": os.path.join(folder, "watch.md"),
+        "deploy": settings.get("deploy") or "none",
+        "deploy_log": os.path.join(folder, "deploy.log"),
         "build": settings.get("build") or "none",
         "build_dir": build_worktree(run_id, repo["repo"]) if "build" in state["order"] else "none",
         "build_log": os.path.join(folder, "build.log"),
@@ -104,7 +108,8 @@ def describe(run_id, repo, state):
     }
 
 
-def start(conn, run_id, repo_name):
+def start(conn, run_id, repo_name, by="human"):
+    by = connected.allow(conn, by, "deploy")
     run = runs.get(conn, run_id)
     project = runs.current_project(run)
     repo = land.with_prs(conn, run_id, repo_name)[0]
@@ -117,9 +122,10 @@ def start(conn, run_id, repo_name):
             return describe(run_id, repo, state)
         folder = after_dir(run_id, repo_name)
         os.rename(folder, f"{folder}-{state['merge_sha'][:7]}")
-        stale = build_worktree(run_id, repo_name)
-        if os.path.isdir(stale):
-            git(["worktree", "remove", "--force", stale], repo["path"], check=False)
+        for kind in ("_after", "_deploy"):
+            stale = build_worktree(run_id, repo_name, kind)
+            if os.path.isdir(stale):
+                git(["worktree", "remove", "--force", stale], repo["path"], check=False)
     settings = settings_of(project, repo_name)
     order = steps_of(settings)
     if not order:
@@ -152,7 +158,7 @@ def start(conn, run_id, repo_name):
     }
     store(run_id, repo_name, state)
     with db.tx(conn):
-        db.event(conn, "land.after", run_id, repo=repo_name, merge_sha=merge_sha, steps=order)
+        db.event(conn, "land.after", run_id, repo=repo_name, merge_sha=merge_sha, steps=order, by=by)
     return describe(run_id, repo, state)
 
 
@@ -184,7 +190,8 @@ def keep_artifact(source, folder, repo_name):
     return target
 
 
-def build(conn, run_id, repo_name, timeout=None):
+def build(conn, run_id, repo_name, timeout=None, by="human"):
+    by = connected.allow(conn, by, "deploy")
     run, state = load(conn, run_id, repo_name)
     if "build" not in state["order"]:
         raise FactoryError(f"repo {repo_name} has no build after merge")
@@ -219,12 +226,51 @@ def build(conn, run_id, repo_name, timeout=None):
         git(["worktree", "prune"], repo["path"], check=False)
     store(run_id, repo_name, state)
     with db.tx(conn):
-        db.event(conn, "land.build", run_id, repo=repo_name, status=step["status"], reason=reason, artifacts=artifacts)
+        db.event(conn, "land.build", run_id, repo=repo_name, status=step["status"], reason=reason, artifacts=artifacts,
+                 by=by)
     return {"repo": repo_name, "status": step["status"], "artifacts": artifacts, "reason": reason,
             "build_log": log, "build_dir": worktree if reason else "removed"}
 
 
-def publish(conn, run_id, repo_name, dry_run=False):
+def deploy(conn, run_id, repo_name, timeout=None, dry_run=False, by="human"):
+    by = connected.allow(conn, by, "deploy")
+    run, state = load(conn, run_id, repo_name)
+    if "deploy" not in state["order"]:
+        raise FactoryError(f"repo {repo_name} has no deploy after merge")
+    step = state["steps"]["deploy"]
+    command = state["settings"]["deploy"]
+    if step["status"] == "done":
+        return {"repo": repo_name, "status": "done", "reason": None, "merge_sha": state["merge_sha"]}
+    if dry_run:
+        return {"repo": repo_name, "status": "would_deploy", "command": command, "merge_sha": state["merge_sha"]}
+    repo = land.with_prs(conn, run_id, repo_name)[0]
+    project = runs.current_project(run)
+    worktree = ensure_worktree(repo, run_id, state["merge_sha"], "_deploy")
+    log = os.path.join(after_dir(run_id, repo_name), "deploy.log")
+    write_text(log, f"deploy of {repo_name} at {state['merge_sha']}, {now()}\n")
+    entry = next((item for item in project.get("repos", []) if item["name"] == repo_name), {})
+    reason = None
+    for line in (entry.get("setup"), command):
+        if line:
+            reason = shell(line, worktree, log, timeout or DEPLOY_TIMEOUT)
+            if reason:
+                break
+    if reason:
+        step.update(status="failed", reason=reason)
+    else:
+        step.update(status="done", reason=None, deployed_at=now())
+        git(["worktree", "remove", "--force", worktree], repo["path"], check=False)
+        git(["worktree", "prune"], repo["path"], check=False)
+    store(run_id, repo_name, state)
+    with db.tx(conn):
+        db.event(conn, "land.deploy", run_id, repo=repo_name, status=step["status"], reason=reason,
+                 merge_sha=state["merge_sha"], by=by)
+    return {"repo": repo_name, "status": step["status"], "reason": reason, "merge_sha": state["merge_sha"],
+            "deploy_log": log, "deploy_dir": worktree if reason else "removed"}
+
+
+def publish(conn, run_id, repo_name, dry_run=False, by="human"):
+    by = connected.check_author(by) if dry_run else connected.allow(conn, by, "deploy")
     run, state = load(conn, run_id, repo_name)
     wanted = [step for step in ("release", "package") if step in state["order"]]
     if not wanted:
@@ -266,7 +312,7 @@ def publish(conn, run_id, repo_name, dry_run=False):
     if not dry_run:
         store(run_id, repo_name, state)
         with db.tx(conn):
-            db.event(conn, "land.publish", run_id, repo=repo_name, tag=state["tag"],
+            db.event(conn, "land.publish", run_id, repo=repo_name, tag=state["tag"], by=by,
                      **{step: result[step]["action"] for step in wanted})
     return result
 
@@ -281,14 +327,16 @@ def verdict_of(path):
     return match.group(1), lines[1].strip() if len(lines) > 1 else ""
 
 
-def save_watch(conn, run_id, repo_name, text):
+def save_watch(conn, run_id, repo_name, text, by="human"):
+    connected.allow(conn, by, "deploy")
     load(conn, run_id, repo_name)
     path = os.path.join(after_dir(run_id, repo_name), "watch.md")
     write_text(path, text if text.endswith("\n") else text + "\n")
     return {"saved": path}
 
 
-def watched(conn, run_id, repo_name):
+def watched(conn, run_id, repo_name, by="human"):
+    by = connected.allow(conn, by, "deploy")
     _, state = load(conn, run_id, repo_name)
     if "watch" not in state["order"]:
         raise FactoryError(f"repo {repo_name} has no deploy watch after merge")
@@ -301,5 +349,5 @@ def watched(conn, run_id, repo_name):
     state["steps"]["watch"].update(status="done", verdict=verdict, conclusion=conclusion, done_at=now())
     store(run_id, repo_name, state)
     with db.tx(conn):
-        db.event(conn, "land.watch", run_id, repo=repo_name, verdict=verdict, merge_sha=state["merge_sha"])
+        db.event(conn, "land.watch", run_id, repo=repo_name, verdict=verdict, merge_sha=state["merge_sha"], by=by)
     return {"repo": repo_name, "verdict": verdict, "conclusion": conclusion, "watch_file": path}

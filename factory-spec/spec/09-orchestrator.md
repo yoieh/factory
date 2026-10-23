@@ -90,15 +90,16 @@ Its own session, started by a human: check PR states of applied items (`improvem
 
 ## Land
 
-`/factory land <run-id>`, and the end of Finish when the project's `defaults.land` is `ready` or `merge`: `land check` (wait in the background while checks run), then per open PR `land start` and one `factory-lander` each, all in one message, background; then `land apply`. The core alone decides and acts: it marks the PR ready or merges it only on PASS, with every check passing, a clean merge and the judged head. Report the verdict, the action and the reasons. Never change `defaults.land`: only the user turns landing on.
+`/factory land <run-id>`, and the end of Finish when the project's `defaults.land` is `ready` or `merge`: `land check` (wait in the background while checks run), then per open PR `land start` and one `factory-lander` each, all in one message, background; then `land apply`. On CHANGES that the factory may fix (`next` of `land check` is `fix`): `land fix`, which reworks the repo's last job with the review's Must fix items, then Rework and Finish as usual, and land again, at most `defaults.land_fixes` times per PR. The core alone decides and acts: it marks the PR ready or merges it only on PASS, with every check passing, a clean merge and the judged head. Report the verdict, the fixes, the action and the reasons. Never change `defaults.land` or `defaults.land_fixes`: only the user turns landing on. With `--by <agent>` a connected agent started the session; every land command gets `--by`, and a move refused for a missing role is reported, never worked around.
 
 ## After merge
 
-For a merged PR whose repo has `after_merge` steps left (`after` of `land check` or `land apply`): `land after`, then at once a `factory-watcher` in the background when the repo watches its deploy and `land build` with Bash `run_in_background` when it builds; after a done build, `land publish`; when the watcher returns, `land watched`. The core alone builds and publishes. Report the deploy verdict first when it is `FAILED`, `RESTORED` or `ESCALATED`, with what the user must do. Never change `after_merge`: what is published is the user's decision.
+For a merged PR whose repo has `after_merge` steps left (`after` of `land check` or `land apply`): `land after`, then `land deploy` in the background when the repo deploys by command, a `factory-watcher` in the background when the repo watches its deploy (after the deploy returned, when there is one) and `land build` with Bash `run_in_background` when it builds; after a done build, `land publish`; when the watcher returns, `land watched`. The core alone builds and publishes. Report the deploy verdict first when it is `FAILED`, `RESTORED` or `ESCALATED`, with what the user must do. Never change `after_merge`: what is published is the user's decision.
 
 ## Never
 
-- create a release or push a package other than through `land publish`
+- deploy other than through `land deploy`, or create a release or push a package other than through `land publish`
+- change a connected agent's roles
 - merge into the default branch yourself, mark a PR ready or merge it other than through `land apply`, force-push, or push anything but feature branches and `chore/improvements-*` branches
 - touch the user's checkout (no checkout, reset or stash in a repo path); only `fetch` and `worktree add`
 - write run state outside the CLI, or edit agent files

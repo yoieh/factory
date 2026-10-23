@@ -18,13 +18,15 @@ TOP_KEYS = (
     "step_skills", "catalogue_dirs", "improvement_targets", "defaults",
 )
 REPO_KEYS = ("name", "path", "remote", "default_branch", "role", "test", "setup", "after_merge")
-AFTER_MERGE_KEYS = ("watch", "build", "artifact", "release", "package")
+AFTER_MERGE_KEYS = ("deploy", "watch", "build", "artifact", "release", "package")
 RELEASE_MODES = ("off", "draft", "publish")
 PACKAGE_MODES = ("off", "publish")
 KNOWLEDGE_KEYS = ("label", "read_first", "per_repo", "architecture")
 TARGET_KEYS = ("repo", "base", "label")
-DEFAULTS = {"confirm_plan": False, "branch_prefix": "feature/", "require_code_review": True, "land": "off", "agent_runs": None}
-DEFAULT_KEYS = ("parallel", "max_rounds", "confirm_plan", "branch_prefix", "require_code_review", "land", "agent_runs")
+DEFAULTS = {"confirm_plan": False, "branch_prefix": "feature/", "require_code_review": True, "land": "off", "land_fixes": 2,
+            "agent_runs": None}
+DEFAULT_KEYS = ("parallel", "max_rounds", "confirm_plan", "branch_prefix", "require_code_review", "land", "land_fixes",
+                "agent_runs")
 LAND_MODES = ("off", "ready", "merge")
 STEP_NAMES = {
     1: "--project",
@@ -193,6 +195,8 @@ def validate(project, folder_name=None, config=None):
             problems.append("defaults.branch_prefix must be a string")
         if "land" in defaults and defaults["land"] not in LAND_MODES:
             problems.append(f"defaults.land must be one of {', '.join(LAND_MODES)}")
+        if "land_fixes" in defaults and not (is_int(defaults["land_fixes"]) and 0 <= defaults["land_fixes"] <= 5):
+            problems.append("defaults.land_fixes must be an integer from 0 to 5")
     if problems:
         return problems
     normal = normalise(project)
@@ -231,8 +235,9 @@ def after_merge_problems(label, after):
     problems = [f"{label}: unknown key {key!r}" for key in after if key not in AFTER_MERGE_KEYS]
     if "watch" in after and not isinstance(after["watch"], bool):
         problems.append(f"{label}.watch must be true or false")
-    if "build" in after and not (isinstance(after["build"], str) and after["build"].strip()):
-        problems.append(f"{label}.build must be a non-empty string")
+    for key in ("build", "deploy"):
+        if key in after and not (isinstance(after[key], str) and after[key].strip()):
+            problems.append(f"{label}.{key} must be a non-empty string")
     if "artifact" in after:
         artifacts = after["artifact"] if isinstance(after["artifact"], list) else [after["artifact"]]
         if not artifacts or not all(isinstance(path, str) and path.strip() for path in artifacts):

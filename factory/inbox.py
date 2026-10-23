@@ -1,7 +1,7 @@
 import json
 import time
 
-from . import FactoryError, connected, db, improvements, jobs, questions, runs
+from . import FactoryError, connected, db, improvements, jobs, land, questions, runs
 
 PLAN_REPLY = "yes, or say what to change"
 MAX_EVENTS = 1000
@@ -89,7 +89,38 @@ def improvement_item(item, by):
     }
 
 
-def items(conn, project=None, agent=None):
+def pr_items(conn, project=None, by="<your agent name>"):
+    found = []
+    resolved = {}
+    sql = ("SELECT DISTINCT r.id FROM runs r JOIN run_repos p ON p.run_id = r.id "
+           "WHERE r.archived_at IS NULL AND p.pr_url IS NOT NULL AND (p.pr_state IS NULL OR p.pr_state IN ('OPEN', 'MERGED'))")
+    values = []
+    if project:
+        sql += " AND r.project = ?"
+        values.append(project)
+    for (run_id,) in conn.execute(sql + " ORDER BY r.created_at DESC, r.id DESC", values).fetchall():
+        repos = [repo for repo in runs.run_repos(conn, run_id) if repo["pr_url"]]
+        full = runs.get(conn, run_id)
+        if full["project"] not in resolved:
+            resolved[full["project"]] = runs.current_project(full)
+        for repo in repos:
+            step = land.work(conn, full, repo, resolved[full["project"]])
+            if step["next"] in ("none", "fixing"):
+                continue
+            found.append(dict(step, **{
+                "type": "pr",
+                "id": f"{run_id}/{repo['repo']}",
+                "run": run_summary(full),
+                "repo": repo["repo"],
+                "url": repo["pr_url"],
+                "pr_state": repo["pr_state"],
+                "mode": land.mode_of(resolved[full["project"]]),
+                "session": f"/factory land {run_id} --repo {repo['repo']} --by {by}",
+            }))
+    return found
+
+
+def items(conn, project=None, agent=None, role=None):
     by = agent or "<your agent name>"
     found = []
     cached = {}
@@ -102,14 +133,19 @@ def items(conn, project=None, agent=None):
         found.append(question_item(conn, question, run, by))
     for item in improvements.listing(conn, None, project, ["open"]):
         found.append(improvement_item(item, by))
+    found.extend(item for item in pr_items(conn, project, by) if role in (None, item["role"]))
     return found
 
 
-def inbox(conn, project=None, agent=None):
+def inbox(conn, project=None, agent=None, role=None):
+    if role and role not in connected.ROLES:
+        raise FactoryError(f"--role must be one of {', '.join(connected.ROLES)}", code=2)
     if agent:
         agent = connected.check_name(agent)
         connected.touch(conn, agent)
-    found = items(conn, project, agent)
+    found = items(conn, project, agent, role)
+    if role:
+        found = [item for item in found if item["type"] == "pr"]
     return {"items": found, "count": len(found), "cursor": cursor(conn)}
 
 

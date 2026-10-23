@@ -14,6 +14,7 @@ version: 1
 - Prefer the most direct check: call the endpoint, run the command, drive the screen, run the end-to-end tests.
 - Bug fix: follow the steps of the bug report and confirm the bug is gone, then run the reproducing test.
 - Watch for side effects near the change: errors in the logs, a neighbouring flow that broke.
+- Run test suites with a log file and a set timeout, and name a hung test before you rerun, as your agent file's Check says.
 
 ## Must fix
 - A criterion whose behaviour does not match the spec.

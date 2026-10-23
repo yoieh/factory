@@ -137,6 +137,7 @@ Before you return, check every point and fix what fails:
    - a `code` group has `review-code` when its step has `code_review: required` and `defaults.require_code_review` in `project` is true (the default); every step's `requires` is met
    - `depends_on` names jobs of this plan without a cycle; ids match `^[a-z0-9][a-z0-9-]{0,39}$` and are unique; a `code` job names a repo of `project`; a `files` job names no `repo`, and its `reads` holds only repos of `project`; every `files` job that needs code has `reads`
 5. No spec asks for code comments, docstrings or inline explanations: workers add none (factory-worker.md, build.md, fix.md). Put the meaning in a name, a test name or the repo docs that Scope lists.
+6. When a spec sets a threshold (a time cutoff, a size limit, a count), name the boundary once, for example "exactly 30 minutes counts as stale", and use that comparison in every Scope line, acceptance criterion, test case and doc text of the spec. Add a test case at the boundary when the harness can pin the clock.
 
 When the orchestrator resumes you with `plan load` problems or with a human's changes to the plan, fix every point, overwrite the files and run this check again.
 

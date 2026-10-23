@@ -1,7 +1,7 @@
 ---
 name: factory
 description: Run the software factory for one run. Give it a local issue, an external issue key or URL, or a feature text; it plans small jobs with a pipeline each, runs producer and gate agents in parallel in their own worktrees, merges code jobs into one feature branch per repo, opens a draft PR per repo when the code host can, and ends with a retrospective whose improvements a human decides; improve applies the accepted ones, and land reviews a done run's PRs and marks them ready or merges them when the project allows it, then runs the repo's steps after merge (deploy watch, build, release, package). Use for /factory <issue>, /factory <repo> <feature>, resume, answer, clarify, rework, publish, land, retro, improve, issue and list.
-argument-hint: "<KEY-n> [flags] | <external-key-or-url> [text] [flags] | [<repo>] <feature text> [flags] | (no arguments) | resume <run-id> | answer <question-id> <text> | clarify <question-id> <text> | rework <run-id> <job-id> <note> | publish <run-id> | land <run-id> [--repo <r>] [--dry-run] | retro <run-id> | improve [<id>...] [--factory-base <branch>] | issue add|list|show ... | list   (flags: --project <p> --repo <r>... --confirm-plan --no-pr --branch <b> --base <b> --parallel <n> --max-rounds <n> --design <url>...)"
+argument-hint: "<KEY-n> [flags] | <external-key-or-url> [text] [flags] | [<repo>] <feature text> [flags] | (no arguments) | resume <run-id> | answer <question-id> <text> | clarify <question-id> <text> | rework <run-id> <job-id> <note> | publish <run-id> | land <run-id> [--repo <r>] [--dry-run] | retro <run-id> | improve [<id>...] [--factory-base <branch>] | issue add|list|show ... | list   (flags: --project <p> --repo <r>... --confirm-plan --no-pr --branch <b> --base <b> --parallel <n> --max-rounds <n> --again --design <url>...)"
 ---
 
 # /factory: the orchestrator
@@ -154,7 +154,7 @@ Parse `$ARGUMENTS`:
 | `issue add\|list\|show ...` | Pass the rest on to `"$F" issue add "<project>" "<title>" ...`, `"$F" issue list ...` or `"$F" issue show "<KEY-n>"`, with the resolved project for `add` when none is given, and show the result. |
 | `list` | `"$F" run list --table` and show it. |
 
-Flags for starts: `--project <p>`, `--repo <r>` (repeat), `--confirm-plan`, `--no-pr`, `--branch <b>`, `--base <b>`, `--parallel <n>`, `--max-rounds <n>`, `--design <url>` (repeat). Pass each given flag on to `run new`, except `--design`, which Designs handles.
+Flags for starts: `--project <p>`, `--repo <r>` (repeat), `--confirm-plan`, `--no-pr`, `--branch <b>`, `--base <b>`, `--parallel <n>`, `--max-rounds <n>`, `--again` (another run on an issue that already has an active one), `--design <url>` (repeat). Pass each given flag on to `run new`, except `--design`, which Designs handles.
 
 The first argument, when it is not a command word above:
 
@@ -213,7 +213,7 @@ Give a producer its name when the Agent tool takes a `name`. Store what SendMess
    ```sh
    "$F" run new "<issue title>" --issue "<KEY-n>" --session "${CLAUDE_SESSION_ID}" --repo "<repo>" --branch "<name>" --base "<branch>" --parallel "<n>" --max-rounds "<n>" --no-pr
    ```
-   Keep the JSON: `id`, `feature_branch`, `run_dir`, `plan`, `issue_key`, `issue_file`, `repos`, `project_file`, `catalogue_file`, `skipped`, `no_pr`, `confirm_plan`. `run new` writes `issue.md`, links the run to the issue and moves it to `in_progress`. A repo without an `origin` remote is allowed: its base is its local default branch and nothing is fetched. An issue run always confirms the plan. The session id lets the factory count this session's tokens and its agents' (an empty value falls back to `$CLAUDE_CODE_SESSION_ID`).
+   Keep the JSON: `id`, `feature_branch`, `run_dir`, `plan`, `issue_key`, `issue_file`, `repos`, `project_file`, `catalogue_file`, `skipped`, `no_pr`, `confirm_plan`. `run new` writes `issue.md`, links the run to the issue and moves it to `in_progress`. A repo without an `origin` remote is allowed: its base is its local default branch and nothing is fetched. An issue run always confirms the plan. The session id lets the factory count this session's tokens and its agents' (an empty value falls back to `$CLAUDE_CODE_SESSION_ID`). When `run new` exits 2 with `issue <key> already has run <run-id> (<status>)`, tell the user which run holds the issue and stop: `/factory resume <run-id>` goes on with it. Never pass `--again` unless the user asks for it.
 3. Record the skips from your session check. Then Designs, then Plan.
 
 ## Start from an external issue
@@ -223,7 +223,7 @@ Give a producer its name when the Agent tool takes a `name`. Store what SendMess
    - Text pasted after the key: it becomes the Description; fields you do not know are "unknown". After `run new`, skip with `--pr`: `"$F" skip add "<run-id>" tracker.fetch_issue "built from pasted text, not fetched from the tracker" --pr`.
    - No pasted text, but a repo (`--repo`, or the current repo): go to **Start from a feature text** with the key as the feature and `--external-key`, so the key lands in the branch. Skip `tracker.fetch_issue` with `--pr`: "built from the issue key only, the issue was not fetched".
    - Neither: ask one question in chat for the issue text or a repo.
-2. `"$F" run new "<title>" --external-key "<key>" --external-url "<url>" --session "${CLAUDE_SESSION_ID}"`, plus the given flags as in Start from a local issue. Keep the same JSON. `run new` creates or updates the mirror issue in the central tracker and links the run to it (`issue_key`). The feature branch carries the external key, so the tracker links branches and PRs by itself.
+2. `"$F" run new "<title>" --external-key "<key>" --external-url "<url>" --session "${CLAUDE_SESSION_ID}"`, plus the given flags as in Start from a local issue. Keep the same JSON. On the error that the issue already has a run, stop as Start from a local issue says. `run new` creates or updates the mirror issue in the central tracker and links the run to it (`issue_key`). The feature branch carries the external key, so the tracker links branches and PRs by itself.
 3. Write `<issue_file>`:
    ```markdown
    # <KEY>: <title>

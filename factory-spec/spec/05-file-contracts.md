@@ -202,8 +202,13 @@ What was fixed from the gates (round 2 and later).
 ## Merge
 Only after a merge conflict: what conflicted and how it was resolved.
 
+## Checked
+Code jobs, when a suite run failed: each failing test id with its assertion line, and what its rerun alone showed.
+
 ## Open points
 ```
+
+A flaky test goes under Open points as exactly `flake: <test id>: <assertion line>`.
 
 `STATUS: BLOCKED <reason>` when the step could not finish, with what was tried.
 

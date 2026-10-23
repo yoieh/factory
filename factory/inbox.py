@@ -74,7 +74,7 @@ def question_item(conn, question, run, by):
     return item
 
 
-def improvement_item(item):
+def improvement_item(item, by):
     return {
         "type": "improvement",
         "id": item["id"],
@@ -85,7 +85,7 @@ def improvement_item(item):
         "impact": item["impact"],
         "evidence": item["evidence"],
         "proposal": item["proposal"],
-        "decide": ["factory", "improvement", "decide", str(item["id"]), "accepted|rejected", "--note", "<note>"],
+        "decide": ["factory", "improvement", "decide", str(item["id"]), "accepted|rejected", "--note", "<note>", "--by", by],
     }
 
 
@@ -101,7 +101,7 @@ def items(conn, project=None, agent=None):
             continue
         found.append(question_item(conn, question, run, by))
     for item in improvements.listing(conn, None, project, ["open"]):
-        found.append(improvement_item(item))
+        found.append(improvement_item(item, by))
     return found
 
 

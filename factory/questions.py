@@ -168,35 +168,21 @@ def set_status(conn, question, status, **extra):
              question=question["id"], **{"from": question["status"], "to": status})
 
 
-SELF = "orchestrator"
-
-
-def check_author(author, own=False):
-    author = (author or "").strip()
-    if not author:
-        raise FactoryError("--by is empty", code=2)
-    if author in ("human", "dashboard") or (own and author == SELF):
-        return author
-    return connected.check_name(author)
-
-
-def seen(conn, author):
-    if author not in ("human", "dashboard", SELF):
-        connected.touch(conn, author)
+SELF = connected.SELF
 
 
 def answer(conn, question_id, text, delivered=False, author="human"):
     text = (text or "").strip()
     if not text:
         raise FactoryError("the answer is empty", code=2)
-    author = check_author(author, own=True)
+    author = connected.check_author(author, own=True)
     with db.tx(conn):
         question = row(conn, question_id)
         if question["status"] not in ("open", "clarify"):
             raise FactoryError(f"question {question_id} is {question['status']}, not open")
         add_message(conn, question, "answer", author, text, delivered=delivered)
         set_status(conn, question, "answered", answer=text, answered_at=now())
-        seen(conn, author)
+        connected.seen(conn, author)
     return with_thread(conn, row(conn, question_id))
 
 
@@ -218,7 +204,7 @@ def clarify(conn, question_id, text, delivered=False, author="human"):
     text = (text or "").strip()
     if not text:
         raise FactoryError("the follow-up is empty", code=2)
-    author = check_author(author)
+    author = connected.check_author(author)
     with db.tx(conn):
         question = row(conn, question_id)
         if question["status"] != "open":
@@ -226,7 +212,7 @@ def clarify(conn, question_id, text, delivered=False, author="human"):
         target = reply_file(conn, question)
         add_message(conn, question, "clarify", author, text, path=target, delivered=delivered)
         set_status(conn, question, "clarify")
-        seen(conn, author)
+        connected.seen(conn, author)
     return dict(with_thread(conn, row(conn, question_id)), reply_file=target)
 
 

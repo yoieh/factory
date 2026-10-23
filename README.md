@@ -136,11 +136,12 @@ factory events --wait --as helper          # blocks until something happens; ret
 factory events --since <cursor> --wait --as helper
 factory inbox --as helper                  # everything that waits for you, across runs
 factory question answer <id> "yes" --by helper
+factory improvement decide <id> rejected --note "Duplicates rule X" --by helper
 ```
 
-`factory inbox` lists the open questions of every run, each with its `kind` (`question`, `plan_confirm` or `human_gate`), the run and job, the question line, the options with the recommended one, and the exact command to answer or ask back, plus the improvements waiting for a decision. `factory events` follows the event log from a cursor, so an agent waits on one call instead of watching every run. An answer stored with `--by <name>` counts as yours: the orchestrator acts on it like an answer in its own chat. An answer stored with `--by orchestrator` is the orchestrator's own, for example a plan it approved because you told it to, and the thread shows it that way. Over the network, the dashboard serves the same as `/api/inbox`, `/api/events` and `/api/agents`, and its answer and follow-up POSTs take `"by": "<name>"`.
+`factory inbox` lists the open questions of every run, each with its `kind` (`question`, `plan_confirm` or `human_gate`), the run and job, the question line, the options with the recommended one, and the exact command to answer or ask back, plus the improvements waiting for a decision. `factory events` follows the event log from a cursor, so an agent waits on one call instead of watching every run. An answer stored with `--by <name>` counts as yours: the orchestrator acts on it like an answer in its own chat. An answer stored with `--by orchestrator` is the orchestrator's own, for example a plan it approved because you told it to, and the thread shows it that way. An agent decides improvements the same way: `improvement decide --by <name>` needs a `--note` with the reason, stores who decided in `decided_by` and logs it on the `improvement.decide` event, so every decision says whether you or which agent made it. Over the network, the dashboard serves the same as `/api/inbox`, `/api/events` and `/api/agents`, and its answer, follow-up and decide POSTs take `"by": "<name>"`.
 
-The **Agents** page of the dashboard lists every connected agent with when it was last seen and what it answered. `factory agent remove <name>` forgets one; its answers keep its name.
+The **Agents** page of the dashboard lists every connected agent with when it was last seen, what it answered and which improvements it decided. `factory agent remove <name>` forgets one; its answers keep its name.
 
 ## Dashboard
 
@@ -156,8 +157,8 @@ One local page, served by the standard library and built from one self-contained
 - **Runs**: the loop graph (the run's phases, with one lane per job: a box per group, its gates as chips that turn green or red per round, the job's token and a `?` on a waiting job), a list, and a timeline. The right pane shows repos and PR states, cost by node with the date of the price table, skips, run files, answered questions and events; with a job open, its pipeline, verdicts and files. Opening a run counts its tokens (`usage sync`).
 - **Issues**: filter, create, change status, priority, title and labels, edit the body, and copy the `/factory <KEY>` command that starts a run in Claude Code.
 - **Projects**: repos, integrations with availability, knowledge, skill installs and drift, and the catalogue with where each step comes from. Read-only.
-- **Improvements**: evidence and proposal per item; accept, reject, mark done or send back to review, with a note.
-- **Agents**: the connected agents, with when they were connected and last seen, and their latest answers. Read-only.
+- **Improvements**: evidence and proposal per item, and who decided it; accept, reject, mark done or send back to review, with a note.
+- **Agents**: the connected agents, with when they were connected and last seen, their latest answers and their improvement decisions. Read-only.
 
 To reach the dashboard from other devices on a tailnet, keep the server on 127.0.0.1 and put `tailscale serve` in front of it, then list the machine's tailnet name:
 
@@ -190,13 +191,14 @@ The core acts only when every check passes (a repo without CI counts on the land
 Once a PR is merged, by `land apply` or by a person, `/factory land <run-id>` runs the steps the repo's `after_merge` asks for:
 
 ```json
-{"name": "game", "path": "~/src/game", "after_merge": {"build": "make export", "artifact": "build/game-windows.zip",
+{"name": "game", "path": "~/src/game", "after_merge": {"build": "make export",
+                                                       "artifact": ["build/game-windows.zip", "build/game-linux.zip"],
                                                        "release": "draft", "package": "off"}}
 {"name": "app", "path": "~/src/app", "after_merge": {"watch": true}}
 ```
 
 - `watch`: the `factory-watcher` agent follows the merge commit's deploy with the `deploy-watch` skill. When the deploy broke production, it rolls the broken services back and opens a remediation PR, which it never merges. Its verdict (`DEPLOY: VERIFIED`, `FAILED`, `RESTORED`, ...) is reported first when something went wrong.
-- `build` and `artifact`: the core builds the merge commit in its own worktree, with the repo's `setup` first, and keeps the artifact (a folder is zipped) in the run's `land/<repo>/after/`.
+- `build` and `artifact`: the core builds the merge commit in its own worktree, with the repo's `setup` first, and keeps the artifact, one path or a list such as one zip per platform (a folder is zipped), in the run's `land/<repo>/after/`.
 - `release` (`off`, `draft`, `publish`) and `package` (`off`, `publish`): `factory land publish` uploads the build as a release tagged `build-<yyyymmdd>-<short sha>`, and as a package of the repo, through the code host adapter's `publish_release` and `publish_package`. Its `adapter.md` says what a package is there and which rights the upload needs.
 
 Only the user sets `after_merge`, per repo: `factory project set <name> repos.<repo>.after_merge '<json>'`. Releases and packages stay `off` until then.

@@ -7,6 +7,7 @@ NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$")
 RESERVED = ("human", "dashboard", "orchestrator", "planner", "retro")
 MAX_DESCRIPTION = 400
 RECENT = 20
+SELF = "orchestrator"
 
 
 def check_name(name):
@@ -19,6 +20,20 @@ def check_name(name):
     if name.lower() in RESERVED:
         raise FactoryError(f"{name!r} is reserved; pick another agent name", code=2)
     return name
+
+
+def check_author(author, own=False):
+    author = (author or "").strip()
+    if not author:
+        raise FactoryError("--by is empty", code=2)
+    if author in ("human", "dashboard") or (own and author == SELF):
+        return author
+    return check_name(author)
+
+
+def seen(conn, author):
+    if author not in ("human", "dashboard", SELF):
+        touch(conn, author)
 
 
 def row(conn, name):
@@ -70,6 +85,9 @@ def counts(conn, name):
         (name,),
     ):
         found["answers" if kind == "answer" else "follow_ups"] = count
+    found["decisions"] = conn.execute(
+        "SELECT COUNT(*) FROM events WHERE kind = 'improvement.decide' AND json_extract(payload, '$.by') = ?", (name,),
+    ).fetchone()[0]
     return found
 
 
@@ -83,6 +101,16 @@ def recent(conn, name, limit=RECENT):
     for item in found:
         item["question"] = first_line(item["question"])
     return found
+
+
+def decisions(conn, name, limit=RECENT):
+    return db.rows(conn.execute(
+        "SELECT e.at, json_extract(e.payload, '$.improvement') AS improvement_id, json_extract(e.payload, '$.from') AS \"from\", "
+        "json_extract(e.payload, '$.to') AS \"to\", json_extract(e.payload, '$.note') AS note, i.title, i.project, i.run_id "
+        "FROM events e LEFT JOIN improvements i ON i.id = json_extract(e.payload, '$.improvement') "
+        "WHERE e.kind = 'improvement.decide' AND json_extract(e.payload, '$.by') = ? ORDER BY e.id DESC LIMIT ?",
+        (name, limit),
+    ))
 
 
 def first_line(text):
@@ -102,4 +130,5 @@ def listing(conn):
 def show(conn, name):
     found = entry(conn, row(conn, name))
     found["recent"] = recent(conn, name)
+    found["decisions_recent"] = decisions(conn, name)
     return found

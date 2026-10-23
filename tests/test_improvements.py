@@ -49,6 +49,28 @@ class ImprovementTest(FactoryCase):
         self.assertFalse(self.decide("repo-b", "open")["changed"])
         self.assertIn("no improvement 999", self.fails("improvement", "decide", "999", "accepted"))
 
+    def test_the_decision_records_who_made_it(self):
+        accepted = self.decide("repo-a", "accepted")
+        self.assertEqual(accepted["decided_by"], "human")
+        self.assertIn("give the reason with --note",
+                      self.fails("improvement", "decide", str(self.ids["repo-b"]), "rejected", "--by", "bertil", code=2))
+        rejected = self.decide("repo-b", "rejected", "--note", "Too small to matter", "--by", "bertil")
+        self.assertEqual((rejected["status"], rejected["decided_by"]), ("rejected", "bertil"))
+        self.assertIsNone(self.decide("repo-b", "open", "--by", "bertil")["decided_by"])
+        self.assertIn("reserved", self.fails("improvement", "decide", str(self.ids["docs-a"]), "accepted", "--note", "x",
+                                             "--by", "retro", code=2))
+        self.assertIn("only marks improvements done", self.fails("improvement", "decide", str(self.ids["docs-a"]), "accepted",
+                                                                 "--by", "orchestrator", code=2))
+        self.assertEqual(self.decide("repo-a", "done", "--by", "orchestrator")["decided_by"], "orchestrator")
+        shown = self.cli("agent", "show", "bertil")
+        self.assertEqual(shown["decisions"], 2)
+        self.assertEqual([(item["improvement_id"], item["from"], item["to"], item["note"]) for item in shown["decisions_recent"]],
+                         [(self.ids["repo-b"], "rejected", "open", None),
+                          (self.ids["repo-b"], "open", "rejected", "Too small to matter")])
+        self.assertEqual(shown["decisions_recent"][0]["title"], "Title repo-b")
+        found = self.cli("events", "--kind", "improvement.decide")["events"]
+        self.assertEqual([event["payload"]["by"] for event in found], ["human", "bertil", "bertil", "orchestrator"])
+
     def test_factory_items_go_to_the_factory_project(self):
         self.cli("project", "add", "factory", "--key", "FAC")
         self.cli("config", "set", "factory_project", '"factory"')

@@ -98,7 +98,7 @@ def describe(run_id, repo, state):
         "build": settings.get("build") or "none",
         "build_dir": build_worktree(run_id, repo["repo"]) if "build" in state["order"] else "none",
         "build_log": os.path.join(folder, "build.log"),
-        "artifact": state["steps"].get("build", {}).get("artifact") or "none",
+        "artifacts": state["steps"].get("build", {}).get("artifacts") or [],
         "release": settings.get("release", "off"),
         "package": settings.get("package", "off"),
     }
@@ -168,6 +168,13 @@ def shell(command, cwd, log, timeout):
     return None if done.returncode == 0 else f"{command} exited with {done.returncode}"
 
 
+def wanted_artifacts(settings):
+    found = settings.get("artifact")
+    if not found:
+        return []
+    return found if isinstance(found, list) else [found]
+
+
 def keep_artifact(source, folder, repo_name):
     if os.path.isdir(source):
         base = os.path.join(folder, f"{repo_name}-{os.path.basename(source.rstrip(os.sep))}")
@@ -183,7 +190,7 @@ def build(conn, run_id, repo_name, timeout=None):
         raise FactoryError(f"repo {repo_name} has no build after merge")
     step = state["steps"]["build"]
     if step["status"] == "done":
-        return {"repo": repo_name, "status": "done", "artifact": step.get("artifact") or "none", "reason": None}
+        return {"repo": repo_name, "status": "done", "artifacts": step.get("artifacts") or [], "reason": None}
     repo = land.with_prs(conn, run_id, repo_name)[0]
     project = runs.current_project(run)
     worktree = ensure_worktree(repo, run_id, state["merge_sha"])
@@ -197,24 +204,23 @@ def build(conn, run_id, repo_name, timeout=None):
         reason = shell(command, worktree, log, timeout or BUILD_TIMEOUT)
         if reason:
             break
-    artifact = None
-    wanted = state["settings"].get("artifact")
-    if not reason and wanted:
-        source = os.path.join(worktree, wanted)
-        if os.path.exists(source):
-            artifact = keep_artifact(source, folder, repo_name)
-        else:
-            reason = f"the build left no {wanted}"
+    artifacts = []
+    missing = [path for path in wanted_artifacts(state["settings"]) if not os.path.exists(os.path.join(worktree, path))]
+    if not reason and missing:
+        reason = f"the build left no {', '.join(missing)}"
+    if not reason:
+        artifacts = [keep_artifact(os.path.join(worktree, path), folder, repo_name)
+                     for path in wanted_artifacts(state["settings"])]
     if reason:
         step.update(status="failed", reason=reason)
     else:
-        step.update(status="done", reason=None, artifact=artifact, built_at=now())
+        step.update(status="done", reason=None, artifacts=artifacts, built_at=now())
         git(["worktree", "remove", "--force", worktree], repo["path"], check=False)
         git(["worktree", "prune"], repo["path"], check=False)
     store(run_id, repo_name, state)
     with db.tx(conn):
-        db.event(conn, "land.build", run_id, repo=repo_name, status=step["status"], reason=reason, artifact=artifact)
-    return {"repo": repo_name, "status": step["status"], "artifact": artifact or "none", "reason": reason,
+        db.event(conn, "land.build", run_id, repo=repo_name, status=step["status"], reason=reason, artifacts=artifacts)
+    return {"repo": repo_name, "status": step["status"], "artifacts": artifacts, "reason": reason,
             "build_log": log, "build_dir": worktree if reason else "removed"}
 
 
@@ -224,11 +230,12 @@ def publish(conn, run_id, repo_name, dry_run=False):
     if not wanted:
         raise FactoryError(f"repo {repo_name} publishes no release or package after merge")
     built = state["steps"]["build"]
-    if built["status"] != "done" or not os.path.isfile(built.get("artifact") or ""):
+    artifacts = built.get("artifacts") or []
+    if built["status"] != "done" or not artifacts or not all(os.path.isfile(path) for path in artifacts):
         raise FactoryError(f"repo {repo_name} has no build to publish; run land build first")
     project = runs.current_project(run)
     repo = land.with_prs(conn, run_id, repo_name)[0]
-    result = {"repo": repo_name, "tag": state["tag"], "artifact": built["artifact"]}
+    result = {"repo": repo_name, "tag": state["tag"], "artifacts": artifacts}
     for step in wanted:
         entry = state["steps"][step]
         if entry["status"] == "done":
@@ -243,7 +250,7 @@ def publish(conn, run_id, repo_name, dry_run=False):
             result[step] = {"action": f"would_{step}", "mode": state["settings"].get(step)}
             continue
         extra = {"pr_url": repo["pr_url"], "tag": state["tag"], "merge_sha": state["merge_sha"],
-                 "artifact": built["artifact"], "title": state["title"], "notes_file": state["notes_file"],
+                 "artifacts": ",".join(artifacts), "title": state["title"], "notes_file": state["notes_file"],
                  "release_mode": state["settings"].get("release", "off")}
         outcome = adapters.run_capability(project, host, capability, land.repo_entry(repo), extra, PUBLISH_TIMEOUT)
         if outcome["status"] == "ok":

@@ -229,12 +229,18 @@ def after_merge_problems(label, after):
     problems = [f"{label}: unknown key {key!r}" for key in after if key not in AFTER_MERGE_KEYS]
     if "watch" in after and not isinstance(after["watch"], bool):
         problems.append(f"{label}.watch must be true or false")
-    for key in ("build", "artifact"):
-        if key in after and not (isinstance(after[key], str) and after[key].strip()):
-            problems.append(f"{label}.{key} must be a non-empty string")
-    artifact = after.get("artifact")
-    if isinstance(artifact, str) and (os.path.isabs(artifact) or ".." in artifact.replace("\\", "/").split("/")):
-        problems.append(f"{label}.artifact must be a path inside the repo")
+    if "build" in after and not (isinstance(after["build"], str) and after["build"].strip()):
+        problems.append(f"{label}.build must be a non-empty string")
+    if "artifact" in after:
+        artifacts = after["artifact"] if isinstance(after["artifact"], list) else [after["artifact"]]
+        if not artifacts or not all(isinstance(path, str) and path.strip() for path in artifacts):
+            problems.append(f"{label}.artifact must be a path or a non-empty list of paths")
+        else:
+            names = [os.path.basename(path.replace("\\", "/").rstrip("/")) for path in artifacts]
+            if any(os.path.isabs(path) or ".." in path.replace("\\", "/").split("/") or "," in path for path in artifacts):
+                problems.append(f"{label}.artifact must be paths inside the repo, without commas")
+            elif len(set(names)) != len(names):
+                problems.append(f"{label}.artifact: every path needs its own file name")
     if "release" in after and after["release"] not in RELEASE_MODES:
         problems.append(f"{label}.release must be one of {', '.join(RELEASE_MODES)}")
     if "package" in after and after["package"] not in PACKAGE_MODES:

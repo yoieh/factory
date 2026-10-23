@@ -32,11 +32,11 @@ def after_host():
     script = {"via": "script"}
     data["capabilities"]["publish_release"] = dict(script, command=[
         "python3", "scripts/publish_release.py", "--url", "{pr_url}", "--tag", "{tag}", "--target", "{merge_sha}",
-        "--file", "{artifact}", "--title", "{title}", "--notes-file", "{notes_file}", "--mode", "{release_mode}",
+        "--files", "{artifacts}", "--title", "{title}", "--notes-file", "{notes_file}", "--mode", "{release_mode}",
         "--prerelease", "{prerelease}"])
     data["capabilities"]["publish_package"] = dict(script, command=[
         "python3", "scripts/publish_package.py", "--url", "{pr_url}", "--tag", "{tag}", "--revision", "{merge_sha}",
-        "--file", "{artifact}"])
+        "--files", "{artifacts}"])
     data["settings"]["prerelease"] = {"type": "bool", "default": True}
     scripts["scripts/publish_release.py"] = RELEASE_SCRIPT
     scripts["scripts/publish_package.py"] = PACKAGE_SCRIPT
@@ -88,7 +88,8 @@ class AfterMergeTest(FactoryCase):
             return [json.loads(line) for line in handle]
 
     def test_build_release_and_package_the_merge_commit(self):
-        self.after_merge({"build": "mkdir -p out/win && git rev-parse HEAD > out/win/game.txt", "artifact": "out/win",
+        self.after_merge({"build": "mkdir -p out/win && git rev-parse HEAD > out/win/game.txt && echo l > out/game-linux.zip",
+                          "artifact": ["out/win", "out/game-linux.zip"],
                           "release": "draft", "package": "publish"})
         self.assertEqual(self.cli("land", "check", self.run["id"])["repos"][0]["after"], ["build", "release", "package"])
         started = self.cli("land", "after", self.run["id"], "--repo", "api")
@@ -100,8 +101,10 @@ class AfterMergeTest(FactoryCase):
         self.assertIn("has no build to publish", self.fails("land", "publish", self.run["id"], "--repo", "api"))
         built = self.cli("land", "build", self.run["id"], "--repo", "api")
         self.assertEqual((built["status"], built["reason"], built["build_dir"]), ("done", None, "removed"))
-        self.assertTrue(built["artifact"].endswith(os.path.join("after", "api-win.zip")))
-        with zipfile.ZipFile(built["artifact"]) as archive:
+        windows, linux = built["artifacts"]
+        self.assertTrue(windows.endswith(os.path.join("after", "api-win.zip")))
+        self.assertTrue(linux.endswith(os.path.join("after", "game-linux.zip")))
+        with zipfile.ZipFile(windows) as archive:
             self.assertEqual(archive.read("game.txt").decode().strip(), self.merge)
         self.assertFalse(os.path.exists(started["build_dir"]))
         published = self.cli("land", "publish", self.run["id"], "--repo", "api")
@@ -109,7 +112,7 @@ class AfterMergeTest(FactoryCase):
         self.assertTrue(published["release"]["where"].endswith(started["tag"]))
         self.assertEqual(published["package"], {"action": "pushed", "where": f"registry.example.com/shop/api:{started['tag']}"})
         release, package = self.calls()
-        for flag, value in (("--target", self.merge), ("--file", built["artifact"]), ("--mode", "draft"),
+        for flag, value in (("--target", self.merge), ("--files", f"{windows},{linux}"), ("--mode", "draft"),
                             ("--prerelease", "true"), ("--title", f"api {self.merge[:7]}: Add the lead form")):
             self.assertEqual(release[release.index(flag) + 1], value, flag)
         notes = release[release.index("--notes-file") + 1]
@@ -146,7 +149,7 @@ class AfterMergeTest(FactoryCase):
         self.after_merge({"build": "echo zip > game.zip", "artifact": "game.zip", "release": "publish"})
         self.cli("land", "after", self.run["id"], "--repo", "api")
         built = self.cli("land", "build", self.run["id"], "--repo", "api")
-        self.assertTrue(built["artifact"].endswith(os.path.join("after", "game.zip")))
+        self.assertTrue(built["artifacts"][0].endswith(os.path.join("after", "game.zip")))
         dry = self.cli("land", "publish", self.run["id"], "--repo", "api", "--dry-run")
         self.assertEqual(dry["release"], {"action": "would_release", "mode": "publish"})
         self.assertEqual(self.calls(), [])
@@ -212,7 +215,9 @@ class AfterMergeTest(FactoryCase):
             ({"package": "draft", "build": "make", "artifact": "a.zip"}, "package must be one of off, publish"),
             ({"artifact": "a.zip"}, "artifact needs build"),
             ({"build": "make", "release": "draft"}, "release needs build and artifact"),
-            ({"build": "make", "artifact": "../a.zip"}, "artifact must be a path inside the repo"),
+            ({"build": "make", "artifact": "../a.zip"}, "artifact must be paths inside the repo, without commas"),
+            ({"build": "make", "artifact": []}, "artifact must be a path or a non-empty list of paths"),
+            ({"build": "make", "artifact": ["a/x.zip", "b/x.zip"]}, "every path needs its own file name"),
             ({"watch": "yes"}, "watch must be true or false"),
             ({"deploy": True}, "unknown key 'deploy'"),
         ]

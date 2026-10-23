@@ -64,9 +64,9 @@ A repo's `after_merge` says what the factory does once its PR is merged, in **Af
 |---|---|
 | `watch` | `true`: a `factory-watcher` follows the merge commit's deploy with the `deploy-watch` skill, rolls back a production outage the deploy caused, and opens (never merges) a remediation PR. |
 | `build` | A shell command, run with the repo's `setup` in a detached worktree at the merge commit. |
-| `artifact` | The build's output, a path inside the repo (a folder is zipped). Needs `build`. |
-| `release` | `off` (default), `draft` or `publish`: upload the artifact as a release of the code host. Needs `artifact`. |
-| `package` | `off` (default) or `publish`: push the artifact as a package of the repo. Needs `artifact`. |
+| `artifact` | The build's output: a path inside the repo, or a list of them (for example one zip per platform), each with its own file name. A folder is zipped. Needs `build`. |
+| `release` | `off` (default), `draft` or `publish`: upload the artifacts together as one release of the code host. Needs `artifact`. |
+| `package` | `off` (default) or `publish`: push the artifacts as one package of the repo. Needs `artifact`. |
 
 `factory project set <name> repos.<repo>.after_merge '<json>'` sets it for one repo.
 

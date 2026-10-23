@@ -190,13 +190,14 @@ The core acts only when every check passes (a repo without CI counts on the land
 Once a PR is merged, by `land apply` or by a person, `/factory land <run-id>` runs the steps the repo's `after_merge` asks for:
 
 ```json
-{"name": "game", "path": "~/src/game", "after_merge": {"build": "make export", "artifact": "build/game-windows.zip",
+{"name": "game", "path": "~/src/game", "after_merge": {"build": "make export",
+                                                       "artifact": ["build/game-windows.zip", "build/game-linux.zip"],
                                                        "release": "draft", "package": "off"}}
 {"name": "app", "path": "~/src/app", "after_merge": {"watch": true}}
 ```
 
 - `watch`: the `factory-watcher` agent follows the merge commit's deploy with the `deploy-watch` skill. When the deploy broke production, it rolls the broken services back and opens a remediation PR, which it never merges. Its verdict (`DEPLOY: VERIFIED`, `FAILED`, `RESTORED`, ...) is reported first when something went wrong.
-- `build` and `artifact`: the core builds the merge commit in its own worktree, with the repo's `setup` first, and keeps the artifact (a folder is zipped) in the run's `land/<repo>/after/`.
+- `build` and `artifact`: the core builds the merge commit in its own worktree, with the repo's `setup` first, and keeps the artifact, one path or a list such as one zip per platform (a folder is zipped), in the run's `land/<repo>/after/`.
 - `release` (`off`, `draft`, `publish`) and `package` (`off`, `publish`): `factory land publish` uploads the build as a release tagged `build-<yyyymmdd>-<short sha>`, and as a package of the repo, through the code host adapter's `publish_release` and `publish_package`. Its `adapter.md` says what a package is there and which rights the upload needs.
 
 Only the user sets `after_merge`, per repo: `factory project set <name> repos.<repo>.after_merge '<json>'`. Releases and packages stay `off` until then.

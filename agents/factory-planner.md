@@ -116,6 +116,7 @@ Only when the job builds UI from a design: frame files in `design/` (and `notes.
 Only when another job depends on this one, or this job uses another job's result: the exact interface.
 ## Acceptance criteria
 - [ ] one testable statement per line
+A docs-only job gets no "full suite passes" criterion unless a test reads the changed files; name the grep instead.
 ## Tests
 Which tests to add or change, and the command that proves them. For files jobs: the deliverable files under `out/` and how a reviewer checks them.
 ## Notes for steps

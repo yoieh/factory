@@ -36,7 +36,7 @@ Read in this order and stop as soon as you can write the plan. Project knowledge
    - the files that define its dependencies, test command and lint, and its CI config
    - `git -C <path> log --oneline -20` for the commit style
    - the few files the change will touch, to confirm the names, paths and contracts you put in a spec
-   - when the issue or the code names a known gap, bug or limitation that the job removes: grep the repo's docs for it (`git -C <path> grep -n -i <distinctive phrase>` over docs and rules files) and put every place that records it in the spec's Scope
+   - when the issue or the code names a known gap, bug or limitation that the job removes: grep the repo's docs for it (`git -C <path> grep -n -i <distinctive words>` over docs and rules files) and put every place that records it in the spec's Scope
 
 Read code to confirm a fact you write down, not to learn the system. When `knowledge` lists nothing, plan from the repos' own docs and code, and say so in one line under "Risks and open points". Missing knowledge is never a reason to stop or ask. Change nothing in any repo.
 

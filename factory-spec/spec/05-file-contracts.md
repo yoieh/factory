@@ -42,7 +42,7 @@ Prompt keys per agent, in this order:
 |---|---|
 | `factory-planner` | `node`, `feature`, `issue`, `designs`, `repos`, `run_dir`, `catalogue`, `project`, `factory_bin` |
 | `factory-worker` (produce) | `node`, `job_dir`, `group_dir`, `step_file`, `kind`, `plan`, `issue`, `designs`, `repo`, `worktree`, `branch`, `feature_branch`, `out_dir`, `sources`, `round`, `setup`, `upstream`, `previous`, `run_dir`, `project`, `factory_bin` |
-| `factory-reviewer` (gate) | `node`, `job_dir`, `group_dir`, `round_dir`, `gate_file`, `review_file`, `producer_file`, `kind`, `plan`, `issue`, `designs`, `repo`, `worktree`, `branch`, `feature_branch`, `group_base`, `out_dir`, `sources`, `round`, `setup`, `upstream`, `previous`, `run_dir`, `project`, `factory_bin` |
+| `factory-reviewer` (gate) | `node`, `job_dir`, `group_dir`, `round_dir`, `gate_file`, `review_file`, `producer_file`, `kind`, `plan`, `issue`, `designs`, `repo`, `worktree`, `branch`, `feature_branch`, `group_base`, `out_dir`, `sources`, `round`, `gates`, `setup`, `upstream`, `previous`, `run_dir`, `project`, `factory_bin` |
 | `factory-retro` | `node`, `run_id`, `run_dir`, `retro_file`, `retro_notes`, `issue`, `plan`, `repos`, `catalogue`, `project`, `factory_bin` |
 | `factory-improver` | `node`, `items`, `report`, `repo`, `worktree`, `branch`, `base_branch`, `setup`, `run_dir`, `project`, `factory_bin` |
 | `factory-lander` | `node`, `repo`, `pr_url`, `pr_file`, `feature_worktree`, `feature_branch`, `base_branch`, `head_sha`, `test`, `checks_file`, `round`, `round_dir`, `review_file`, `previous`, `plan`, `issue`, `run_dir`, `project`, `factory_bin` |
@@ -57,6 +57,7 @@ Values:
 - `kind`: `code` or `files`. For `files` jobs `repo`, `worktree`, `branch` and `feature_branch` are `none`; for `code` jobs `out_dir` is `none`.
 - `sources`: for `files` jobs, a comma list of `<repo>=<feature_worktree>` for the repos in the job's `reads`, read-only; `none` for `code` jobs and for files jobs that read no code. Files jobs never read the user's checkouts.
 - `group_base` (reviewer): the commit the current group started from (the feature branch head for group 1, the job branch head when a later group started). Gates of code jobs review `git -C <worktree> diff <group_base>..<branch>` for this group and may read the full job diff for context. `none` for files jobs.
+- `gates` (reviewer): every gate of the current round, the reviewer's own too, as a comma list. The gates of a round run at the same time in the same worktree, so a gate file can leave a run to another gate of the round.
 - `setup`: `ok`, `none` (files jobs, or no setup command), or `failed: <command>: <last error line>`.
 - `upstream`: the job dirs of `depends_on` jobs, comma list, or `none`. `previous`: the group dirs of this job's earlier groups, comma list, or `none`.
 - `review_file`: `<round_dir>/<gate>.md`.

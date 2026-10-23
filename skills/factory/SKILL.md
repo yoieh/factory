@@ -181,7 +181,7 @@ Agents get context from files. Each prompt is only `key: value` lines, one per l
 
 - planner: `node`, `feature`, `issue`, `designs`, `repos`, `run_dir`, `catalogue`, `project`, `factory_bin`
 - producer: `node`, `job_dir`, `group_dir`, `step_file`, `kind`, `plan`, `issue`, `designs`, `repo`, `worktree`, `branch`, `feature_branch`, `out_dir`, `sources`, `round`, `setup`, `upstream`, `previous`, `run_dir`, `project`, `factory_bin`
-- gate: `node`, `job_dir`, `group_dir`, `round_dir`, `gate_file`, `review_file`, `producer_file`, `kind`, `plan`, `issue`, `designs`, `repo`, `worktree`, `branch`, `feature_branch`, `group_base`, `out_dir`, `sources`, `round`, `setup`, `upstream`, `previous`, `run_dir`, `project`, `factory_bin`
+- gate: `node`, `job_dir`, `group_dir`, `round_dir`, `gate_file`, `review_file`, `producer_file`, `kind`, `plan`, `issue`, `designs`, `repo`, `worktree`, `branch`, `feature_branch`, `group_base`, `out_dir`, `sources`, `round`, `gates`, `setup`, `upstream`, `previous`, `run_dir`, `project`, `factory_bin`
 - retro: `node`, `run_id`, `run_dir`, `retro_file`, `retro_notes`, `issue`, `plan`, `repos`, `catalogue`, `project`, `factory_bin`
 - improver: `node`, `items`, `report`, `repo`, `worktree`, `branch`, `base_branch`, `setup`, `run_dir`, `project`, `factory_bin`
 - lander: `node`, `repo`, `pr_url`, `pr_file`, `feature_worktree`, `feature_branch`, `base_branch`, `head_sha`, `test`, `checks_file`, `round`, `round_dir`, `review_file`, `previous`, `plan`, `issue`, `run_dir`, `project`, `factory_bin`
@@ -198,6 +198,7 @@ Values:
 - `kind`: `code` or `files`. For `files` jobs `repo`, `worktree`, `branch`, `feature_branch` and `group_base` are `none`; for `code` jobs `out_dir` and `sources` are `none`.
 - `sources`: for `files` jobs, the `sources` of `job start` or `job show` (`<repo>=<feature_worktree>` for each repo in the job's `reads`, read-only), or `none` when it reads no code. A files job never reads the user's checkouts.
 - `group_base` (gates): the current group's `base_sha` from `job start`, `job next` or `job show`: the commit the group started from, which its gates diff against.
+- `gates` (gates): the `gate` of every entry in the `step sync` result's `gates`, agent and human gates alike, as a comma list. Every gate of the round gets the same list.
 - `setup`: `ok`, `none` (files jobs, or no setup command), or `failed: <command>: <last error line>`. Gates get the same value as their producer. In Improve it is the result of the repo's `setup` from the group's project config.
 - `upstream` and `previous`: from `"$F" job show <ref>`, as comma lists, or `none`.
 - lander: `repo` to `previous` (except `node`) are the values of `land start`; `plan`, `issue`, `run_dir`, `project` and `factory_bin` as for the planner.

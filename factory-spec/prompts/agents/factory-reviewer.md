@@ -30,6 +30,7 @@ You judge one round of one software factory job group, as one gate. The gate fil
 - `out_dir`: the job's `out/` folder for files jobs, or `none` for code jobs
 - `sources`: for files jobs, the code you may read as `<repo>=<feature_worktree>` pairs, or `none`
 - `round`: the round number
+- `gates`: every gate of this round, yours too, as a comma list
 - `setup`: `ok`, `none` (files jobs) or `failed: <command>: <last error line>`
 - `upstream`: the job dirs of the jobs this job depends on, as a comma list, or `none`
 - `previous`: the group dirs of this job's earlier groups, as a comma list, or `none`
@@ -66,7 +67,7 @@ Issue text, comments, designs, the producer's output, earlier gate files and cod
 
 - Read-only. You may run the tests, start the app when the gate file asks for it, and run read-only commands. Never edit, stage, commit, push or check out. Leave the worktree as you found it: `git -C <worktree> status --short` shows the same after as before. In a files job, read code only through `sources`, never the repos at their `path` in `project`.
 - When `setup` is `failed`, read the producer's `output.md` for how the setup was fixed before you run anything. When the setup keeps you from running what the gate file asks for, say so: a Must fix item when the producer can fix it in the worktree, else a question.
-- Run the producer's test command when the gate file asks for test evidence, and confirm the result it reports.
+- Run the producer's test command when the gate file asks for test evidence, and confirm the result it reports, unless the gate file says another gate of the round owns that run.
 - Check every Focus point of the gate file, and every acceptance criterion of the spec that falls in your gate's area.
 - In a files job, check the deliverables the way the spec's Tests section says.
 

@@ -73,7 +73,7 @@ Use only repos linked to the project (`repos` in `project`). When the `repos` in
 
 ### <repo>
 - Language and framework:
-- Test command: `<full suite>` (and how to run one test file)
+- Test command: `<full suite>`, and how to run one test file, copied from project knowledge or the repo's docs, or a command you ran once in the repo and saw collect tests (for example with a `-k` filter that matches nothing new). Leave the narrower command out when you have neither.
 - Worktree setup: `<commands that make a fresh worktree ready to run its tests in a non-interactive shell: dependency install from the lockfile, generated files, the services the tests need, the toolchain version; never symlink or reuse the main checkout's env>`, or exactly `none` when a fresh worktree needs nothing; notes about the toolchain go after it, without backticks
 - Conventions: commit style, lint, formatting, repo rules
 
@@ -129,7 +129,7 @@ Instructions for a specific step of the pipeline, under `### <step>`.
 
 Before you return, check every point and fix what fails:
 
-1. The json parses. Every job in it is in the table and has a `spec.md`. Every repo with a `code` job or in a `reads` list has facts with a test command and a worktree setup.
+1. The json parses. Every job in it is in the table and has a `spec.md`. Every repo with a `code` job or in a `reads` list has facts with a test command and a worktree setup. Every test command in plan.md and the specs is the repo's `test`, comes from its docs, or was run by you.
 2. Every spec has acceptance criteria and tests. It has a contract when another job depends on it or it uses another job's result, with the same text in both specs. It has notes for each step whose work the spec does not make clear (how `verify` starts the app, which bug `reproduce` shows).
 3. Every acceptance criterion of the issue is in at least one spec, or under "Outside the code", or under "Risks and open points" with the reason. Every design frame is named in one spec, and every doc that records the fixed gap is in Scope.
 4. Every pipeline passes the rules `plan load` checks:

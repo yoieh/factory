@@ -16,7 +16,7 @@ PLACEHOLDER_RE = re.compile(r"\{([a-z_]+)\}")
 SLOTS = ("tracker", "code_host", "design")
 CAPABILITIES = {
     "tracker": ("fetch_issue", "import", "sync", "comment"),
-    "code_host": ("push", "open_pr", "pr_state", "pr_template"),
+    "code_host": ("push", "open_pr", "pr_state", "pr_template", "pr_checks", "land_pr"),
     "design": ("fetch_design",),
 }
 VIAS = ("mcp", "cli", "skill", "git", "file", "script", "core")
@@ -29,7 +29,7 @@ PATTERN_KEYS = {
 }
 PLACEHOLDERS = (
     "project", "repo", "repo_path", "remote_url", "source_branch", "target_branch",
-    "pr_file", "title", "pr_url", "issue_key", "external_key", "external_keys",
+    "pr_file", "title", "pr_url", "issue_key", "external_key", "external_keys", "head_sha", "action",
 )
 RESERVED_SETTINGS = PLACEHOLDERS + ("adapter", "write", "patterns")
 DEFAULT_SLOTS = {"tracker": "local", "code_host": "none"}
@@ -345,6 +345,13 @@ REPO_PLACEHOLDERS = ("repo", "repo_path", "remote_url")
 OUTPUTS = {
     "pr_state": lambda data: data.get("state") in ("OPEN", "MERGED", "DECLINED", "SUPERSEDED") and isinstance(data.get("url"), str),
     "open_pr": lambda data: data.get("action") in ("created", "updated") and isinstance(data.get("url"), str),
+    "pr_checks": lambda data: (
+        data.get("state") in ("OPEN", "MERGED", "DECLINED") and isinstance(data.get("url"), str)
+        and isinstance(data.get("draft"), bool) and isinstance(data.get("head_sha"), str)
+        and data.get("mergeable") in ("MERGEABLE", "CONFLICTING", "UNKNOWN")
+        and data.get("checks") in ("passing", "pending", "failing", "none")
+        and isinstance(data.get("failing"), list) and isinstance(data.get("pending"), list)),
+    "land_pr": lambda data: data.get("action") in ("ready", "merged") and isinstance(data.get("url"), str),
     "sync": lambda data: isinstance(data.get("issues"), list) and all(
         isinstance(item, dict) and isinstance(item.get("external_key"), str) for item in data["issues"]),
     "fetch_issue": lambda data: isinstance(data.get("title"), str),

@@ -88,9 +88,13 @@ Spawn `factory-retro` with its prompt lines; `retro load`; on errors resume it w
 
 Its own session, started by a human: check PR states of applied items (`improvement prs` + `pr_state`), mark merged ones `done`; `improvement start`; one worktree and one `factory-improver` per group; test, write `pr.md`, push and open a draft PR when the code host can, `improvement pr`. Missing credentials or `pr_state`: report the PRs as unchecked and carry on.
 
+## Land
+
+`/factory land <run-id>`, and the end of Finish when the project's `defaults.land` is `ready` or `merge`: `land check` (wait in the background while checks run), then per open PR `land start` and one `factory-lander` each, all in one message, background; then `land apply`. The core alone decides and acts: it marks the PR ready or merges it only on PASS, with every check passing, a clean merge and the judged head. Report the verdict, the action and the reasons. Never change `defaults.land`: only the user turns landing on.
+
 ## Never
 
-- merge into the default branch, force-push, or push anything but feature branches and `chore/improvements-*` branches
+- merge into the default branch yourself, mark a PR ready or merge it other than through `land apply`, force-push, or push anything but feature branches and `chore/improvements-*` branches
 - touch the user's checkout (no checkout, reset or stash in a repo path); only `fetch` and `worktree add`
 - write run state outside the CLI, or edit agent files
 - write to an external tracker unless the project's tracker has `"write": true`

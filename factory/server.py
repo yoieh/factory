@@ -331,7 +331,10 @@ def post_routes(conn, route, body):
         note = text_limit(body.get("note"), MAX_TEXT, "note")
         if not isinstance(body.get("status"), str):
             raise Refused(400, "status is required")
-        return improvements.decide(conn, number(match.group(1), "improvement"), body["status"], note)
+        author = body.get("by") or "dashboard"
+        if not isinstance(author, str):
+            raise Refused(400, "by must be an agent name")
+        return improvements.decide(conn, number(match.group(1), "improvement"), body["status"], note, author)
     match = re.match(r"^/api/runs/([^/]+)/archive$", route)
     if match:
         if not isinstance(body.get("archived"), bool):

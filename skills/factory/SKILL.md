@@ -474,7 +474,7 @@ Do not act on the improvements here: you never accept, reject, apply or mark the
 `/factory improve [<id>...] [--factory-base <branch>]` applies the improvements a human accepted. A human starts it in its own session, not in a run's orchestrator session. It is not part of a run: its tokens are not counted and `skip add` does not apply, so report every skip in the final report instead. Accepting an item is the permission to change it; the draft PR is the human's second check. Do Setup step 1 once.
 
 1. **Merged PRs first.** `"$F" improvement prs --check` lists the open PRs of accepted items with a `state` per PR, read through each project's `pr_state`. It changes no item:
-   - `MERGED`: `"$F" improvement decide <id> done` for every id of that PR.
+   - `MERGED`: `"$F" improvement decide <id> done --by orchestrator` for every id of that PR.
    - `DECLINED` or `SUPERSEDED`: change nothing. Report it: a human rejects the items or moves them back to review on the dashboard (that clears the PR, so a later accept gets a new one).
    - `OPEN`: report it as waiting for review.
    - `unchecked` (no `pr_state`, or missing credentials, with the reason): report the PR as unchecked, with the reason, and go on.

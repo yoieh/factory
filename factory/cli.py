@@ -386,10 +386,11 @@ def build():
     entry.add_argument("--run")
     entry.add_argument("--project")
     entry.add_argument("--status", action="append", default=[])
-    entry = add(improvement, "decide", cmd_improvement_decide, "A human's decision.")
+    entry = add(improvement, "decide", cmd_improvement_decide, "A decision by the user or an agent on their behalf.")
     entry.add_argument("id", type=int)
     entry.add_argument("status", choices=list(improvements.STATUSES))
     entry.add_argument("--note")
+    entry.add_argument("--by", default="human")
     entry = add(improvement, "start", cmd_improvement_start, "Group accepted items per repo and base branch.")
     entry.add_argument("--id", dest="ids", type=int, action="append", default=[])
     entry.add_argument("--factory-base")
@@ -648,7 +649,7 @@ def cmd_improvement_list(conn, args):
 
 
 def cmd_improvement_decide(conn, args):
-    return improvements.decide(conn, args.id, args.status, args.note)
+    return improvements.decide(conn, args.id, args.status, args.note, args.by)
 
 
 def cmd_improvement_start(conn, args):

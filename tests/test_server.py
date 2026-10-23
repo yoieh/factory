@@ -149,7 +149,8 @@ class WriteRoutesTest(ServerCase):
         found = self.get("/api/inbox?as=assistant")
         kinds = {item["kind"] for item in found["items"] if item["type"] == "question"}
         self.assertIn("plan_confirm", kinds)
-        self.assertTrue(any(item["type"] == "improvement" for item in found["items"]))
+        improvement = next(item for item in found["items"] if item["type"] == "improvement")
+        self.assertEqual(improvement["decide"][-2:], ["--by", "assistant"])
         self.assertIsNotNone(self.get("/api/agents/assistant")["seen_at"])
         cursor = found["cursor"]
         self.assertEqual(self.get(f"/api/events?since={cursor}")["events"], [])
@@ -162,7 +163,10 @@ class WriteRoutesTest(ServerCase):
     def test_decide_and_archive(self):
         items = self.get("/api/improvements?status=open")
         decided = self.post(f"/api/improvements/{items[0]['id']}/decide", {"status": "accepted", "note": "good"})
-        self.assertEqual((decided["status"], decided["note"]), ("accepted", "good"))
+        self.assertEqual((decided["status"], decided["note"], decided["decided_by"]), ("accepted", "good", "dashboard"))
+        by_agent = self.post(f"/api/improvements/{items[1]['id']}/decide", {"status": "rejected", "note": "no", "by": "bertil"})
+        self.assertEqual(by_agent["decided_by"], "bertil")
+        self.post(f"/api/improvements/{items[1]['id']}/decide", {"status": "open", "by": 7}, status=400)
         self.assertTrue(decided["issue_key"].startswith("DEMO-"))
         self.post(f"/api/improvements/{items[0]['id']}/decide", {"status": "maybe"}, status=400)
         self.post(f"/api/improvements/{items[0]['id']}/decide", {"note": "x"}, status=400)

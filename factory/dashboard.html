@@ -1404,6 +1404,7 @@ function improvementsPage() {
           item.pr_url ? [" · ", external(item.pr_url, "PR")] : null),
         item.location ? el("p", { style: "margin:8px 0 0" }, el("code", {}, item.location)) : null,
         el("h3", {}, "Evidence"), md(item.evidence), el("h3", {}, "Proposal"), md(item.proposal),
+        item.decided_by ? el("p", { class: "muted small", style: "margin:10px 0 0" }, `${statusLabel(item.status)} by `, item.decided_by === "human" || item.decided_by === "dashboard" ? "you" : el("a", { href: `#agents/${encodeURIComponent(item.decided_by)}` }, item.decided_by), item.decided_at ? ` · ${shortTime(item.decided_at)}` : "") : null,
         item.note ? el("p", { class: "muted", style: "margin:10px 0 0" }, `Note: ${item.note}`) : null,
         el("div", { class: "actions", style: "margin-top:12px" }, note, (actions[item.status] || []).map(([status, label]) => el("button", { class: status === "accepted" ? "primary" : "", onclick: async () => {
           try { await post(`/api/improvements/${item.id}/decide`, { status, note: note.value || null }); delete state.drafts[`note-${item.id}`]; await refresh(); } catch (error) { toast(error.message); }
@@ -1415,13 +1416,13 @@ function agentsPage(current) {
   if (current.name) return agentDetail(current.name);
   const list = state.cache.agents;
   return el("div", {}, el("h1", {}, "Agents"),
-    el("p", { class: "sub" }, "Outside tools that read the inbox and answer for you. Connect one with ", el("code", {}, "factory agent add <name>"),
-      "; an agent that answers with ", el("code", {}, "--by <name>"), " shows up here by itself. Read-only here."),
+    el("p", { class: "sub" }, "Outside tools that read the inbox, answer and decide improvements for you. Connect one with ", el("code", {}, "factory agent add <name>"),
+      "; an agent that answers or decides with ", el("code", {}, "--by <name>"), " shows up here by itself. Read-only here."),
     !list ? el("p", { class: "muted" }, "Loading…") : list.error ? failed(list) : list.length ? el("div", { class: "card tablecard" }, el("table", {},
-      el("thead", {}, el("tr", {}, ["Name", "Description", "Connected", "Last seen", "Answers", "Follow-ups"].map((name) => el("th", {}, name)))),
+      el("thead", {}, el("tr", {}, ["Name", "Description", "Connected", "Last seen", "Answers", "Follow-ups", "Decisions"].map((name) => el("th", {}, name)))),
       el("tbody", {}, list.map((agent) => el("tr", { class: "list-row", onclick: () => go(`#agents/${encodeURIComponent(agent.name)}`) },
         el("td", {}, el("b", {}, agent.name)), el("td", {}, agent.description || el("span", { class: "muted" }, "–")), el("td", {}, shortTime(agent.added_at)),
-        el("td", {}, agent.seen_at ? shortTime(agent.seen_at) : el("span", { class: "muted" }, "never")), el("td", {}, agent.answers), el("td", {}, agent.follow_ups)))))) :
+        el("td", {}, agent.seen_at ? shortTime(agent.seen_at) : el("span", { class: "muted" }, "never")), el("td", {}, agent.answers), el("td", {}, agent.follow_ups), el("td", {}, agent.decisions)))))) :
       el("div", { class: "empty" }, "No agents connected yet."));
 }
 
@@ -1435,13 +1436,20 @@ function agentDetail(name) {
       el("dt", {}, "Connected"), el("dd", {}, shortTime(agent.added_at)),
       el("dt", {}, "Last seen"), el("dd", {}, agent.seen_at ? shortTime(agent.seen_at) : "never"),
       el("dt", {}, "Answers"), el("dd", {}, agent.answers),
-      el("dt", {}, "Follow-ups"), el("dd", {}, agent.follow_ups)),
+      el("dt", {}, "Follow-ups"), el("dd", {}, agent.follow_ups),
+      el("dt", {}, "Decisions"), el("dd", {}, agent.decisions)),
     el("h2", {}, "Latest"), agent.recent.length ? el("div", { class: "card tablecard" }, el("table", {},
       el("thead", {}, el("tr", {}, ["When", "Question", "Run", "Action", "Text"].map((label) => el("th", {}, label)))),
       el("tbody", {}, agent.recent.map((item) => el("tr", { class: "list-row", onclick: () => go(`#${item.run_id}/q${item.question_id}`) },
         el("td", {}, shortTime(item.at)), el("td", {}, el("b", {}, `q${item.question_id}`), " ", item.question), el("td", {}, el("code", {}, item.run_id)),
         el("td", {}, item.kind === "clarify" ? "asked back" : "answered"), el("td", {}, item.text)))))) :
-      el("p", { class: "muted" }, "It has not answered anything yet."));
+      el("p", { class: "muted" }, "It has not answered anything yet."),
+    el("h2", {}, "Improvement decisions"), (agent.decisions_recent || []).length ? el("div", { class: "card tablecard" }, el("table", {},
+      el("thead", {}, el("tr", {}, ["When", "Improvement", "Decision", "Note"].map((label) => el("th", {}, label)))),
+      el("tbody", {}, agent.decisions_recent.map((item) => el("tr", { class: "list-row", onclick: () => go("#improvements") },
+        el("td", {}, shortTime(item.at)), el("td", {}, el("b", {}, `#${item.improvement_id}`), " ", item.title || el("span", { class: "muted" }, "gone")),
+        el("td", {}, `${statusLabel(item.from)} → ${statusLabel(item.to)}`), el("td", {}, item.note || el("span", { class: "muted" }, "–"))))))) :
+      el("p", { class: "muted" }, "It has not decided any improvement yet."));
 }
 
 function applyTheme() {

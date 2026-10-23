@@ -75,6 +75,21 @@ See 08 for `issue ...`.
 | `question list [--run r] [--status s]...` | Questions with threads. |
 | `question wait <run-id> [--timeout 1800]` | Block until the run has an undelivered `answer` or `clarify` message; return those items and mark them delivered. Each item: `id`, `job_id`, `asked_by`, `status`, `kind` (`answer` or `clarify`), `text` (the human's text), `by` (the message author: `human`, `dashboard` or the `--by` name) and, for `clarify`, `reply_file`. Returns `[]` on timeout. `question clarify --delivered` and `question answer` from the session's own chat (`--delivered`) mark their message delivered at once. |
 
+## Connected agents
+
+A connected agent is an outside tool that reads the inbox and answers for the user: a voice assistant, another agent, a script. The factory knows it only by its name; what it may approve and how it reaches the user live in the agent's own setup. A name is 1 to 40 letters, digits, `.`, `_` or `-`, starting with a letter or digit; `human`, `dashboard`, `orchestrator`, `planner` and `retro` are reserved. The first `question answer --by <name>`, `question clarify --by <name>`, `inbox --as <name>` or `events --as <name>` registers the name and later ones move its `seen_at`, so `agent add` is optional.
+
+| Command | Does |
+|---|---|
+| `agent add <name> [--description d]` | Register an agent, or change its description. Returns what `agent show` returns. |
+| `agent list [--table]` | Every agent with `added_at`, `seen_at`, `answers` and `follow_ups` (counts of its messages). |
+| `agent show <name>` | One agent and its `recent` 20 answers and follow-ups (`question_id`, `kind`, `text`, `at`, `run_id`, `job_id`, `asked_by`, the question's first line and status). |
+| `agent remove <name>` | Forget an agent. Its messages keep its name; its next answer registers it again. |
+| `inbox [--project p] [--as name]` | Everything that waits for the user: `{"items", "count", "cursor"}`. A question item (open questions only; `clarify` waits for an agent's reply) has `type: "question"`, `id`, `kind` (`question`, `plan_confirm` or `human_gate`), `run` (`id`, `feature`, `project`, `status`, `issue_key`), `job` (`id`, `kind`, `repo`, `title`, `stage`, `pipeline`) or null, `asked_by`, `asked_at`, `decision` (the question line), `options` (`letter`, `text`, `recommended`), `text`, `thread`, and `answer` and `ask_back` as argument lists with the agent's name filled in from `--as`. A plan confirm adds `expects`, `plan`, `repos` and `jobs` with their pipelines; a human gate adds `expects`. An improvement item has `type: "improvement"`, `id`, `run_id`, `project`, `title`, `target`, `impact`, `evidence`, `proposal` and `decide`. `cursor` is the latest event id, to start `events --since` from. |
+| `events [--since n] [--run r] [--kind k]... [--limit 200] [--wait] [--timeout 1800] [--as name]` | Events with an id above `--since`, oldest first, at most `--limit` (1 to 1000): `{"events": [{id, run_id, job_id, at, kind, payload}], "cursor"}`. Pass `cursor` as the next `--since`. Without `--since`: the latest `--limit` events, or with `--wait` only new ones. `--kind` matches a kind or a prefix (`question` matches `question.ask` and `question.status`). `--wait` blocks until there is a match or the timeout ends. |
+
+An agent's loop: `events --wait --as <name>` (or `--since <cursor>`), then `inbox --as <name>`, then answer with the item's `answer` command. Answers it stores are the user's (09, Questions).
+
 ## Skips and events
 
 | Command | Does |

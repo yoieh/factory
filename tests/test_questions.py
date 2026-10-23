@@ -120,11 +120,11 @@ class QuestionFlowTest(FactoryCase):
     def test_an_answer_says_who_wrote_it_for_the_user(self):
         one = self.cli("question", "ask", self.run_id, QUESTION)
         two = self.cli("question", "ask", self.run_id, QUESTION, "--job", "lead")
-        answered = self.cli("question", "answer", str(one["id"]), "A", "--by", "bertil")
-        self.assertEqual(answered["thread"][-1]["author"], "bertil")
+        answered = self.cli("question", "answer", str(one["id"]), "A", "--by", "assistant")
+        self.assertEqual(answered["thread"][-1]["author"], "assistant")
         self.cli("question", "clarify", str(two["id"]), "Which client?")
         found = self.cli("question", "wait", self.run_id, "--timeout", "1")
-        self.assertEqual([item["by"] for item in found], ["bertil", "human"])
+        self.assertEqual([item["by"] for item in found], ["assistant", "human"])
         self.assertIn("--by is empty", self.fails("question", "answer", str(two["id"]), "A", "--by", " ", code=2))
 
     def test_delivered_messages_do_not_come_back(self):

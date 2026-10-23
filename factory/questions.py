@@ -2,7 +2,7 @@ import os
 import re
 import time
 
-from . import FactoryError, db, heads, home
+from . import FactoryError, connected, db, heads, home
 from .util import now, read_text, text_hash
 
 OPTION_RE = re.compile(r"^\s*[-*]\s+\*\*([A-Z])(?:\s*\(([^)]*)\))?\s*:?\s*\*\*\s*:?\s*(.*)$")
@@ -172,7 +172,14 @@ def check_author(author):
     author = (author or "").strip()
     if not author:
         raise FactoryError("--by is empty", code=2)
-    return author
+    if author in ("human", "dashboard"):
+        return author
+    return connected.check_name(author)
+
+
+def seen(conn, author):
+    if author not in ("human", "dashboard"):
+        connected.touch(conn, author)
 
 
 def answer(conn, question_id, text, delivered=False, author="human"):
@@ -186,6 +193,7 @@ def answer(conn, question_id, text, delivered=False, author="human"):
             raise FactoryError(f"question {question_id} is {question['status']}, not open")
         add_message(conn, question, "answer", author, text, delivered=delivered)
         set_status(conn, question, "answered", answer=text, answered_at=now())
+        seen(conn, author)
     return with_thread(conn, row(conn, question_id))
 
 
@@ -215,6 +223,7 @@ def clarify(conn, question_id, text, delivered=False, author="human"):
         target = reply_file(conn, question)
         add_message(conn, question, "clarify", author, text, path=target, delivered=delivered)
         set_status(conn, question, "clarify")
+        seen(conn, author)
     return dict(with_thread(conn, row(conn, question_id)), reply_file=target)
 
 

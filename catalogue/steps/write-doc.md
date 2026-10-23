@@ -33,6 +33,7 @@ version: 1
 4. Link to existing docs instead of copying them.
 5. No secrets, real credentials or personal data in examples. No factory words.
 6. Round 2 and later: fix every Must fix item from the gate files. A `rework.md` is a human request: do it.
+7. Code job whose diff changes only documentation files: run `grep -rlF <path> <test dirs>` for each changed path (and its basename) and copy the output under Checked. When nothing matches and the repo has no docs build or link check, do not run the full suite; set Test command to that grep. When a test matches, run only those test files.
 
 ## Output
 Beyond the standard `output.md`:

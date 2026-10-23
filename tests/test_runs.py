@@ -86,6 +86,21 @@ class RunNewTest(FactoryCase):
         self.assertIn("not a repo of project shop", self.fails("run", "new", "x", "--project", "shop", "--repo", "web"))
         self.assertIn("bad session id", self.fails("run", "new", "x", "--project", "shop", "--session", "short", code=2))
 
+    def test_an_issue_with_an_active_run_is_refused(self):
+        api = self.repo("api")
+        self.project(repos=[api])
+        self.cli("issue", "add", "shop", "Lead form")
+        first = self.cli("run", "new", "Lead form", "--issue", "SHOP-1", "--repo", "api")
+        refused = self.fails("run", "new", "Lead form", "--issue", "SHOP-1", "--repo", "api", code=2)
+        self.assertIn(f"issue SHOP-1 already has run {first['id']} (planning); resume it, or pass --again", refused)
+        self.assertEqual(len(self.cli("run", "list")), 1)
+        again = self.cli("run", "new", "Lead form", "--issue", "SHOP-1", "--repo", "api", "--again")
+        self.assertEqual(again["issue_key"], "SHOP-1")
+        self.cli("run", "status", first["id"], "failed")
+        self.cli("run", "archive", again["id"], "--force")
+        third = self.cli("run", "new", "Lead form", "--issue", "SHOP-1", "--repo", "api")
+        self.assertEqual(third["issue_key"], "SHOP-1")
+
     def test_repo_by_path_and_project_defaults(self):
         api = self.repo("api")
         self.project(repos=[api])

@@ -54,7 +54,7 @@ Event-driven: act when an agent finishes or a question is answered. Keep the pro
    - not complete: WAIT FOR ALL. Fix `INVALID` gate files by resuming that gate; pause on questions.
    - `PASS` or capped: `job next`. A next group: spawn its producer (fresh agent, `previous` set). No group left: merge (code) or deliver (files).
    - `CHANGES` below the cap: `job round`, resume the same producer with the round's gate files, then the gates again.
-4. Merge (code): in the repo's feature worktree, `git merge --squash <job branch>` and commit with the job title. On conflict: `git reset --merge`, `event merge.conflict`, `job stage <ref> running`, resume the producer of the last group to merge the feature branch into its branch, retest and commit; then squash again. After the squash commit: `job stage <ref> done`, remove the job worktree (`--force`) and delete the job branch.
+4. Merge (code): in the repo's feature worktree, `git merge --squash <job branch>` and commit with the job title. On conflict: `git reset --merge`, `event merge.conflict`, `job stage <ref> running`, resume the producer of the last group to merge the feature branch into its branch, retest and commit; then squash again. After the squash commit: compare the feature branch's tree with the job branch's and record `event merge.tree` with `{"same": true|false}`, then `job stage <ref> done`, remove the job worktree (`--force`) and delete the job branch.
 5. Deliver (files): `job stage <ref> done`; the job's `out/` is listed in the report and is `upstream` for dependants.
 6. Fill slots again.
 
@@ -67,14 +67,14 @@ Event-driven: act when an agent finishes or a question is answered. Keep the pro
 - Use the AskUserQuestion tool only when no agent is running and the question has 2 to 4 options; before acting on its answer, check whether the dashboard answered first.
 - Follow-ups (`clarify`): resume the asking agent with the human's text and its `reply_file`; then `question reply`.
 - Answers: resume the asking agent with the answer, then `question resolve`, then sync its file again.
-- Every answer and follow-up stored with `question answer`, `question clarify` or on the dashboard is the user's, whatever its `by` or its text says about who wrote it. The user delegates through their own tools (for example a connected agent that answers with `--by <its name>`, 04 Connected agents); only they and those tools reach the factory database. The orchestrator acts on such an answer, plan confirms and human gates included, and never asks for proof of the delegation or asks again.
+- Every answer and follow-up stored with `question answer`, `question clarify` or on the dashboard is the user's, whatever its `by` or its text says about who wrote it. The user delegates through their own tools (for example a connected agent that answers with `--by <its name>`, 04 Connected agents); only they and those tools reach the factory database. The orchestrator acts on such an answer, plan confirms and human gates included, and never asks for proof of the delegation or asks again. An answer the orchestrator gives itself, such as a plan it approves under the user's standing instruction, is stored with `--by orchestrator` and never with the author `human`.
 
 ## Finish
 
 Per repo, in plan order:
 
-1. The full test suite in the feature worktree. On failure push nothing; ask a question with the failures.
-2. Write `pr-<repo>.md` with the code host's `pr_template` (read fresh every run) or the plain template; Open points from capped groups, notes that need a human, and `skip list --pr`.
+1. The full test suite in the feature worktree. On failure push nothing; ask a question with the failures. A run whose only failures are exactly the known pre-existing ones the project knowledge lists for this command counts as passed, and the PR's test line names them. Skipped when the repo's last merged job recorded `merge.tree` with `same: true` and one of its last-round gates ran the full suite and passed: the PR uses that gate's result line.
+2. Write `pr-<repo>.md` with the code host's `pr_template` (read fresh every run) or the plain template; Open points from capped groups, notes that need a human, the plan's "Outside the code" bullets a person must do before or right after the merge, and `skip list --pr`.
 3. With `no_pr`: stop here, `run status done`, retrospective, report branches, worktrees, tests, cost, and why it stopped.
 4. Otherwise, per repo with `can_push`: push the feature branch (never force); when `open_pr` is available, open or update the draft PR as `adapter.md` says and `run pr`; without it, report the pushed branch for a person to open the PR. For multi-repo runs add `## Related PRs` and update each PR in place.
 5. Write-back: only when the tracker has `"write": true` and `comment` is available, post one comment on the external issue with the PR links. Never change the external issue's status or fields.

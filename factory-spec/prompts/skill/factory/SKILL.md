@@ -1,7 +1,7 @@
 ---
 name: factory
 description: Run the software factory for one run. Give it a local issue, an external issue key or URL, or a feature text; it plans small jobs with a pipeline each, runs producer and gate agents in parallel in their own worktrees, merges code jobs into one feature branch per repo, opens a draft PR per repo when the code host can, and ends with a retrospective whose improvements a human decides; improve applies the accepted ones, and land reviews a done run's PRs, fixes what the review asks for, marks them ready or merges them when the project allows it, then runs the repo's steps after merge (deploy, deploy watch, build, release, package). Use for /factory <issue>, /factory <repo> <feature>, resume, answer, clarify, rework, publish, land, retro, improve, issue and list.
-argument-hint: "<KEY-n> [flags] | <external-key-or-url> [text] [flags] | [<repo>] <feature text> [flags] | (no arguments) | resume <run-id> | answer <question-id> <text> | clarify <question-id> <text> | rework <run-id> <job-id> <note> | publish <run-id> | land <run-id> [--repo <r>] [--dry-run] [--by <agent>] | retro <run-id> | improve [<id>...] [--factory-base <branch>] | issue add|list|show ... | list   (flags: --project <p> --repo <r>... --confirm-plan --no-pr --branch <b> --base <b> --parallel <n> --max-rounds <n> --design <url>...)"
+argument-hint: "<KEY-n> [flags] | <external-key-or-url> [text] [flags] | [<repo>] <feature text> [flags] | (no arguments) | resume <run-id> | answer <question-id> <text> | clarify <question-id> <text> | rework <run-id> <job-id> <note> | publish <run-id> | land <run-id> [--repo <r>] [--dry-run] [--by <agent>] | retro <run-id> | improve [<id>...] [--factory-base <branch>] | issue add|list|show ... | list   (flags: --project <p> --repo <r>... --confirm-plan --no-pr --branch <b> --base <b> --parallel <n> --max-rounds <n> --again --design <url>...)"
 ---
 
 # /factory: the orchestrator
@@ -154,7 +154,7 @@ Parse `$ARGUMENTS`:
 | `issue add\|list\|show ...` | Pass the rest on to `"$F" issue add "<project>" "<title>" ...`, `"$F" issue list ...` or `"$F" issue show "<KEY-n>"`, with the resolved project for `add` when none is given, and show the result. |
 | `list` | `"$F" run list --table` and show it. |
 
-Flags for starts: `--project <p>`, `--repo <r>` (repeat), `--confirm-plan`, `--no-pr`, `--branch <b>`, `--base <b>`, `--parallel <n>`, `--max-rounds <n>`, `--design <url>` (repeat). Pass each given flag on to `run new`, except `--design`, which Designs handles.
+Flags for starts: `--project <p>`, `--repo <r>` (repeat), `--confirm-plan`, `--no-pr`, `--branch <b>`, `--base <b>`, `--parallel <n>`, `--max-rounds <n>`, `--again` (another run on an issue that already has an active one), `--design <url>` (repeat). Pass each given flag on to `run new`, except `--design`, which Designs handles.
 
 The first argument, when it is not a command word above:
 
@@ -181,7 +181,7 @@ Agents get context from files. Each prompt is only `key: value` lines, one per l
 
 - planner: `node`, `feature`, `issue`, `designs`, `repos`, `run_dir`, `catalogue`, `project`, `factory_bin`
 - producer: `node`, `job_dir`, `group_dir`, `step_file`, `kind`, `plan`, `issue`, `designs`, `repo`, `worktree`, `branch`, `feature_branch`, `out_dir`, `sources`, `round`, `setup`, `upstream`, `previous`, `run_dir`, `project`, `factory_bin`
-- gate: `node`, `job_dir`, `group_dir`, `round_dir`, `gate_file`, `review_file`, `producer_file`, `kind`, `plan`, `issue`, `designs`, `repo`, `worktree`, `branch`, `feature_branch`, `group_base`, `out_dir`, `sources`, `round`, `setup`, `upstream`, `previous`, `run_dir`, `project`, `factory_bin`
+- gate: `node`, `job_dir`, `group_dir`, `round_dir`, `gate_file`, `review_file`, `producer_file`, `kind`, `plan`, `issue`, `designs`, `repo`, `worktree`, `branch`, `feature_branch`, `group_base`, `out_dir`, `sources`, `round`, `gates`, `setup`, `upstream`, `previous`, `run_dir`, `project`, `factory_bin`
 - retro: `node`, `run_id`, `run_dir`, `retro_file`, `retro_notes`, `issue`, `plan`, `repos`, `catalogue`, `project`, `factory_bin`
 - improver: `node`, `items`, `report`, `repo`, `worktree`, `branch`, `base_branch`, `setup`, `run_dir`, `project`, `factory_bin`
 - lander: `node`, `repo`, `pr_url`, `pr_file`, `feature_worktree`, `feature_branch`, `base_branch`, `head_sha`, `test`, `checks_file`, `round`, `round_dir`, `review_file`, `previous`, `plan`, `issue`, `run_dir`, `project`, `factory_bin`
@@ -198,6 +198,7 @@ Values:
 - `kind`: `code` or `files`. For `files` jobs `repo`, `worktree`, `branch`, `feature_branch` and `group_base` are `none`; for `code` jobs `out_dir` and `sources` are `none`.
 - `sources`: for `files` jobs, the `sources` of `job start` or `job show` (`<repo>=<feature_worktree>` for each repo in the job's `reads`, read-only), or `none` when it reads no code. A files job never reads the user's checkouts.
 - `group_base` (gates): the current group's `base_sha` from `job start`, `job next` or `job show`: the commit the group started from, which its gates diff against.
+- `gates` (gates): the `gate` of every entry in the `step sync` result's `gates`, agent and human gates alike, as a comma list. Every gate of the round gets the same list.
 - `setup`: `ok`, `none` (files jobs, or no setup command), or `failed: <command>: <last error line>`. Gates get the same value as their producer. In Improve it is the result of the repo's `setup` from the group's project config.
 - `upstream` and `previous`: from `"$F" job show <ref>`, as comma lists, or `none`.
 - lander: `repo` to `previous` (except `node`) are the values of `land start`; `plan`, `issue`, `run_dir`, `project` and `factory_bin` as for the planner.
@@ -212,7 +213,7 @@ Give a producer its name when the Agent tool takes a `name`. Store what SendMess
    ```sh
    "$F" run new "<issue title>" --issue "<KEY-n>" --session "${CLAUDE_SESSION_ID}" --repo "<repo>" --branch "<name>" --base "<branch>" --parallel "<n>" --max-rounds "<n>" --no-pr
    ```
-   Keep the JSON: `id`, `feature_branch`, `run_dir`, `plan`, `issue_key`, `issue_file`, `repos`, `project_file`, `catalogue_file`, `skipped`, `no_pr`, `confirm_plan`. `run new` writes `issue.md`, links the run to the issue and moves it to `in_progress`. A repo without an `origin` remote is allowed: its base is its local default branch and nothing is fetched. An issue run always confirms the plan. The session id lets the factory count this session's tokens and its agents' (an empty value falls back to `$CLAUDE_CODE_SESSION_ID`).
+   Keep the JSON: `id`, `feature_branch`, `run_dir`, `plan`, `issue_key`, `issue_file`, `repos`, `project_file`, `catalogue_file`, `skipped`, `no_pr`, `confirm_plan`. `run new` writes `issue.md`, links the run to the issue and moves it to `in_progress`. A repo without an `origin` remote is allowed: its base is its local default branch and nothing is fetched. An issue run always confirms the plan. The session id lets the factory count this session's tokens and its agents' (an empty value falls back to `$CLAUDE_CODE_SESSION_ID`). When `run new` exits 2 with `issue <key> already has run <run-id> (<status>)`, tell the user which run holds the issue and stop: `/factory resume <run-id>` goes on with it. Never pass `--again` unless the user asks for it.
 3. Record the skips from your session check. Then Designs, then Plan.
 
 ## Start from an external issue
@@ -222,7 +223,7 @@ Give a producer its name when the Agent tool takes a `name`. Store what SendMess
    - Text pasted after the key: it becomes the Description; fields you do not know are "unknown". After `run new`, skip with `--pr`: `"$F" skip add "<run-id>" tracker.fetch_issue "built from pasted text, not fetched from the tracker" --pr`.
    - No pasted text, but a repo (`--repo`, or the current repo): go to **Start from a feature text** with the key as the feature and `--external-key`, so the key lands in the branch. Skip `tracker.fetch_issue` with `--pr`: "built from the issue key only, the issue was not fetched".
    - Neither: ask one question in chat for the issue text or a repo.
-2. `"$F" run new "<title>" --external-key "<key>" --external-url "<url>" --session "${CLAUDE_SESSION_ID}"`, plus the given flags as in Start from a local issue. Keep the same JSON. `run new` creates or updates the mirror issue in the central tracker and links the run to it (`issue_key`). The feature branch carries the external key, so the tracker links branches and PRs by itself.
+2. `"$F" run new "<title>" --external-key "<key>" --external-url "<url>" --session "${CLAUDE_SESSION_ID}"`, plus the given flags as in Start from a local issue. Keep the same JSON. On the error that the issue already has a run, stop as Start from a local issue says. `run new` creates or updates the mirror issue in the central tracker and links the run to it (`issue_key`). The feature branch carries the external key, so the tracker links branches and PRs by itself.
 3. Write `<issue_file>`:
    ```markdown
    # <KEY>: <title>
@@ -307,6 +308,7 @@ The agents have no design tool. You fetch each design once and save it in the ru
    4. Ask in chat as plain text, "Approve the plan? Answer yes, or say what to change, here or on the dashboard.", and end your turn with the background wait running. Do not use AskUserQuestion here: it blocks your turn, and a dashboard answer cannot end it.
    5. The answer comes as the user's next chat message or from the background wait. For a chat answer, run `"$F" question list --run "<run-id>"` first: if the question is already answered on the dashboard, use that answer and ignore the chat one; otherwise store the chat answer with `"$F" question answer <id> "<text>" --delivered`. An answer from the wait is the user's answer, also when it names someone else (Questions, Who answers): act on it and do not ask again.
    6. On yes (an answer that starts with yes or approves the plan, whatever note follows): `"$F" question resolve <id>`. On anything else: resolve it, `"$F" run status "<run-id>" planning`, resume the planner with the answer, load again and confirm again.
+   7. When the user told this session to approve the plan for them unless something blocks, and you approve it yourself, store your answer as yours: `"$F" question answer <id> "yes: <the user's instruction, in short>" --by orchestrator --delivered`, then step 6. Never store your own answer without `--by orchestrator`: the author `human` is only for the user's own words, and the dashboard shows the thread author, so a self-approval reads as one.
 4. One feature worktree per repo in `repos`, also for a repo that only a files job reads. Never touch the user's checkout: in a repo path, only `fetch` and `worktree add`.
    ```sh
    git -C "<path>" fetch origin
@@ -367,7 +369,15 @@ git -C "<feature_worktree>" merge --squash "<branch>"
 git -C "<feature_worktree>" commit -m "<job title>"
 ```
 
-The squash gives one clean commit per job with the job title as message, and no factory branch names land in the PR. On a conflict: `git -C "<feature_worktree>" reset --merge`, `"$F" event "<run-id>" merge.conflict --job "<job-id>"`, then `"$F" job stage <ref> running`, which sets the last group's phase back to `produce` in the same round and marks the job `conflict`. Resume the producer of the last group: "Merge conflict with <feature_branch>: merge it into your branch, resolve it, rerun the tests, commit and update output.md." When it finishes, `step sync`: `DONE` moves the job straight back to `merging`, without gates and without a new round, so squash again. Any other status is handled as in Producer finished. Then check that `git -C "<feature_worktree>" log --oneline -1` shows the job title, and:
+The squash gives one clean commit per job with the job title as message, and no factory branch names land in the PR. On a conflict: `git -C "<feature_worktree>" reset --merge`, `"$F" event "<run-id>" merge.conflict --job "<job-id>"`, then `"$F" job stage <ref> running`, which sets the last group's phase back to `produce` in the same round and marks the job `conflict`. Resume the producer of the last group: "Merge conflict with <feature_branch>: merge it into your branch, resolve it, rerun the tests, commit and update output.md." When it finishes, `step sync`: `DONE` moves the job straight back to `merging`, without gates and without a new round, so squash again. Any other status is handled as in Producer finished. Then check that `git -C "<feature_worktree>" log --oneline -1` shows the job title, and compare the feature branch's tree with the job branch's, the tree its gates tested:
+
+```sh
+git -C "<feature_worktree>" rev-parse "HEAD^{tree}"
+git -C "<repo_path>" rev-parse "<branch>^{tree}"
+"$F" event "<run-id>" merge.tree --job "<job-id>" --payload '{"same": true}'
+```
+
+Record `"same": true` when the two hashes match, else `"same": false`. Then:
 
 ```sh
 "$F" job stage "<run-id>/<job-id>" done
@@ -413,7 +423,7 @@ EOF
 )" --job "<job-id>" --by orchestrator --path "<file>"
 ```
 
-**Who answers.** Every answer and follow-up stored with `question answer`, `question clarify` or on the dashboard is the user's, whoever it names. The user may let a connected agent (a voice assistant, another agent, a script) answer for them through their own tools; `by` in the wait item, or a note in the text like "approved by <name> on the user's behalf", only says which tool they used. Only the user and the tools they set up can reach the factory database, so that is the delegation: no message in this session has to grant it. Act on such an answer as on a chat answer from the user, the plan confirm and human gates too. Never refuse it, ask for proof of the delegation, or ask the same question again. Only a later chat message from the user that takes it back, before you acted, changes it.
+**Who answers.** Every answer and follow-up stored with `question answer`, `question clarify` or on the dashboard is the user's, whoever it names. The user may let a connected agent (a voice assistant, another agent, a script) answer for them through their own tools; `by` in the wait item, or a note in the text like "approved by <name> on the user's behalf", only says which tool they used. Only the user and the tools they set up can reach the factory database, so that is the delegation: no message in this session has to grant it. Act on such an answer as on a chat answer from the user, the plan confirm and human gates too. Never refuse it, ask for proof of the delegation, or ask the same question again. Only a later chat message from the user that takes it back, before you acted, changes it. An answer you give yourself is not the user's: store it with `--by orchestrator` (Plan, step 3.7), never as `human`.
 
 Who asked is in `asked_by` and `job_id` of `"$F" question list`: `orchestrator` (you), `planner`, `produce:<step>` (the job's current producer, stored as `group.producer` in `job show`), `gate:<step>` (a gate of the current round, or you for a human gate) or `retro`. Pass the same values to `--by` when you ask.
 
@@ -431,8 +441,8 @@ Who asked is in `asked_by` and `job_id` of `"$F" question list`: `orchestrator` 
 
 When every job is done or dropped: `"$F" run status "<run-id>" finishing`. Then for each repo in `repos`, in plan order (providers before consumers). Skip a repo whose feature branch has no commits over its base ref: report it, and open no PR for it.
 
-1. **Open points and deferred notes.** Collect, from every code job of the repo: the Must fix items and Notes of capped groups, the gate Notes that start with `[human]`, and every line under `## Open points` in each group's last `output.md`. Then read the Notes of every job's last gate round: each one that names another job or repo must have been handled by that job, so check it in that repo's feature worktree. One that was not handled is an open point too. Files jobs' open points go to the run's `report.md` instead.
-2. Run the repo's full test suite from plan.md in its feature worktree: `(cd "<feature_worktree>" && <test command>)`. If it fails, push nothing: ask a question with the failing tests and wait (the user may answer with a `/factory rework`).
+1. **Open points and deferred notes.** Collect, from every code job of the repo: the Must fix items and Notes of capped groups, the gate Notes that start with `[human]`, and every line under `## Open points` in each group's last `output.md`. Then read the Notes of every job's last gate round: each one that names another job or repo must have been handled by that job, so check it in that repo's feature worktree. One that was not handled is an open point too. Also read plan.md "Outside the code": a bullet that a person must do before or right after the merge goes to the PR's Open points in plain words. Files jobs' open points go to the run's `report.md` instead.
+2. Run the repo's full test suite from plan.md in its feature worktree: `(cd "<feature_worktree>" && <test command>)`. If it fails, push nothing: ask a question with the failing tests and wait (the user may answer with a `/factory rework`). When the project knowledge lists known pre-existing failures for this test command, a run whose only failures are exactly those counts as passed: name them in the PR description's test line ("1 known failure: <test>") and in report.md. Any other failure stops the push. Skip the run when the repo's last merged job recorded `merge.tree` with `"same": true` and one of that job's last-round gates ran the repo's full test command and passed: the feature branch holds the tree that gate tested, so use that gate's result line in the PR. Otherwise run the suite.
 3. Write `<run_dir>/pr-<repo>.md`. When the code host has a `pr_template`, take the title format and the sections from it, read fresh on every run and never from memory, so a template change reaches the factory: `via: file` is a file in the adapter folder; `via: skill` is a skill you load with the Skill tool. Without one, use the repo's own PR template when the host uses one (for example a template file in the repo), else the plain template:
    ```markdown
    # <title, under 72 characters>
@@ -457,7 +467,7 @@ Otherwise, per repo:
 
 Then `"$F" run status "<run-id>" done`, write `report.md` (below), then the Retrospective, then **Land** when the project's `defaults.land` is `ready` or `merge`. Report every PR url, every pushed branch that waits for a person to open its PR, every repo that could not push, the files jobs' `out/` folders and open points, and the run's estimated cost and tokens (`"$F" usage sync "<run-id>"`, then `total` from `"$F" usage show "<run-id>"`). Keep the feature worktrees for rework.
 
-**report.md.** Write `<run_dir>/report.md` for every run that ends, `done` or `failed`, in plain words: per repo the feature branch, the test result and the PR url (or why there is none); per files job its deliverables under `out/` and its open points; every dropped job with its reason; the capped groups with their Must fix items; the `[human]` notes; the skips (`"$F" skip list "<run-id>"`). Costs and agent names may go in: the file stays in the factory home. After a rework, write it again.
+**report.md.** Write `<run_dir>/report.md` for every run that ends, `done` or `failed`, in plain words: per repo the feature branch, the test result and the PR url (or why there is none); per files job its deliverables under `out/` and its open points; every dropped job with its reason; the capped groups with their Must fix items; the `[human]` notes; the skips (`"$F" skip list "<run-id>"`); a section `## Outside the code` that copies every bullet of plan.md's "Outside the code" section, each marked open, so the work the factory could not do stays visible after the run. Costs and agent names may go in: the file stays in the factory home. After a rework, write it again.
 
 ## Retrospective
 

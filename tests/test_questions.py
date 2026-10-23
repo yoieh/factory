@@ -127,6 +127,14 @@ class QuestionFlowTest(FactoryCase):
         self.assertEqual([item["by"] for item in found], ["assistant", "human"])
         self.assertIn("--by is empty", self.fails("question", "answer", str(two["id"]), "A", "--by", " ", code=2))
 
+    def test_the_orchestrator_answers_its_own_question_as_itself(self):
+        one = self.cli("question", "ask", self.run_id, "Approve the plan? Answer yes, or say what to change.", "--plain")
+        two = self.cli("question", "ask", self.run_id, QUESTION, "--job", "lead")
+        answered = self.cli("question", "answer", str(one["id"]), "yes", "--by", "orchestrator", "--delivered")
+        self.assertEqual(answered["thread"][-1]["author"], "orchestrator")
+        self.assertEqual(self.cli("agent", "list"), [])
+        self.assertIn("reserved", self.fails("question", "clarify", str(two["id"]), "Which client?", "--by", "orchestrator", code=2))
+
     def test_delivered_messages_do_not_come_back(self):
         one = self.cli("question", "ask", self.run_id, QUESTION)
         self.cli("question", "answer", str(one["id"]), "A", "--delivered")

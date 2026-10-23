@@ -321,7 +321,7 @@ def post_routes(conn, route, body):
         question_id = number(match.group(1), "question")
         text = text_limit(body.get("text"), MAX_TEXT, "text")
         author = body.get("by") or "dashboard"
-        if not isinstance(author, str):
+        if not isinstance(author, str) or author.strip() == questions.SELF:
             raise Refused(400, "by must be an agent name")
         if match.group(2) == "answer":
             return questions.answer(conn, question_id, text or "", delivered=False, author=author)

@@ -168,17 +168,20 @@ def set_status(conn, question, status, **extra):
              question=question["id"], **{"from": question["status"], "to": status})
 
 
-def check_author(author):
+SELF = "orchestrator"
+
+
+def check_author(author, own=False):
     author = (author or "").strip()
     if not author:
         raise FactoryError("--by is empty", code=2)
-    if author in ("human", "dashboard"):
+    if author in ("human", "dashboard") or (own and author == SELF):
         return author
     return connected.check_name(author)
 
 
 def seen(conn, author):
-    if author not in ("human", "dashboard"):
+    if author not in ("human", "dashboard", SELF):
         connected.touch(conn, author)
 
 
@@ -186,7 +189,7 @@ def answer(conn, question_id, text, delivered=False, author="human"):
     text = (text or "").strip()
     if not text:
         raise FactoryError("the answer is empty", code=2)
-    author = check_author(author)
+    author = check_author(author, own=True)
     with db.tx(conn):
         question = row(conn, question_id)
         if question["status"] not in ("open", "clarify"):

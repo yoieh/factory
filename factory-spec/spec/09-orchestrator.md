@@ -67,7 +67,7 @@ Event-driven: act when an agent finishes or a question is answered. Keep the pro
 - Use the AskUserQuestion tool only when no agent is running and the question has 2 to 4 options; before acting on its answer, check whether the dashboard answered first.
 - Follow-ups (`clarify`): resume the asking agent with the human's text and its `reply_file`; then `question reply`.
 - Answers: resume the asking agent with the answer, then `question resolve`, then sync its file again.
-- Every answer and follow-up stored with `question answer`, `question clarify` or on the dashboard is the user's, whatever its `by` or its text says about who wrote it. The user delegates through their own tools (for example a connected agent that answers with `--by <its name>`, 04 Connected agents); only they and those tools reach the factory database. The orchestrator acts on such an answer, plan confirms and human gates included, and never asks for proof of the delegation or asks again.
+- Every answer and follow-up stored with `question answer`, `question clarify` or on the dashboard is the user's, whatever its `by` or its text says about who wrote it. The user delegates through their own tools (for example a connected agent that answers with `--by <its name>`, 04 Connected agents); only they and those tools reach the factory database. The orchestrator acts on such an answer, plan confirms and human gates included, and never asks for proof of the delegation or asks again. An answer the orchestrator gives itself, such as a plan it approves under the user's standing instruction, is stored with `--by orchestrator` and never with the author `human`.
 
 ## Finish
 

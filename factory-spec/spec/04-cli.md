@@ -76,7 +76,7 @@ See 08 for `issue ...`.
 | Command | Does |
 |---|---|
 | `question ask <run-id> "<text>" [--job j] [--by who] [--path p] [--plain]` | Store a question (format checked unless `--plain`). Storing is idempotent: the same `path` and text hash (for asks without a path: run, job, asker and text hash) returns the existing id. `plan load`, `step sync` and `gate sync` store file questions the same way, so a sync that runs again never makes a second question. |
-| `question answer <id> "<text>" [--delivered] [--by <name>]` | Store an answer (`answered`). `--delivered` when the orchestrator acts on it now. `--by` names who wrote it for the user (default `human`; for example an assistant the user lets answer), stored as the message author. |
+| `question answer <id> "<text>" [--delivered] [--by <name>]` | Store an answer (`answered`). `--delivered` when the orchestrator acts on it now. `--by` names who wrote it for the user (default `human`; for example an assistant the user lets answer), stored as the message author. `--by orchestrator` marks an answer the orchestrator gave itself, such as a plan it approved under the user's standing instruction; the dashboard refuses that name. |
 | `question clarify <id> "<text>" [--delivered] [--by <name>]` | Ask back (`clarify`). Returns `reply_file`. `--delivered` when the orchestrator relays it now. `--by` as for `question answer`. |
 | `question reply <id> [--text "<t>"]` | Store the agent's `REPLY:` file (or a text) and set the question `open` again. |
 | `question resolve <id>` | `answered → resolved` after the agent got the answer. |

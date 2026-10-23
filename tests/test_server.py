@@ -144,6 +144,7 @@ class WriteRoutesTest(ServerCase):
         confirm = self.question("plan_confirm")
         self.post(f"/api/questions/{confirm['id']}/answer", {"text": "yes", "by": "two words"}, status=400)
         self.post(f"/api/questions/{confirm['id']}/answer", {"text": "yes", "by": 3}, status=400)
+        self.post(f"/api/questions/{confirm['id']}/answer", {"text": "yes", "by": "orchestrator"}, status=400)
 
     def test_inbox_and_events(self):
         found = self.get("/api/inbox?as=assistant")

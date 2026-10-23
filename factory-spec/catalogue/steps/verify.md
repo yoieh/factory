@@ -4,7 +4,7 @@ role: gate
 kinds: [code]
 agent: factory-reviewer
 summary: Runs the app or the tests end to end and checks each acceptance criterion by behaviour, not by reading.
-when: The acceptance criteria describe behaviour someone can check by running the app, an endpoint or a command. It is the second gate of a bug fix.
+when: The acceptance criteria describe behaviour someone can check by running the app, an endpoint or a command. It is the second gate of a bug fix. Not when every criterion is the repo's test command, its build result or a read-only check such as a grep: review-code reruns those.
 requires: [repo-tests]
 version: 1
 ---

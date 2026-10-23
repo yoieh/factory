@@ -40,3 +40,4 @@ Style, naming taste and refactor ideas are notes. If in doubt, it is a note.
 3. In a `fix` group, check that the reproducing test was not changed, weakened or skipped.
 4. Do not raise a point again that a human or an earlier round settled.
 5. Each Must fix item names `path/file:line`, the problem, why it must be fixed, and the fix.
+6. When `gates` includes `verify`, do not run the full build or the full test suite: verify runs them in the same worktree at the same time. Run only the targeted tests that the spec names (or the tests the diff adds), and leave the full-suite claim in `output.md` to verify, which must pass too. Say under Notes which tests you ran.

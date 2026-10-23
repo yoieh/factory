@@ -27,10 +27,11 @@ version: 1
 1. Change no production code. Test helpers and fixtures are fine when the test needs them.
 2. The test must fail for the bug's reason. A failure from an import error, a missing fixture or a broken setup does not count.
 3. Run the new test on its own and confirm the failure. Then run the full suite and confirm that only the new tests fail.
-4. Do not mark the test as skipped or as an expected failure. The `fix` step must turn it green.
-5. When you cannot reproduce the bug after a fair try, do not commit a passing test. Ask a question that says what you tried.
-6. Round 2 and later: fix every Must fix item from the previous round's gate files.
-7. Commit the test on `branch` in the repo's commit style. Stage files by name. No code comments and no factory words.
+4. Do not write the fix, not even as a throwaway you revert: the fix group proves that the tests can turn green. To find existing tests that the fix will break, grep the tests for the names and values the bug touches. Correct a test that asserts the buggy behaviour, or list it for fix under Open points.
+5. Do not mark the test as skipped or as an expected failure. The `fix` step must turn it green.
+6. When you cannot reproduce the bug after a fair try, do not commit a passing test. Ask a question that says what you tried.
+7. Round 2 and later: fix every Must fix item from the previous round's gate files.
+8. Commit the test on `branch` in the repo's commit style. Stage files by name. No code comments and no factory words.
 
 ## Output
 Beyond the standard `output.md`, add `## Reproduction`:

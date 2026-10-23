@@ -279,7 +279,7 @@ For a local issue the CLI writes this file from the issue body at `run new --iss
 
 ## report.md
 
-Written by the orchestrator when the run is done or failed, in plain words: per repo the feature branch, test result and PR url (or why there is none); per files job its deliverables under `out/` and its open points; capped groups with their Must fix items; `[human]` notes; skips. No costs or agent names are needed here, but they are allowed: the report stays in the factory home.
+Written by the orchestrator when the run is done or failed, in plain words: per repo the feature branch, test result and PR url (or why there is none); per files job its deliverables under `out/` and its open points; capped groups with their Must fix items; `[human]` notes; skips; a `## Outside the code` section with every bullet of plan.md's "Outside the code", each marked open. No costs or agent names are needed here, but they are allowed: the report stays in the factory home.
 
 ## Design files
 

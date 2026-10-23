@@ -184,6 +184,7 @@ def build():
     entry.add_argument("--no-pr", action="store_true")
     entry.add_argument("--session")
     entry.add_argument("--again", action="store_true")
+    entry.add_argument("--by", default="human")
     entry = add(run, "session", cmd_run_session, "Add an orchestrator session to a run.")
     entry.add_argument("run_id")
     entry.add_argument("session", nargs="?")
@@ -709,6 +710,7 @@ def cmd_run_new(conn, args):
     return runs.new(
         conn, args.feature, args.project, args.repo, args.issue, args.external_key, args.external_url, args.branch,
         args.base, args.parallel, args.max_rounds, args.confirm_plan, args.no_pr, args.session, again=args.again,
+        author=args.by,
     )
 
 

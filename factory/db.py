@@ -7,7 +7,7 @@ from . import FactoryError
 from .util import now
 
 MIGRATIONS = ["schema.sql", "migrations/0002-dropped-stage.sql", "migrations/0003-connected-agents.sql",
-              "migrations/0004-improvement-decided-by.sql"]
+              "migrations/0004-improvement-decided-by.sql", "migrations/0005-run-started-by.sql"]
 
 
 def migration_sql(version):

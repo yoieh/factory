@@ -88,6 +88,7 @@ def counts(conn, name):
     found["decisions"] = conn.execute(
         "SELECT COUNT(*) FROM events WHERE kind = 'improvement.decide' AND json_extract(payload, '$.by') = ?", (name,),
     ).fetchone()[0]
+    found["runs"] = conn.execute("SELECT COUNT(*) FROM runs WHERE started_by = ?", (name,)).fetchone()[0]
     return found
 
 
@@ -113,6 +114,14 @@ def decisions(conn, name, limit=RECENT):
     ))
 
 
+def runs_started(conn, name, limit=RECENT):
+    return db.rows(conn.execute(
+        "SELECT id, project, feature, issue_key, status, created_at FROM runs WHERE started_by = ? "
+        "ORDER BY created_at DESC, id DESC LIMIT ?",
+        (name, limit),
+    ))
+
+
 def first_line(text):
     line = next((line.strip() for line in (text or "").splitlines() if line.strip()), "")
     return re.sub(r"^QUESTION:\s*", "", line, flags=re.I)
@@ -131,4 +140,5 @@ def show(conn, name):
     found = entry(conn, row(conn, name))
     found["recent"] = recent(conn, name)
     found["decisions_recent"] = decisions(conn, name)
+    found["runs_recent"] = runs_started(conn, name)
     return found

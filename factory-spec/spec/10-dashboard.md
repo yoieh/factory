@@ -4,7 +4,7 @@
 
 ## Pages
 
-All pages share a sidebar: Inbox (count of open questions and plans to confirm), Issues, Projects, Improvements (count to review), and the runs list with a search box (issue key, repo, feature) and a menu for active, archived or all. A project picker at the top filters every page (default: all projects). The open view lives in the URL hash so links can be shared locally. Every cost shows the date of the price table it uses (11).
+All pages share a sidebar: Inbox (count of open questions and plans to confirm), Issues, Projects, Improvements (count to review), and the runs list with a search box (issue key, repo, feature) and a menu for active (not done, not archived), archived or all. A project picker at the top filters every page (default: all projects). The open view lives in the URL hash so links can be shared locally. Every cost shows the date of the price table it uses (11).
 
 | Page | Hash | Shows |
 |---|---|---|

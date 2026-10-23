@@ -7,10 +7,11 @@ from . import VERSION, FactoryError, db
 from .util import dotted_set, expand, read_json, write_json
 
 NAME_RE = re.compile(r"^[a-z][a-z0-9-]{1,39}$")
+HOST_RE = re.compile(r"^(?=.{1,253}$)[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$")
 
 DEFAULT_CONFIG = {
     "default_project": None,
-    "dashboard": {"port": 8765},
+    "dashboard": {"port": 8765, "hosts": []},
     "factory_source": None,
     "factory_project": None,
     "catalogue_dirs": [],
@@ -90,11 +91,14 @@ def validate_config(config):
         problems.append("config.json: dashboard must be an object")
     else:
         for key in dashboard:
-            if key != "port":
+            if key not in ("port", "hosts"):
                 problems.append(f"config.json: unknown key 'dashboard.{key}'")
         port = dashboard.get("port", 8765)
         if not (is_int(port) and 1 <= port <= 65535):
             problems.append("config.json: dashboard.port must be a port number")
+        hosts = dashboard.get("hosts", [])
+        if not (isinstance(hosts, list) and all(isinstance(host, str) and HOST_RE.match(host) for host in hosts)):
+            problems.append("config.json: dashboard.hosts must be a list of lowercase host names, without scheme or port")
     source = config.get("factory_source")
     if source is not None:
         try:
@@ -123,7 +127,7 @@ def normalise_config(config):
     merged = copy.deepcopy(DEFAULT_CONFIG)
     for key, value in config.items():
         merged[key] = value
-    merged["dashboard"] = {"port": 8765, **(config.get("dashboard") or {})}
+    merged["dashboard"] = {"port": 8765, "hosts": [], **(config.get("dashboard") or {})}
     if merged["factory_source"]:
         merged["factory_source"] = expand(merged["factory_source"])
     merged["catalogue_dirs"] = [expand(entry) for entry in merged["catalogue_dirs"]]

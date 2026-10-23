@@ -127,7 +127,7 @@ $FACTORY_HOME/                      default ~/.factory
 ```json
 {
   "default_project": null,
-  "dashboard": {"port": 8765},
+  "dashboard": {"port": 8765, "hosts": []},
   "factory_source": null,
   "factory_project": null,
   "catalogue_dirs": [],

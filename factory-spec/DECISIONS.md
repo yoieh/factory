@@ -121,3 +121,7 @@ Fixed without a decision, as phase 5's "fix what breaks":
 - A core copy under `$FACTORY_HOME/core/` counted as the plugin, because `install.sh` copies `.claude-plugin/`. It now counts only when the plugin's self-copy made it, and then it points back to the plugin folder (`.plugin-source`).
 - The dashboard folds a question that is already answered, and shows `dropped` jobs.
 - The Confirm box stayed on wait until the session read the dashboard's answer and moved the run, about ten seconds later. It now turns done as soon as the plan confirm is answered yes (yes, y, approve, approved, ok, okay); any other answer shows the Planner running again. The run's status pill still shows the run's real status. The run detail marks each question's `kind`, as the question list already did.
+
+### After phase 5
+
+- **The dashboard over Tailscale** (2026-10-23, asked by the user). The server still binds 127.0.0.1; `tailscale serve` proxies the tailnet name to it and keeps the browser's `Host`. `config.json` `dashboard.hosts` lists extra host names (lowercase, no scheme or port) that the Host and Origin checks accept on any port, because the proxy's port need not match the local one. `factory serve` reads it at start. No bind option was added, so nothing listens outside loopback.

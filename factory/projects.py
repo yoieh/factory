@@ -23,8 +23,10 @@ RELEASE_MODES = ("off", "draft", "publish")
 PACKAGE_MODES = ("off", "publish")
 KNOWLEDGE_KEYS = ("label", "read_first", "per_repo", "architecture")
 TARGET_KEYS = ("repo", "base", "label")
-DEFAULTS = {"confirm_plan": False, "branch_prefix": "feature/", "require_code_review": True, "land": "off", "land_fixes": 2}
-DEFAULT_KEYS = ("parallel", "max_rounds", "confirm_plan", "branch_prefix", "require_code_review", "land", "land_fixes")
+DEFAULTS = {"confirm_plan": False, "branch_prefix": "feature/", "require_code_review": True, "land": "off", "land_fixes": 2,
+            "agent_runs": None}
+DEFAULT_KEYS = ("parallel", "max_rounds", "confirm_plan", "branch_prefix", "require_code_review", "land", "land_fixes",
+                "agent_runs")
 LAND_MODES = ("off", "ready", "merge")
 STEP_NAMES = {
     1: "--project",
@@ -184,6 +186,8 @@ def validate(project, folder_name=None, config=None):
             problems.append("defaults.parallel must be an integer of 1 or more")
         if "max_rounds" in defaults and not (is_int(defaults["max_rounds"]) and 1 <= defaults["max_rounds"] <= 10):
             problems.append("defaults.max_rounds must be an integer from 1 to 10")
+        if defaults.get("agent_runs") is not None and not (is_int(defaults["agent_runs"]) and 0 <= defaults["agent_runs"] <= 64):
+            problems.append("defaults.agent_runs must be null or an integer from 0 to 64")
         for key in ("confirm_plan", "require_code_review"):
             if key in defaults and not isinstance(defaults[key], bool):
                 problems.append(f"defaults.{key} must be true or false")

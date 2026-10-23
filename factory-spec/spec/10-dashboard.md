@@ -13,7 +13,7 @@ All pages share a sidebar: Inbox (count of open questions and plans to confirm),
 | Issues | `#issues`, `#issues/<KEY-n>` | Filterable list; one issue with body, links, history; create and edit. Shows the `/factory <KEY-n>` command to copy. |
 | Projects | `#projects`, `#projects/<name>` | Repos, integrations with availability, knowledge paths that exist, catalogue (steps and templates with their source), skill installs and drift. Read-only. |
 | Improvements | `#improvements` | Every improvement, filtered by status, target and project; evidence, proposal, run, `seen_in`; accept, reject, mark done, back to review, with a note. |
-| Agents | `#agents`, `#agents/<name>` | The connected agents (04): name, description, roles, last seen, how many answers, follow-ups, improvement decisions and PR moves; one agent with its roles, its latest answers, each linking to its question, its latest improvement decisions with their notes, and its latest PR moves (review, fix, merge, deploy), each linking to its run. An improvement card says who decided it. Read-only. |
+| Agents | `#agents`, `#agents/<name>` | The connected agents (04): name, description, roles, last seen, how many answers, follow-ups, improvement decisions, runs started and PR moves; one agent with its roles, its latest answers, each linking to its question, its latest improvement decisions with their notes, the runs it started, and its latest PR moves (review, fix, merge, deploy), each linking to its run. An improvement card says who decided it, and a run an agent started names the agent. Read-only. |
 
 ### Loop graph with pipelines
 

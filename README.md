@@ -137,6 +137,7 @@ factory events --since <cursor> --wait --as helper
 factory inbox --as helper                  # everything that waits for you, across runs
 factory question answer <id> "yes" --by helper
 factory improvement decide <id> rejected --note "Duplicates rule X" --by helper
+/factory SHOP-12 --by helper               # in Claude Code: start a run from a ready issue
 ```
 
 ### PR work by role
@@ -152,9 +153,9 @@ factory inbox --as ops --role deploy        # the PRs that wait for a deploy
 
 Every PR of a done run is an item in the inbox with `next`: `review`, `fix`, `merge`, `deploy`, or `decide` when a person must decide. Each item names the role that does it (`null` when it waits for you) and the `session` that does it, `/factory land <run-id> --repo <repo> --by <name>`, which the agent starts in Claude Code. That session passes `--by` to every land command, and the core lets the agent make only the moves of its roles: `land start` needs `review`, `land fix` needs `fix`, `land apply` needs `merge`, and the steps after merge need `deploy`. A move without the role is refused with the command that gives it. Whether a PR may be merged at all is still the project's `defaults.land`, and what runs after a merge is still the repo's `after_merge`: a role never turns those on. Without `--by` the session works for you and may make every move. Every move is logged with who made it, and the Agents page lists each agent's roles and moves.
 
-`factory inbox` lists the open questions of every run, each with its `kind` (`question`, `plan_confirm` or `human_gate`), the run and job, the question line, the options with the recommended one, and the exact command to answer or ask back, plus the improvements waiting for a decision. `factory events` follows the event log from a cursor, so an agent waits on one call instead of watching every run. An answer stored with `--by <name>` counts as yours: the orchestrator acts on it like an answer in its own chat. An answer stored with `--by orchestrator` is the orchestrator's own, for example a plan it approved because you told it to, and the thread shows it that way. An agent decides improvements the same way: `improvement decide --by <name>` needs a `--note` with the reason, stores who decided in `decided_by` and logs it on the `improvement.decide` event, so every decision says whether you or which agent made it. Over the network, the dashboard serves the same as `/api/inbox`, `/api/events` and `/api/agents`, and its answer, follow-up and decide POSTs take `"by": "<name>"`.
+`factory inbox` lists the open questions of every run, each with its `kind` (`question`, `plan_confirm` or `human_gate`), the run and job, the question line, the options with the recommended one, and the exact command to answer or ask back, plus the improvements waiting for a decision. `factory events` follows the event log from a cursor, so an agent waits on one call instead of watching every run. An answer stored with `--by <name>` counts as yours: the orchestrator acts on it like an answer in its own chat. An answer stored with `--by orchestrator` is the orchestrator's own, for example a plan it approved because you told it to, and the thread shows it that way. An agent decides improvements the same way: `improvement decide --by <name>` needs a `--note` with the reason, stores who decided in `decided_by` and logs it on the `improvement.decide` event, so every decision says whether you or which agent made it. An agent can also work through the issue queue: `/factory <KEY-n> --by <name>` passes `--by` to `run new`, which stores it as the run's `started_by` and logs it on `run.new`. An agent starts only a `ready` local issue, and, when the project sets `defaults.agent_runs`, only while it has fewer active runs (planning to finishing) than that (0 stops agents starting runs). Without it the agent itself judges which issues can run side by side. Over the network, the dashboard serves the same as `/api/inbox`, `/api/events` and `/api/agents`, and its answer, follow-up and decide POSTs take `"by": "<name>"`.
 
-The **Agents** page of the dashboard lists every connected agent with when it was last seen, what it answered and which improvements it decided. `factory agent remove <name>` forgets one; its answers keep its name.
+The **Agents** page of the dashboard lists every connected agent with when it was last seen, what it answered, which improvements it decided and which runs it started; a run it started says so on its page. `factory agent remove <name>` forgets one; its answers keep its name.
 
 ## Dashboard
 
@@ -171,7 +172,7 @@ One local page, served by the standard library and built from one self-contained
 - **Issues**: filter, create, change status, priority, title and labels, edit the body, and copy the `/factory <KEY>` command that starts a run in Claude Code.
 - **Projects**: repos, integrations with availability, knowledge, skill installs and drift, and the catalogue with where each step comes from. Read-only.
 - **Improvements**: evidence and proposal per item, and who decided it; accept, reject, mark done or send back to review, with a note.
-- **Agents**: the connected agents, with when they were connected and last seen, their latest answers and their improvement decisions. Read-only.
+- **Agents**: the connected agents, with when they were connected and last seen, their latest answers, their improvement decisions and the runs they started. Read-only.
 
 To reach the dashboard from other devices on a tailnet, keep the server on 127.0.0.1 and put `tailscale serve` in front of it, then list the machine's tailnet name:
 

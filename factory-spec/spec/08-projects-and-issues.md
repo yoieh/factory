@@ -38,7 +38,7 @@
     "process":   {"label": "issues and process"}
   },
   "defaults": {"parallel": 3, "max_rounds": 4, "confirm_plan": false, "branch_prefix": "feature/",
-               "require_code_review": true, "land": "off"}
+               "require_code_review": true, "land": "off", "agent_runs": null}
 }
 ```
 
@@ -56,7 +56,7 @@ Keys:
 | `step_skills` | no | Per `skills_key` of a step, a list of `{path, when}` files the step's agent reads. |
 | `catalogue_dirs` | no | Extra catalogue folders (06). |
 | `improvement_targets` | no | Where accepted improvements go. Default: `factory`, `repo`, `process`; `knowledge` only when set. Per target: `repo` (a project repo, or none for `factory` and `process`), `base` (`current`, `default` or a branch name), `label`. |
-| `defaults` | no | Run defaults. `land` (`off`, `ready` or `merge`, default `off`) says what `land apply` does with a PR the lander passed: nothing, mark it ready for review, or merge it. Only the user turns it on, per project. `land_fixes` (0 to 5, default 2) is how many times the factory fixes a PR the lander sent back before a person decides. |
+| `defaults` | no | Run defaults. `land` (`off`, `ready` or `merge`, default `off`) says what `land apply` does with a PR the lander passed: nothing, mark it ready for review, or merge it. Only the user turns it on, per project. `agent_runs` (null, the default, or 0 to 64) caps the active runs (`planning` to `finishing`, not archived) a project may have when a connected agent starts one (`run new --by`); 0 stops agents starting runs, null leaves it to the agent's judgment. `land_fixes` (0 to 5, default 2) is how many times the factory fixes a PR the lander sent back before a person decides. |
 
 A repo's `after_merge` says what the factory does once its PR is merged, in **After merge** of Land. Only the user sets it.
 
@@ -121,6 +121,7 @@ factory issue sync <project>                     # tracker adapter's sync script
 - Automatic status moves (03): `in_progress` on run start, `in_review` when the first PR is stored, `done` when every PR of the issue's latest run is merged. A failed run leaves the issue `in_progress` and adds an event.
 - Improvements: when a human accepts an improvement, the core creates an issue of type `improvement` in the run's project (or, for target `factory`, in the project named by `config.json` `factory_project`, else the run's project) and links both ways. The issue moves to `done` when the improvement does. Rejecting closes it.
 - `/factory` with no arguments in a repo lists the project's `ready` issues and offers to start one.
+- The queue: a connected agent may start runs for the user from `ready` issues with `/factory <KEY-n> --by <name>` (04, `run new --by`). Only `ready` local issues, never `open`, `in_progress` or later ones, so an issue is never started twice, and only up to `defaults.agent_runs` active runs per project when the project sets it.
 
 ### Dashboard
 

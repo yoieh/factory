@@ -1,7 +1,7 @@
 ---
 name: factory
 description: Run the software factory for one run. Give it a local issue, an external issue key or URL, or a feature text; it plans small jobs with a pipeline each, runs producer and gate agents in parallel in their own worktrees, merges code jobs into one feature branch per repo, opens a draft PR per repo when the code host can, and ends with a retrospective whose improvements a human decides; improve applies the accepted ones, and land reviews a done run's PRs, fixes what the review asks for, marks them ready or merges them when the project allows it, then runs the repo's steps after merge (deploy, deploy watch, build, release, package). Use for /factory <issue>, /factory <repo> <feature>, resume, answer, clarify, rework, publish, land, retro, improve, issue and list.
-argument-hint: "<KEY-n> [flags] | <external-key-or-url> [text] [flags] | [<repo>] <feature text> [flags] | (no arguments) | resume <run-id> | answer <question-id> <text> | clarify <question-id> <text> | rework <run-id> <job-id> <note> | publish <run-id> | land <run-id> [--repo <r>] [--dry-run] [--by <agent>] | retro <run-id> | improve [<id>...] [--factory-base <branch>] | issue add|list|show ... | list   (flags: --project <p> --repo <r>... --confirm-plan --no-pr --branch <b> --base <b> --parallel <n> --max-rounds <n> --again --design <url>...)"
+argument-hint: "<KEY-n> [flags] | <external-key-or-url> [text] [flags] | [<repo>] <feature text> [flags] | (no arguments) | resume <run-id> | answer <question-id> <text> | clarify <question-id> <text> | rework <run-id> <job-id> <note> | publish <run-id> | land <run-id> [--repo <r>] [--dry-run] [--by <agent>] | retro <run-id> | improve [<id>...] [--factory-base <branch>] | issue add|list|show ... | list   (flags: --project <p> --repo <r>... --confirm-plan --no-pr --branch <b> --base <b> --parallel <n> --max-rounds <n> --again --design <url>... --by <agent>)"
 ---
 
 # /factory: the orchestrator
@@ -154,7 +154,7 @@ Parse `$ARGUMENTS`:
 | `issue add\|list\|show ...` | Pass the rest on to `"$F" issue add "<project>" "<title>" ...`, `"$F" issue list ...` or `"$F" issue show "<KEY-n>"`, with the resolved project for `add` when none is given, and show the result. |
 | `list` | `"$F" run list --table` and show it. |
 
-Flags for starts: `--project <p>`, `--repo <r>` (repeat), `--confirm-plan`, `--no-pr`, `--branch <b>`, `--base <b>`, `--parallel <n>`, `--max-rounds <n>`, `--again` (another run on an issue that already has an active one), `--design <url>` (repeat). Pass each given flag on to `run new`, except `--design`, which Designs handles.
+Flags for starts: `--project <p>`, `--repo <r>` (repeat), `--confirm-plan`, `--no-pr`, `--branch <b>`, `--base <b>`, `--parallel <n>`, `--max-rounds <n>`, `--again` (another run on an issue that already has an active one), `--design <url>` (repeat), `--by <agent>`. Pass each given flag on to `run new`, except `--design`, which Designs handles. `--by` names the connected agent that starts the run for the user (a voice assistant working through the issue queue); `run new` records it and allows it only for a `ready` local issue, and only below the project's `defaults.agent_runs` cap when it has one. When it refuses, report its message and stop: do not ask, and do not start the run without `--by`.
 
 The first argument, when it is not a command word above:
 
@@ -208,7 +208,7 @@ Give a producer its name when the Agent tool takes a `name`. Store what SendMess
 
 ## Start from a local issue
 
-1. `"$F" issue show "<KEY-n>" --json`. When it is `done` or `closed`, say so and ask whether to go on. Do not create the run until the user agrees.
+1. `"$F" issue show "<KEY-n>" --json`. When it is `done` or `closed`, say so and ask whether to go on. Do not create the run until the user agrees. With `--by`, ask nothing: `run new` checks the issue.
 2. Create the run, with only the flags the user gave, plus `--no-pr` when your session check found `push` missing:
    ```sh
    "$F" run new "<issue title>" --issue "<KEY-n>" --session "${CLAUDE_SESSION_ID}" --repo "<repo>" --branch "<name>" --base "<branch>" --parallel "<n>" --max-rounds "<n>" --no-pr
